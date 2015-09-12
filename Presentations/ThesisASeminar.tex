@@ -1,0 +1,63 @@
+\documentclass[10pt]{beamer}
+
+\usetheme[everytitleformat=regular,progressbar=foot]{m}
+
+\usepackage{booktabs}
+\usepackage[scale=2]{ccicons}
+
+\title{Formalising a language with uniqueness typing}
+\author{Michael Sproul}
+\date{}
+\institute{
+    Supervisor: Ben Lippmeier\\
+    University of New South Wales
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\begin{frame}
+\frametitle{What?}
+
+\begin{enumerate}
+\item Define the \textit{type system} and \textit{semantics} for a small programming language as a formal mathematical system.
+\item Prove that the programming language is ``well-behaved" -- \textit{sound}.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Motivation}
+
+Programming languages are complicated, lots of interacting features.
+
+We want to:
+
+\begin{itemize}
+\item Eliminate or minimise undefined behaviour.
+
+% Do closures work well with exceptions? 
+\item Ensure that language features interoperate without creating unsoundness.
+
+\item Provide a solid foundation for software verification.
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Motivation}
+
+Formalised language semantics are a prerequisite for:
+
+\begin{itemize}
+\item Proofs about programs. \textit{seL4}, verified crypto.
+\item Trust-worthy compilers. \textit{CompCert}.
+\end{itemize}
+
+\end{frame}
+
+
+
+\end{document}
