@@ -19,8 +19,7 @@
 
 \section{Introduction}
 
-\begin{frame}
-\frametitle{What?}
+\begin{frame}{What?}
 
 \begin{enumerate}
 \item Define the \textit{type system} and \textit{semantics} for a small programming language as a formal mathematical system.
@@ -29,7 +28,7 @@
 \end{frame}
 
 \begin{frame}
-\frametitle{Motivation}
+{Motivation}
 
 Programming languages are complicated, lots of interacting features.
 
@@ -47,17 +46,81 @@ We want to:
 \end{frame}
 
 \begin{frame}
-\frametitle{Motivation}
+{Motivation}
 
 Formalised language semantics are a prerequisite for:
 
 \begin{itemize}
 \item Proofs about programs. \textit{seL4}, verified crypto.
+    \begin{itemize}
+    \item Security, correctness, speed (?)
+    \end{itemize}
 \item Trust-worthy compilers. \textit{CompCert}.
+\item Sanity whilst programming?
 \end{itemize}
+\end{frame}
+
+\section{Background}
+
+\begin{frame}{Operational Semantics}
 
 \end{frame}
 
+\begin{frame}{Typing Rules}
 
+Russell, natural deduction, Martin-Lof.
+
+Put STLC typing rules here.
+
+\end{frame}
+
+\begin{frame}{Coq, and dependent types}
+
+Calculus of (Co)Inductive Constructions.
+
+\end{frame}
+
+\begin{frame}{Uniqueness Typing}
+
+\begin{itemize}
+\item Linear type system: every value used \textit{exactly} once.
+\item Affine type system: every value used \textit{at most} once.
+\end{itemize}
+
+From linear logic and affine logic respectively [Girard].
+
+Example languages: Clean, Cyclone, Rust.
+
+\end{frame}
+
+\begin{frame}{Why Uniqueness Typing?}
+\begin{itemize}
+\item Alternative way to model I/O, instead of Monads.
+\item Efficient mutation in pure functional languages.
+\item Avoid garbage collection. Compete with C and C++.
+\end{itemize}
+\end{frame}
+
+\section{Proposal}
+
+\begin{frame}{Proposal}
+
+Define operational semantics and typing rules for a variant of the lambda calculus with \textit{linear} typing, in Coq, using de Bruijn indices for naming.
+
+Prove \textit{progress} and \textit{preservation}.
+\end{frame}
+
+\begin{frame}{Progress}
+
+If a term is well-typed, it is either a value, or it can take a step.
+
+[[formal definition here (gotta workout Latex natural deduction)]]
+\end{frame}
+
+\begin{frame}{Preservation}
+
+If a term is well-typed and it takes a step, it retains the same type.
+
+\end{frame}
 
 \end{document}
