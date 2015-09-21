@@ -1,5 +1,7 @@
 \documentclass[10pt]{beamer}
 
+\usepackage{proof}
+
 \usetheme[everytitleformat=regular,progressbar=foot]{m}
 
 \usepackage{booktabs}
@@ -62,43 +64,77 @@ Formalised language semantics are a prerequisite for:
 
 \section{Background}
 
-\begin{frame}{Operational Semantics}
+\begin{frame}{Contraction and Weakening}
+
+In regular* logic there are two rules that allow assumptions to be discarded or introduced from nowhere:
+
+$$
+\infer[Contraction]{\Gamma, A \vdash B}{
+	\Gamma, A, A \vdash B
+}
+\qquad
+\infer[Weakening]{\Gamma, A \vdash B}{
+    \Gamma \vdash B
+}
+$$
+
+*regular = classical/intuitionistic/constructive
 
 \end{frame}
 
-\begin{frame}{Typing Rules}
+\begin{frame}{Contraction and Weakening}
 
-Russell, natural deduction, Martin-Lof.
+Every logic corresponds to a type system, so we have...
 
-Put STLC typing rules here.
+\begin{eqnarray*}
+\infer[Contraction]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
+	\Gamma, y : A, z : A \vdash u :: B
+}
+\qquad
+\infer[Weakening]{\Gamma, x : A \vdash y :: B}{
+    \Gamma\vdash y :: B
+}
+\end{eqnarray*}
+
+Without contraction, variables can only appear once in a term.
+% Note: This is because concatenation of environments requires distinct variables.
+
+Without weakening, all variables in the context must be used in the term.
+
+[Wadler, 1991, 1993]
 
 \end{frame}
 
-\begin{frame}{Coq, and dependent types}
-
-Calculus of (Co)Inductive Constructions.
-
-\end{frame}
-
-\begin{frame}{Uniqueness Typing}
+\begin{frame}{Linear and affine type systems}
 
 \begin{itemize}
-\item Linear type system: every value used \textit{exactly} once.
-\item Affine type system: every value used \textit{at most} once.
+\item \textbf{Linear type system:} Contraction and weakening banned -- every value used \textit{exactly} once.
+\item \textbf{Affine type system:} Contraction banned, weakening allowed -- every value used \textit{at most} once.
 \end{itemize}
 
-From linear logic and affine logic respectively [Girard].
+From linear logic [Girard, 1987] and affine logic [Grishin, 1974] respectively.
 
-Example languages: Clean, Cyclone, Rust.
+Both type systems allow some terms to be treated in the normal intuitionistic way, via the ! (bang) operator.
 
 \end{frame}
 
-\begin{frame}{Why Uniqueness Typing?}
+\begin{frame}{Why bother?}
+
+Linear values
+
 \begin{itemize}
 \item Alternative way to model I/O, instead of Monads.
 \item Efficient mutation in pure functional languages.
 \item Avoid garbage collection. Compete with C and C++.
 \end{itemize}
+
+
+
+
+\end{frame}
+
+\begin{frame}{Why Uniqueness Typing?}
+
 \end{frame}
 
 \section{Proposal}
