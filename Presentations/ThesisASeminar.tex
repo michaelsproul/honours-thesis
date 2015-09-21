@@ -1,5 +1,6 @@
 \documentclass[10pt]{beamer}
 
+\usepackage{graphicx}
 \usepackage{proof}
 
 \usetheme[everytitleformat=regular,progressbar=foot]{m}
@@ -115,26 +116,73 @@ Without weakening, all variables in the context must be used in the term.
 From linear logic [Girard, 1987] and affine logic [Grishin, 1974] respectively.
 
 Both type systems allow some terms to be treated in the normal intuitionistic way, via the ! (bang) operator.
+% Example here.
 
 \end{frame}
 
 \begin{frame}{Why bother?}
 
-Linear values
+Several languages use type systems based on linear logic to provide useful features:
 
 \begin{itemize}
-\item Alternative way to model I/O, instead of Monads.
-\item Efficient mutation in pure functional languages.
-\item Avoid garbage collection. Compete with C and C++.
+\item Mutation without sacrificing referential transparency.\\
+      Unique references to memory permit destructive updates -- Clean.
+% Clean example here, say the principle.
+\item Memory safety without garbage collection -- Cyclone, Rust.
+% Rust example.
 \end{itemize}
+\end{frame}
 
+\begin{frame}{Uniqueness typing}
 
+Linear (and affine) typing aren't quite enough to guarantee unique references to values.
 
+\textit{Dereliction} allows a non-linear value to be used as a linear one.
+
+In a pure linear (or affine) type system, uniqueness of linear values therefore isn't guaranteed [de Vries 2008].
+\end{frame}
+
+\begin{frame}{Uniqueness typing}
+
+\begin{itemize}
+\item \textbf{Linear/affine typing}: Linear values \textit{will not} be duplicated at any point in the future.
+\item \textbf{Uniqueness typing}: Linear values \textit{have not} been duplicated at any point in the past.
+\end{itemize}
 
 \end{frame}
 
-\begin{frame}{Why Uniqueness Typing?}
+\begin{frame}{Uniqueness typing via attributes}
 
+Edsko de Vries designed a system that uses a uniqueness \textit{kind}, and a type constructor \texttt{Attr} which annotates a type as either unique or non-unique.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=300px]{de_Vries_attributes.png}
+\label{}
+\end{figure}
+% Levity polymorphism?
+\end{frame}
+
+\begin{frame}{Uniqueness typing formalisation}
+de Vries used Coq to prove soundness for his attribute-based type system.
+
+\begin{itemize}
+\item ``Locally nameless" approach to variable naming -- de Bruijn indices for bound variables and names for free variables.\\
+
+\textit{The use of the locally nameless approach, and in particular the use of the Formal Metatheory library, meant that little of our subject reduction
+proof needs to be concerned with alpha-equivalence or freshness.}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The \textbf{$L^3$} language}
+It's great.
+% Talk about capabilities.
+% Can we do files easily with an extension?
+% Time plan (including software foundations).
+% Time for pre-research, time for proving, write ups.
+% Related work at the very end.
+% Francois Potier's stuff (capabilties + uniqueness, frame rule + inverse frame rule JFP). Language: Mezzo.
 \end{frame}
 
 \section{Proposal}
