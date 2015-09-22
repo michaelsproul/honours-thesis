@@ -126,7 +126,7 @@ From linear logic [Girard 1987] and affine logic [Grishin 1974] respectively.
 
 \end{frame}
 
-\begin{frame}[fragile]{Retaining intuitionistic behaviour}
+\begin{frame}{Retaining intuitionistic behaviour}
 
 Linear type systems allow some terms to be treated in the normal intuitionistic way, via the bang operator, (!).
 
@@ -139,17 +139,38 @@ Derivable using a version of contraction that requires \textit{non-linear} assum
 
 \end{frame}
 
-\begin{frame}{Why bother?}
+\begin{frame}
+
+\frametitle{Why bother?}
 
 Several languages use type systems based on linear logic to provide useful features:
 
-\begin{itemize}
-\item Mutation without sacrificing referential transparency.\\
-      Unique references to memory permit destructive updates -- Clean.
-% Clean example here, say the principle.
-\item Memory safety without garbage collection -- Cyclone, Rust.
-% Rust example.
-\end{itemize}
+Mutation without sacrificing referential transparency (Clean).
+
+
+
+% Talk: Unique references to memory permit destructive updates.
+
+
+\end{frame}
+
+\begin{frame}[fragile]{Why bother?}
+
+Memory safety without garbage collection -- Cyclone, Rust.
+
+\begin{verbatim}
+fn main() {
+    // Heap allocated vector - but we don't need to free it!
+    let mut v = Vec::new();
+
+    for i in 0 .. 200 {
+        v.push(i * i);
+    }
+
+    println!("{:?}", v);
+}
+\end{verbatim}
+
 \end{frame}
 
 \begin{frame}{Uniqueness typing}
