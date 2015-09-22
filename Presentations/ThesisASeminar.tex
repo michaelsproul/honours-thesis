@@ -1,12 +1,21 @@
 \documentclass[10pt]{beamer}
 
 \usepackage{graphicx}
+\usepackage{minted}
 \usepackage{proof}
-
-\usetheme[everytitleformat=regular,progressbar=foot]{m}
-
 \usepackage{booktabs}
 \usepackage[scale=2]{ccicons}
+
+\usetheme[everytitleformat=regular, progressbar=foot]{m}
+\usefonttheme[onlymath]{serif}
+
+% Macros
+\let\oldemptyset\emptyset
+\let\emptyset\varnothing
+\newcommand{\case}{\text{ case }}
+\newcommand{\of}{\text{of }}
+\newcommand{\yields}{\multimap}
+
 
 \title{Formalising a language with uniqueness typing}
 \author{Michael Sproul}
@@ -40,7 +49,7 @@ We want to:
 \begin{itemize}
 \item Eliminate or minimise undefined behaviour.
 
-% Do closures work well with exceptions? 
+% Do closures work well with exceptions?
 \item Ensure that language features interoperate without creating unsoundness.
 
 \item Provide a solid foundation for software verification.
@@ -56,7 +65,7 @@ Formalised language semantics are a prerequisite for:
 \begin{itemize}
 \item Proofs about programs. \textit{seL4}, verified crypto.
     \begin{itemize}
-    \item Security, correctness, speed (?)
+    \item Security, correctness.
     \end{itemize}
 \item Trust-worthy compilers. \textit{CompCert}.
 \item Sanity whilst programming?
@@ -67,7 +76,7 @@ Formalised language semantics are a prerequisite for:
 
 \begin{frame}{Contraction and Weakening}
 
-In regular* logic there are two rules that allow assumptions to be discarded or introduced from nowhere:
+In regular* logic there are two rules that allow assumptions to be discarded, or introduced from nowhere:
 
 $$
 \infer[Contraction]{\Gamma, A \vdash B}{
@@ -102,7 +111,7 @@ Without contraction, variables can only appear once in a term.
 
 Without weakening, all variables in the context must be used in the term.
 
-[Wadler, 1991, 1993]
+[Wadler 1991, 1993]
 
 \end{frame}
 
@@ -113,10 +122,20 @@ Without weakening, all variables in the context must be used in the term.
 \item \textbf{Affine type system:} Contraction banned, weakening allowed -- every value used \textit{at most} once.
 \end{itemize}
 
-From linear logic [Girard, 1987] and affine logic [Grishin, 1974] respectively.
+From linear logic [Girard 1987] and affine logic [Grishin 1974] respectively.
 
-Both type systems allow some terms to be treated in the normal intuitionistic way, via the ! (bang) operator.
-% Example here.
+\end{frame}
+
+\begin{frame}[fragile]{Retaining intuitionistic behaviour}
+
+Linear type systems allow some terms to be treated in the normal intuitionistic way, via the bang operator, (!).
+
+\begin{eqnarray*}
+\emptyset \vdash \lambda \langle x' \rangle . \case x' \of !x \rightarrow \langle !x, !x \rangle :\text{ } !A \yields (!A \otimes !A)
+\end{eqnarray*}
+
+Derivable using a version of contraction that requires \textit{non-linear} assumptions [Wadler 1993].
+% Talk note: The case statement is required to coerce an assumption of the form x': !A to [x: A].
 
 \end{frame}
 
