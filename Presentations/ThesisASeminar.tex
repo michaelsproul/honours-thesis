@@ -15,9 +15,14 @@
 \newcommand{\of}{\text{of }}
 \newcommand{\yields}{\multimap}
 \newcommand{\steps}{\Rightarrow}
+\newcommand{\lquine}{\left\ulcorner}
+\newcommand{\rquine}{\right\urcorner}
+\newcommand{\capa}{\text{cap}}
+\newcommand{\ptr}{\text{ptr }}
 
 
-\title{Formalising a language with uniqueness typing}
+\title{Mechanical proof of type soundness for $L^3$}
+\subtitle{$L^3$: \textit{The Linear Language with Locations}}
 \author{Michael Sproul}
 \date{}
 \institute{
@@ -34,7 +39,7 @@
 \begin{frame}{What?}
 
 \begin{enumerate}
-\item Define the \textit{type system} and \textit{semantics} for a small programming language as a formal mathematical system.
+\item Model the \textit{type system} and \textit{semantics} of a small programming language as a formal mathematical system.
 \item Prove that the programming language is ``well-behaved" -- \textit{sound}.
 \end{enumerate}
 \end{frame}
@@ -122,7 +127,7 @@ Without weakening, all variables in the context must be used in the term.
 \item \textbf{Affine type system:} Contraction banned, weakening allowed -- every value used \textit{at most} once.
 \end{itemize}
 
-From linear logic [Girard 1987] and affine logic [Grishin 1974] respectively.
+From linear logic [Girard 1986] and affine logic respectively.
 
 \end{frame}
 
@@ -135,7 +140,7 @@ Linear type systems allow some terms to be treated in the normal intuitionistic 
 \end{eqnarray*}
 
 Derivable using a version of contraction that requires \textit{non-linear} assumptions [Wadler 1993].
-% Talk note: The case statement is required to coerce an assumption of the form x': !A to [x: A].
+% Note: The case statement is required to coerce an assumption of the form x': !A to [x: A].
 
 \end{frame}
 
@@ -146,16 +151,19 @@ Derivable using a version of contraction that requires \textit{non-linear} assum
 Several languages use type systems based on linear logic to provide useful features:
 
 Mutation without sacrificing referential transparency (Clean).
+% Note: Unique references to memory permit destructive updates.
 
-
-% Talk: Unique references to memory permit destructive updates.
-
-
+\begin{figure}[h]
+\centering
+\includegraphics[width=250px]{Clean_Quicksort.png}
+\label{}
+\end{figure}
 \end{frame}
 
 \begin{frame}[fragile]{Why bother?}
 
-Memory safety without garbage collection -- Cyclone, Rust.
+Memory safety without garbage collection --\\
+	Cyclone [Grossman et al. 2005], Rust.
 
 \begin{verbatim}
 fn main() {
@@ -219,14 +227,69 @@ proof needs to be concerned with alpha-equivalence or freshness.}
 \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile]{The \textbf{$L^3$} language}
+
+Based on the linear lambda calculus, supporting \textit{strong updates} via a system of capabilities [Ahmed, Fluet, Morrisett 2001].
+
+\begin{verbatim}
+let val r = ref () in
+   r := true;
+   if (!r) then
+     r := 42
+   else
+     r := 15;
+   !r + 12
+end
+\end{verbatim}
+
+\end{frame}
+
 \begin{frame}{The \textbf{$L^3$} language}
-It's great.
-% Talk about capabilities.
-% Can we do files easily with an extension?
-% Time plan (including software foundations).
-% Time for pre-research, time for proving, write ups.
-% Related work at the very end.
-% Francois Potier's stuff (capabilties + uniqueness, frame rule + inverse frame rule JFP). Language: Mezzo.
+
+Pointers can be shared, but require a \textit{capability} to be read, written or discarded. The capability is treated \textit{linearly}.
+
+\begin{eqnarray*}
+(\sigma, \text{new } v) \Rightarrow (\sigma \uplus \{l \mapsto v\},
+	\lquine l, \langle \capa, \ptr l \rangle \rquine)
+\\
+(\sigma, \text{let } \lquine \rho, x \rquine = \lquine l, v \rquine \text{in } e)
+	\Rightarrow
+	(\sigma, e[l/\rho][v/x])
+\end{eqnarray*}
+
+Different from de Vries' system in that neither \textit{dereliction} nor removal of uniqueness is allowed.
+
+\end{frame}
+
+\begin{frame}{The \textbf{$L^3$} language}
+
+Swapping a value can change its type:
+
+\begin{eqnarray*}
+(\sigma \uplus \{l \mapsto v_1\}, \text{swap cap } (\ptr l) \text{ } v_2)
+	\Rightarrow
+	(\sigma \uplus \{l \mapsto v_2\}, \langle \capa, v_1 \rangle)
+\end{eqnarray*}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=300px]{L3_swap_rule.png}
+\label{}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{$L^3$ has a successor...}
+
+[Ahmed, Fluet and Morrisett 2006] verified a system similar to $L^3$, with regions added on, \textbf{but without strong updates}.
+
+\begin{itemize}
+\item Twelf proof assistant, rather than Coq.
+\item Higher-order abstract syntax -- host language binders used to describe object language binders.
+\end{itemize}
+
+Their conclusion from 2006 still seems to be true, \textbf{nobody has verified a system with strong updates yet}.
+
 \end{frame}
 
 \section{Proposal}
@@ -253,8 +316,8 @@ $$
 
 \begin{itemize}
 \item Background reading on semantics and type theory.
-\item Literature review - mostly papers on linear(ish) type systems.
-\item Coq proofs of type soundness for simple variants of the lambda calculus, via \textit{Software Foundations} [Pierce XXXX].
+\item Literature review - mostly papers on linear-logic based type systems.
+\item Coq proofs of type soundness for simple variants of the lambda calculus, via \textit{Software Foundations} [Pierce 2015].
 \end{itemize}
 \end{frame}
 
@@ -285,7 +348,7 @@ For $L^3$ I'll need to pick a better approach to variable naming.
 \begin{itemize}
 \item Higher-order Abstract Syntax (HOAS).
 \item de Bruijn indices [de Bruijn 1972].
-\item Locally nameless [de Vries 2008].
+\item Locally nameless, as used by [de Vries 2008].
 \end{itemize}
 \end{frame}
 
@@ -298,6 +361,8 @@ Before Week 12 (literature review deadline):
 \item Finish reading and summarising papers (also 3 weeks).
 \end{itemize}
 
+\pause
+
 Over summer (3 months $\approx$ 12 weeks total):
 
 \begin{itemize}
@@ -309,12 +374,37 @@ Over summer (3 months $\approx$ 12 weeks total):
 Definitions may need tweaking along the way.
 \end{frame}
 
-\begin{frame}
+\begin{frame}{Schedule}
+
+Next semester (12 weeks):
+
+\begin{itemize}
+\item Finalise proofs completed over the summer break (6 weeks).
+\item Write-up results and findings (6 weeks).
+\end{itemize}
 
 \end{frame}
 
+\begin{frame}{References}
+\begin{itemize}
+\item \textit{Lambda Calculus Notation with Nameless Dummies} - N. G. de Bruijn (1972).
+\item \textit{Linear Logic} - J. Girard (1986).
+\item \textit{Higher-order abstract syntax} - F. Pfenning and C. Elliot (1988).
+\item \textit{Linear types can change the world!} - P. Wadler (1991).
+\item \textit{A taste of linear logic} - P. Wadler (1993).
+\item \textit{Guaranteeing Safe Destructive Updates through a Type System with Uniqueness Information for Graphs} - S. Smetsers et al (1994).
+\item \textit{$L^3$: A Linear Language with Locations} - A. Ahmed, M. Fluet, G. Morrisett (2001).
+\item \textit{Linear Regions Are All You Need} - A. Ahmed, M. Fluet, G. Morrisett (2006).
+\item \textit{Uniqueness Typing Simplified} - E. de Vries (2008).
+\item \textit{Making Uniqueness Typing Less Unique} - E. de Vries (2008).
+\item \textit{Software Foundations} - B. Pierce (2015).
+\end{itemize}
+\end{frame}
+
 \begin{frame}
-Thanks!
+\begin{center}
+\Large Thanks!
+\end{center}
 \end{frame}
 
 \end{document}

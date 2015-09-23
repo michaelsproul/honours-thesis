@@ -5,3 +5,9 @@
 - *Research Goal*
 - Table of similar language formalisations.
 - Project, direction, related work.
+
+Check out:
+
+% Francois Potier's stuff (capabilties + uniqueness, frame rule + inverse frame rule JFP).
+
+% Language: Mezzo.
