@@ -1,7 +1,6 @@
 \documentclass[10pt]{beamer}
 
 \usepackage{graphicx}
-\usepackage{minted}
 \usepackage{proof}
 \usepackage{booktabs}
 \usepackage[scale=2]{ccicons}
@@ -15,6 +14,7 @@
 \newcommand{\case}{\text{ case }}
 \newcommand{\of}{\text{of }}
 \newcommand{\yields}{\multimap}
+\newcommand{\steps}{\Rightarrow}
 
 
 \title{Formalising a language with uniqueness typing}
@@ -79,11 +79,11 @@ Formalised language semantics are a prerequisite for:
 In regular* logic there are two rules that allow assumptions to be discarded, or introduced from nowhere:
 
 $$
-\infer[Contraction]{\Gamma, A \vdash B}{
+\infer[\text{Contraction}]{\Gamma, A \vdash B}{
 	\Gamma, A, A \vdash B
 }
 \qquad
-\infer[Weakening]{\Gamma, A \vdash B}{
+\infer[\text{Weakening}]{\Gamma, A \vdash B}{
     \Gamma \vdash B
 }
 $$
@@ -97,11 +97,11 @@ $$
 Every logic corresponds to a type system, so we have...
 
 \begin{eqnarray*}
-\infer[Contraction]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
+\infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
 	\Gamma, y : A, z : A \vdash u :: B
 }
 \qquad
-\infer[Weakening]{\Gamma, x : A \vdash y :: B}{
+\infer[\text{Weakening}]{\Gamma, x : A \vdash y :: B}{
     \Gamma\vdash y :: B
 }
 \end{eqnarray*}
@@ -148,7 +148,6 @@ Several languages use type systems based on linear logic to provide useful featu
 Mutation without sacrificing referential transparency (Clean).
 
 
-
 % Talk: Unique references to memory permit destructive updates.
 
 
@@ -173,11 +172,16 @@ fn main() {
 
 \end{frame}
 
-\begin{frame}{Uniqueness typing}
+\begin{frame}[fragile]{Uniqueness typing}
 
 Linear (and affine) typing aren't quite enough to guarantee unique references to values.
 
 \textit{Dereliction} allows a non-linear value to be used as a linear one.
+
+\begin{eqnarray*}
+\lambda x \cdot x : & \alpha^\times \rightarrow \alpha^\odot & \text{(linear dereliction)}\\
+\lambda x \cdot x : & \alpha^\odot \rightarrow \alpha^\times & \text{(uniqueness removal)}
+\end{eqnarray*}
 
 In a pure linear (or affine) type system, uniqueness of linear values therefore isn't guaranteed [de Vries 2008].
 \end{frame}
@@ -207,9 +211,9 @@ Edsko de Vries designed a system that uses a uniqueness \textit{kind}, and a typ
 de Vries used Coq to prove soundness for his attribute-based type system.
 
 \begin{itemize}
-\item ``Locally nameless" approach to variable naming -- de Bruijn indices for bound variables and names for free variables.\\
+\item Locally nameless approach used for variable naming -- de Bruijn indices for bound variables and names for free variables.
 
-\textit{The use of the locally nameless approach, and in particular the use of the Formal Metatheory library, meant that little of our subject reduction
+\item \textit{The use of the locally nameless approach, and in particular the use of the Formal Metatheory library, meant that little of our subject reduction
 proof needs to be concerned with alpha-equivalence or freshness.}
 
 \end{itemize}
@@ -229,22 +233,88 @@ It's great.
 
 \begin{frame}{Proposal}
 
-Define operational semantics and typing rules for a variant of the lambda calculus with \textit{linear} typing, in Coq, using de Bruijn indices for naming.
+Model the operational semantics and type system of $L^3$ core using Coq, and prove \textit{progress} and \textit{preservation}.
 
-Prove \textit{progress} and \textit{preservation}.
+$$
+\infer[\text{Progress}]{\text{value } x \lor \exists x'.\text{ }x \steps x'}{
+    \emptyset \vdash x : \tau
+}
+$$
+
+$$
+\infer[\text{Preservation}]{\emptyset \vdash x' : \tau}{
+    \emptyset \vdash x : \tau \quad x \steps x'
+}
+$$
+
 \end{frame}
 
-\begin{frame}{Progress}
+\begin{frame}{What have I done so far?}
 
-If a term is well-typed, it is either a value, or it can take a step.
-
-[[formal definition here (gotta workout Latex natural deduction)]]
+\begin{itemize}
+\item Background reading on semantics and type theory.
+\item Literature review - mostly papers on linear(ish) type systems.
+\item Coq proofs of type soundness for simple variants of the lambda calculus, via \textit{Software Foundations} [Pierce XXXX].
+\end{itemize}
 \end{frame}
 
-\begin{frame}{Preservation}
+\begin{frame}[fragile]{Software Foundations}
 
-If a term is well-typed and it takes a step, it retains the same type.
+\begin{itemize}
+\item STLC with let-bindings, fixed points, sum types and product types.
+\item \textit{Globally shared names for variables} rather than HOAS, de Bruijn indices or locally nameless.
 
+\begin{verbatim}
+Lemma substitution_preserves_typing :
+  forall Gamma x U t v T,
+    extend Gamma x U |- t \in T ->
+    empty |- v \in U   ->
+    Gamma |- [x:=v]t \in T.
+\end{verbatim}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Approaches to naming}
+
+SF avoids name capture by only permitting substitution of closed terms.
+
+For $L^3$ I'll need to pick a better approach to variable naming.
+% Need an approach that allows fresh names to be easily generated.
+
+\begin{itemize}
+\item Higher-order Abstract Syntax (HOAS).
+\item de Bruijn indices [de Bruijn 1972].
+\item Locally nameless [de Vries 2008].
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Schedule}
+
+Before Week 12 (literature review deadline):
+
+\begin{itemize}
+\item Investigate approaches to variable binding (3 weeks).
+\item Finish reading and summarising papers (also 3 weeks).
+\end{itemize}
+
+Over summer (3 months $\approx$ 12 weeks total):
+
+\begin{itemize}
+\item $L^3$'s operational semantics and type system in Coq (2 weeks).
+\item Prove progress (4 weeks).
+\item Prove preservation, and related lemmas (6 weeks).
+\end{itemize}
+
+Definitions may need tweaking along the way.
+\end{frame}
+
+\begin{frame}
+
+\end{frame}
+
+\begin{frame}
+Thanks!
 \end{frame}
 
 \end{document}
