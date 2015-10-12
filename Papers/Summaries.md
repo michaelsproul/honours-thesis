@@ -12,3 +12,5 @@ Wadler introduces intuitionistic logic with emphasis on the Contraction and Weak
 ## A tutorial implementation of a dependently typed lambda calculus - Loh, McBride, Swierstra (2001)
 
 This paper approaches dependent type systems from the perspective of a Haskell programmer. An interpreter for a simple polymorphic lambda calculus is constructed and then extended with dependent types by extending function space (->) to dependent function space (∀). Dependent data types are briefly discussed, but only in the specific cases of natural numbers and vectors. The paper's calculus is also unashamedly unsound due to the type of * being * (no infinite hierarchy as in Coq).
+
+## Design and Formalization of Mezzo, a Permission-Based Programming Language - Balabonski, Pottier, and Protzenko (2015)
