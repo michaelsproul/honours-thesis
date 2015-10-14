@@ -35,21 +35,46 @@
 \maketitle
 
 \include{abstract}
-\include{acknowledgements}
-\include{abbreviations}
+% \include{acknowledgements}
+% Do I need these?
+% \include{abbreviations}
 
 \tableofcontents
-%\listoffigures  % if required
-%\listoftables  % if required
+%\listoffigures
+%\listoftables
 
 %% pages in the ``mainmatter'' section have arabic page numbers and chapters are numbered
 \mainmatter
 
-\include{introduction}
-\include{background}
-\include{mywork}
-\include{evaluation}
-\include{conclusion}
+% \include{introduction}
+\chapter{Introduction}
+\label{ch:intro}
+
+Computer systems form an integral part of modern society, both in the form of personal devices and critical infrastructure. Ensuring the correct operation of computer hardware and software is therefore required. One emerging technique for the construction of robust software systems is the use of mathematical formalisations and proofs of correctness. In this paradigm, desirable properties of the software can be proven true using a computer-based \textit{proof assistant}, which itself relies only on a minimal amount of trusted code. For software formalisation and verification to be truly effective, the objects under consideration must have precise mathematical models associated with them. Typically these models are created based on the \textit{semantics} (meaning) of the programming language that the software is written in. Unfortunately for the would-be software verifier, most popular programming languages lack formal semantics and are therefore not amenable to verification techniques. The focus of this thesis is the computer-based formalisation of language semantics for a specific language (\textit{The Linear Language with Locations} -- $L^3$), as a pre-requisite for further verification of software written in this language.
+
+\section{Operational Semantics}
+
+\section{Type Systems and Type Safety}
+
+\section{Logic, Type Theory and the Coq proof assistant}
+
+\section{Verification Aims}
+
+The $L^3$ language (REF) was specified in a 2001 paper by Ahmed et al. Arguably 
+
+% Background.
+\chapter{Background}
+\label{ch:intro}
+
+Basic knowledge of
+
+\section{What}
+
+%\include{background}
+% \include{proposal}
+%\include{mywork}
+%\include{evaluation}
+%\include{conclusion}
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
@@ -57,7 +82,7 @@
 \bibliographystyle{alpha}
 \bibliography{pubs}
 
-\include{appendix1}
-\include{appendix2}
+%\include{appendix1}
+%\include{appendix2}
 
 \end{document}
