@@ -1,5 +1,10 @@
 \documentclass[]{unswthesis}
 
+\usepackage{hyperref}
+
+% Disable hideous fluorescent links
+\hypersetup{hidelinks = true}
+
 %%% Class options:
 
 %  undergrad (default)
@@ -82,10 +87,36 @@ Mezzo. Strong updates, etc.
 
 \chapter{Proposal}
 
-\section{Approaches to variable naming and binding}
+\section{Variable naming and binding}
+
+One problem that arises frequently in the formalisation of language semantics is that of \textit{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $e[v/x]$) to describe the semantics of function application:
+% FIXME: formatting, long right arrow and space.
+\begin{eqnarray*}
+(\lambda x : \tau. e) v \Rightarrow_\beta e[v/x]
+\end{eqnarray*}
+
+The problem of \textit{variable capture}, which we wish to avoid, is demonstrated by the following example:
+% FIXME: formatting
+\begin{eqnarray*}
+(\lambda x. \lambda y. x + y) y \Rightarrow_\beta (\lambda y. y + y)
+\end{eqnarray*}
+
+Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. Intuitively, drastically altering the meaning of terms during substitution is something we would like to avoid.
+
+One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in (variable capturing) substitutions. This is the approach taken by \textit{Software Foundations} (REF) in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, it doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture. (might need a stronger argument here).
+
+In our Coq formalisation of $L^3$ we would therefore like to include \textit{capture avoiding substitution} as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meaning of the programs themselves.
+
+\subsection{Higher-order Abstract Syntax}
+
+\subsection{de Bruijn indices}
+
+\subsection{The Locally Nameless approach}
+
+
 
 %\include{background}
-% \include{proposal}
+%\include{proposal}
 %\include{mywork}
 %\include{evaluation}
 %\include{conclusion}
