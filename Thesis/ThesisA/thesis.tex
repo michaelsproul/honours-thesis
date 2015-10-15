@@ -1,6 +1,8 @@
 \documentclass[]{unswthesis}
 
 \usepackage{hyperref}
+\usepackage{proof}
+\usepackage{amsmath}
 
 % Disable hideous fluorescent links
 \hypersetup{hidelinks = true}
@@ -21,7 +23,7 @@
 
 
 %% Thesis details
-\thesistitle{Computer-verified proof of type-soundness for the Linear Language with Locations, $L^3$}
+\thesistitle{Computer-verified proof of type soundness for the Linear Language with Locations, $L^3$}
 \thesisschool{School of Computer Science and Engineering}
 \thesisauthor{Michael Alexander Sproul}
 \thesisZid{z3484357}
@@ -65,21 +67,80 @@ Computer systems form an integral part of modern society, both in the form of pe
 
 \section{Verification Aims}
 
-The $L^3$ language was specified in a 2001 paper by Ahmed et al (REF). The paper includes a hand-written proof of type soundness for $L^3$ core, spanning 8 pages.
+The $L^3$ language was specified in a 2001 (2005? 2007?) paper by Ahmed et al (REF). The paper includes a hand-written proof of type soundness for $L^3$ core, spanning 8 pages.
+
+Include motivation for linear/uniqueness typing here.
 
 % Background.
 \chapter{Background}
 \label{ch:intro}
 
+% Overall picture (verified all the way down, focus on low-level languages).
+% Focus on "normal" semantics and type systems.
+% Notes about TAL
+
+If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code* the program is corrupted by an unverified transformation. Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
+
+Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have been quite successful, and have resulted in numerous impressive verification projects -- notably the CompCert verified compiler (REF) and the seL4 micro-kernel (REF). In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
+
+% FIXME: make this a footnote.
+*We don't consider other methods of computation in the present paper, e.g. logic gates, qubits.
+
 \section{Previous Work}
 
 \subsection{Linear and Uniqueness Typing}
 
-de Vries. Cyclone. Clean.
+Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable features that can be obtained by enforcing them. The Clean programming language (REF) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language (REF) uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available (like a garbage collector itself, or an operating system).
+
+Linear and affine type systems are based on linear and affine logic respectively (REF Girard and Grishin), via the standard mapping from logic to type systems (see previous section?). In classical and intuitionistic logic there are deduction rules equivalent to the following, called \textit{Contraction} and \textit{Weakening}.
+
+\begin{eqnarray*}
+\infer[\text{Contraction}]{\Gamma, A \vdash B}{
+	\Gamma, A, A \vdash B
+}
+\qquad
+\infer[\text{Weakening}]{\Gamma, A \vdash B}{
+    \Gamma \vdash B
+}
+\end{eqnarray*}
+
+Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic bans the use of both rules, such that every assumption is used \textit{exactly once}. Affine logic on the other hand bans only the use of Contraction, which results in the requirement that every assumption be used \textit{at most once}. When transformed into typing rules, Contraction and Weakening take the form:
+
+\begin{eqnarray*}
+\infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
+	\Gamma, y : A, z : A \vdash u :: B
+}
+\qquad
+\infer[\text{Weakening}]{\Gamma, x : A \vdash y :: B}{
+    \Gamma\vdash y :: B
+}
+\end{eqnarray*}
+
+(Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$).
+
+As in linear and affine logic, linear type theory prevents the use of Contraction and Weakening, whilst affine type theory prevents just the use of Contraction. Our previous observations about the number of times an assumption is used now translate into observations about the number of times variables are used.
+
+Without Contraction, \textit{variables can only appear once in a term}. The dual substitution of $x$ for $y$ and $x$ for $z$ allows a term containing one $y$ and one $z$ to become a term containing two occurrences of $x$. None of the other rules of intuitionistic type theory allow this (REF Wadler).
+
+Similarly, without Weakening, \textit{all variables in the context must be used in the term}. This follows from the fact that Weakening introduces an unused variable to the context and no other rule of intuitionistic type theory allows this.
+
+From these two observations we can conclude that linear type theory requires all variables to be used \textit{exactly once} in terms, whilst affine type theory requires all variables to be used \textit{at most once} in terms.
+
+\subsubsection{Uniqueness Typing}
+
+% Linear + affine logic and control over contraction and weakening. DONE.
+
+% Uniqueness typing as an alternative (mention dereliction, non guarantees).
+
+% de Vries formalisation of Clean's uniqueness typing using attributes.
 
 \subsection{Systems of Capabilities}
 
-Mezzo. Strong updates, etc.
+% rgnURAL as a basis for Cyclone.
+
+% Francois Pottier's low-level thing.
+
+% Mezzo. Strong updates, etc.
 
 \subsection{Trust-worthy compilers, typed assembly languages and other similar systems}
 
