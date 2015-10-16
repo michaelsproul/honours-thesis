@@ -1,11 +1,20 @@
 \documentclass[]{unswthesis}
 
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage{amsmath, amssymb}
+\usepackage{mathtools}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{multicol}
+\usepackage[nottoc,numbib]{tocbibind}
 \usepackage{proof}
-\usepackage{amsmath}
+% \usepackage[scale=2]{ccicons}
 
 % Disable hideous fluorescent links
-\hypersetup{hidelinks = true}
+\hypersetup{hidelinks=true}
 
 %%% Class options:
 
@@ -32,8 +41,17 @@
 \thesisdate{October 2015}
 \thesissupervisor{Dr. Ben Lippmeier}
 
-%% My own LaTeX macros, definitions, etc
-\include{definitions}
+%% My own LaTeX macros, definitions, etc.
+\let\oldemptyset\emptyset
+\let\emptyset\varnothing
+\newcommand{\case}{\text{ case }}
+\newcommand{\of}{\text{of }}
+\newcommand{\yields}{\multimap}
+\newcommand{\steps}{\Rightarrow}
+\newcommand{\lquine}{\left\ulcorner}
+\newcommand{\rquine}{\right\urcorner}
+\newcommand{\capa}{\text{cap}}
+\newcommand{\ptr}{\text{ptr }}
 
 \begin{document}
 
@@ -84,11 +102,11 @@ If software verification is to propagate through modern software stacks, verific
 Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have been quite successful, and have resulted in numerous impressive verification projects -- notably the CompCert verified compiler (REF) and the seL4 micro-kernel (REF). In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
 
 % FIXME: make this a footnote.
-*We don't consider other methods of computation in the present paper, e.g. logic gates, qubits.
+*We don't consider other methods of computation in the present paper, e.g. logic gates and qubits.
 
 \section{Previous Work}
 
-\subsection{Linear and Uniqueness Typing}
+\subsection{Linear and Affine Typing}
 
 Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable features that can be obtained by enforcing them. The Clean programming language (REF) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language (REF) uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available (like a garbage collector itself, or an operating system).
 
@@ -126,11 +144,40 @@ Similarly, without Weakening, \textit{all variables in the context must be used 
 
 From these two observations we can conclude that linear type theory requires all variables to be used \textit{exactly once} in terms, whilst affine type theory requires all variables to be used \textit{at most once} in terms.
 
-\subsubsection{Uniqueness Typing}
+It's also worth noting that linear and affine type theory don't entirely ban Contraction and Weakening -- their use is allowed for certain \textit{non-linear} values and types. This is quite practical in the context of programming language implementation as it allows trivially copyable values like integers to be easily duplicated. The mechanism employed by Wadler to selectively allow Contraction and Weakening involves differentiating between linear and non-linear assumptions, and adding type and value-level bang (!) operators to make types and values non-linear. The function for duplication of non-linear values (of type $!A$) is expressed as follows in such a system :
+
+\begin{eqnarray*}
+\varnothing \vdash \lambda \langle x' \rangle . \case x' \of !x \rightarrow \langle !x, !x\rangle :\text{ } !A \yields (!A \otimes !A)
+\end{eqnarray*}
+
+See Wadler 1993 for full notational details.
+
+\subsection{Uniqueness Typing}
+
+Although linear and affine type theory capture the essence of uniquely referenced values, they are insufficient to describe the concept of \textit{uniqueness} as it appears in languages like Clean. In his 2008 paper, de Vries (REF) notes that terms of a unique type are \textit{guaranteed to never have been shared}, which is sufficient to guarantee a unique pointer at runtime. In contrast, terms of linear (or affine) type are \textit{guaranteed not to be shared in the future}, which is insufficient to guarantee a unique pointer.
+
+Without implying equivalence of the two concepts, let $\alpha^\bullet$ denote the type of both linear and unique values, for any base type $\alpha$ (such as \texttt{Int}). Similarly, allow the notation $\alpha^\times$ to stand for non-linear and non-unique types.
+
+\begin{eqnarray*}
+\lambda x \cdot x : & \alpha^\times \rightarrow \alpha^\bullet & \text{(linear dereliction)}\\
+\lambda x \cdot x : & \alpha^\bullet \rightarrow \alpha^\times & \text{(uniqueness removal)}
+\end{eqnarray*}
+
+The distinctness of linearity and uniqueness is further highlighted by the \textit{dereliction} rule present in some versions of linear type theory, and the rule that we'll refer to as \textit{uniqueness removal} present in Clean's type system. As noted by de Vries (REF de Vries PhD thesis), the presence of the dereliction rule allows a non-linear value to be transformed into a linear one, thus breaking any alleged equivalence of linearity and uniqueness (by definition, a non-unique value should not suddenly become unique). Conversely, intuition about uniqueness suggests that treating a unique value as non-unique should be allowed - hence, uniqueness removal.
+
+Note that dereliction need not form a part of type systems based on linear logic, and that it is absent from Wadler's presentations (REF 1991, 1993). Further note that if uniqueness is to be exploited to make garbage collection unnecessary -- as in the case of Rust -- then the uniqueness removal rule is undesirable as it prevents values from having a unique owner.
+
+Due to the non-equivalence of linearity and uniqueness, de Vries constructed a distinct set of semantics and typing rules to model Clean's type system (REF de Vries).
+
+One key component of his approach is the use of the \textit{kind} (type of types) system to track uniqueness and non-uniqueness. As in Haskell, de Vries' uniqueness system includes a kind for data (\texttt{*}) which is the kind of all inhabited types. In addition, there is a uniqueness kind $\mathcal{U}$ inhabited by two types $\bullet$ and $\times$ representing uniqueness and non-uniqueness respectively. A third kind, $\mathcal{T}$ is the kind of base types (like \texttt{Int}). These kinds are brought together by a type constructor $\texttt{Attr} ::_k \mathcal{T} \rightarrow \mathcal{U} \rightarrow *$ which applies a uniqueness attribute to a base type to form a type that is inhabited (e.g. \texttt{Attr} $\bullet$ \texttt{Int} or $\texttt{Int}^\bullet$ for the type of uniquely referenced integers).
+
+The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries system as simple boolean expressions that can be handled by a standard unification algorithm. FIXME: Does this need to be here?
+
+Importantly, de Vries work includes the only known mechanical verification of a type system similar to Clean's. The formalisation uses the Coq proof assistant, and the \textit{locally nameless} (REF) approach to variable naming that will be discussed in (FIXME: SOME SECTION).
 
 % Linear + affine logic and control over contraction and weakening. DONE.
 
-% Uniqueness typing as an alternative (mention dereliction, non guarantees).
+% Uniqueness typing as an alternative (mention dereliction, non guarantees). DONE.
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
 
