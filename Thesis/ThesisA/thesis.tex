@@ -52,6 +52,7 @@
 \newcommand{\rquine}{\right\urcorner}
 \newcommand{\capa}{\text{cap}}
 \newcommand{\ptr}{\text{ptr }}
+\newcommand{\rgnUL}{$\lambda^\text{rgnUL}$}
 
 \begin{document}
 
@@ -90,7 +91,7 @@ The $L^3$ language was specified in a 2001 (2005? 2007?) paper by Ahmed et al (R
 Include motivation for linear/uniqueness typing here.
 
 % Background.
-\chapter{Background}
+\chapter{Background and Previous Work}
 \label{ch:intro}
 
 % Overall picture (verified all the way down, focus on low-level languages).
@@ -104,9 +105,7 @@ Historically, low-level \textit{systems software} has been written primarily in 
 % FIXME: make this a footnote.
 *We don't consider other methods of computation in the present paper, e.g. logic gates and qubits.
 
-\section{Previous Work}
-
-\subsection{Linear and Affine Typing}
+\section{Linear and Affine Typing}
 
 Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable features that can be obtained by enforcing them. The Clean programming language (REF) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language (REF) uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available (like a garbage collector itself, or an operating system).
 
@@ -152,7 +151,7 @@ It's also worth noting that linear and affine type theory don't entirely ban Con
 
 See Wadler 1993 for full notational details.
 
-\subsection{Uniqueness Typing}
+\section{Uniqueness Typing}
 
 Although linear and affine type theory capture the essence of uniquely referenced values, they are insufficient to describe the concept of \textit{uniqueness} as it appears in languages like Clean. In his 2008 paper, de Vries (REF) notes that terms of a unique type are \textit{guaranteed to never have been shared}, which is sufficient to guarantee a unique pointer at runtime. In contrast, terms of linear (or affine) type are \textit{guaranteed not to be shared in the future}, which is insufficient to guarantee a unique pointer.
 
@@ -181,7 +180,13 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
 
-\subsection{Systems of Capabilities}
+\section{The Linear Language with Locations, $L^3$}
+
+\pagebreak
+
+\section{Systems of Capabilities}
+
+Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL (REF). Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are first-class abstractions for the allocation of memory. Dynamic regions extend more common-place lexical regions by allowing regions to exist independent of scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness in Twelf (REF).
 
 % rgnURAL as a basis for Cyclone.
 
@@ -189,11 +194,13 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 % Mezzo. Strong updates, etc.
 
-\subsection{Trust-worthy compilers, typed assembly languages and other similar systems}
+\section{Trust-worthy compilers, typed assembly languages and other similar systems}
 
-\section{The Linear Language with Locations, $L^3$}
+\section{Summary of Previous Work}
 
 \chapter{Proposal}
+
+Proposal intro here.
 
 \section{Variable naming and binding}
 
@@ -220,6 +227,10 @@ In our Coq formalisation of $L^3$ we would therefore like to include \textit{cap
 \subsection{de Bruijn indices}
 
 \subsection{The Locally Nameless approach}
+
+\section{Coq Formalisation of $L^3$}
+
+\section{Summary of Proposal}
 
 
 
