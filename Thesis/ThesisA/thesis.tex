@@ -52,7 +52,7 @@
 \newcommand{\rquine}{\right\urcorner}
 \newcommand{\capa}{\text{cap}}
 \newcommand{\ptr}{\text{ptr }}
-\newcommand{\rgnUL}{$\lambda^\text{rgnUL}$}
+\newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 
 \begin{document}
 
@@ -81,6 +81,8 @@ Computer systems form an integral part of modern society, both in the form of pe
 \section{Operational Semantics}
 
 \section{Type Systems and Type Safety}
+
+REF Wright and Felleisen (1992).
 
 \section{Logic, Type Theory and the Coq proof assistant}
 
@@ -170,7 +172,7 @@ Due to the non-equivalence of linearity and uniqueness, de Vries constructed a d
 
 One key component of his approach is the use of the \textit{kind} (type of types) system to track uniqueness and non-uniqueness. As in Haskell, de Vries' uniqueness system includes a kind for data (\texttt{*}) which is the kind of all inhabited types. In addition, there is a uniqueness kind $\mathcal{U}$ inhabited by two types $\bullet$ and $\times$ representing uniqueness and non-uniqueness respectively. A third kind, $\mathcal{T}$ is the kind of base types (like \texttt{Int}). These kinds are brought together by a type constructor $\texttt{Attr} ::_k \mathcal{T} \rightarrow \mathcal{U} \rightarrow *$ which applies a uniqueness attribute to a base type to form a type that is inhabited (e.g. \texttt{Attr} $\bullet$ \texttt{Int} or $\texttt{Int}^\bullet$ for the type of uniquely referenced integers).
 
-The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries system as simple boolean expressions that can be handled by a standard unification algorithm. FIXME: Does this need to be here?
+The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries' system as simple boolean expressions that can be handled by a standard unification algorithm. FIXME: Does this need to be here?
 
 Importantly, de Vries work includes the only known mechanical verification of a type system similar to Clean's. The formalisation uses the Coq proof assistant, and the \textit{locally nameless} (REF) approach to variable naming that will be discussed in (FIXME: SOME SECTION).
 
@@ -182,19 +184,39 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 \section{The Linear Language with Locations, $L^3$}
 
+Explain linear capabilities here.
+
 \pagebreak
 
 \section{Systems of Capabilities}
 
-Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL (REF). Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are first-class abstractions for the allocation of memory. Dynamic regions extend more common-place lexical regions by allowing regions to exist independent of scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness in Twelf (REF).
+\subsection{Cyclone}
 
-% rgnURAL as a basis for Cyclone.
+Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL (REF). Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are first-class abstractions for the allocation of memory. Dynamic regions extend simpler lexical regions by allowing regions to exist independent of lexical scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness using the Twelf proof assistant (REF).
 
-% Francois Pottier's low-level thing.
+The same authors are also responsible for the Cyclone project (REF), which extends the C programming language with regions and uniqueness typing in order to achieve safe memory management without garbage collection or manual intervention. The \rgnUL calculus models many of Cyclone's features, and there exists a translation from Cyclone to \rgnUL via an intermediate language $F^\text{RGN}$ which makes use of a generalised ST monad (REF Monadic regions). No mechanised proofs of correctness for this work exist, although an earlier proof of type soundness for Cyclone (REF formal type soundness for Cyclone's region system) is structured in a way that looks amenable to mechanised verification. On their webpage (REF), the creators of Cyclone note that work on the project has stopped, with many of the ideas living on in Rust. Future formalisations of Rust can hopefully make use of this work.
+
+\subsection{Pottier's type-and-capability system with hidden state}
+
+A formalisation for a system very similar to $L^3$ does exist, in a 2013 article by Fran\c{c}ois Pottier (REF). Pottier's system uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \textit{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process of (de)allocation. Hidden state is realised via a typing rule called the \textit{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state. The result is a type system for a low-level language supporting the tracking of ownership, strong updates
+
+FIXME: Could probably expand on the frame and anti-frame rules here.
+
+Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his \texttt{dblib} library, discussed in FIXME). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation (REF Wright). Pottier notes that the formalisation took around 6 months to complete.
+
+\subsection{Mezzo and high-level systems}
+
+% rgnURAL as a basis for Cyclone. DONE.
+
+% Francois Pottier's low-level thing. DONE.
 
 % Mezzo. Strong updates, etc.
 
 \section{Trust-worthy compilers, typed assembly languages and other similar systems}
+
+% CompCERT.
+% TALx86.
+% Bedrock.
 
 \section{Summary of Previous Work}
 
