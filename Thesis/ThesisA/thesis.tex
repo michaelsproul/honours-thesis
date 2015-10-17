@@ -184,7 +184,7 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 \section{The Linear Language with Locations, $L^3$}
 
-Explain linear capabilities here.
+Explain $L^3$ and linear capabilities here. Including: runtime erasure of capabilities.
 
 \pagebreak
 
@@ -218,13 +218,21 @@ Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 20
 
 % Mezzo. Strong updates, etc. Kind of DONE.
 
-\section{Trust-worthy compilers, typed assembly languages and other similar systems}
+\section{Typed assembly languages and trustworthy compilers}
 
-% CompCERT.
-% TALx86.
+Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations. Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 (REF) system, blocks are annotated with pre-conditions that place requirements on the types of registers. A semantic model for typed assembly languages has recently appeared (REF Semantic Foundations for TALs), including a Twelf formalisation. Denotational semantics are used in the proof of type soundness, in contrast to the operational semantics and syntactic soundness proofs of previously cited works.
+
+More broadly it is worth noting the contribution of the CompCert (REF) project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or SSPHS as an intermediate language.
+
+Another take on the typed assembly language concept, is Bedrock from Adam Chlipala's research group (REF). FIXME: Keep going here (Bedrock seems pretty massive).
+
+% TALx86. DONE.
+% CompCERT. DONE.
 % Bedrock.
 
 \section{Summary of Previous Work}
+
+
 
 \chapter{Proposal}
 
