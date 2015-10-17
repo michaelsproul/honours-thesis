@@ -11,6 +11,7 @@
 \usepackage{multicol}
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage{proof}
+\usepackage{centernot}
 % \usepackage[scale=2]{ccicons}
 
 % Disable hideous fluorescent links
@@ -53,6 +54,7 @@
 \newcommand{\capa}{\text{cap}}
 \newcommand{\ptr}{\text{ptr }}
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
+%\newcommand{\space}{\text{ }}
 
 \begin{document}
 
@@ -90,7 +92,7 @@ REF Wright and Felleisen (1992).
 
 The $L^3$ language was specified in a 2001 (2005? 2007?) paper by Ahmed et al (REF). The paper includes a hand-written proof of type soundness for $L^3$ core, spanning 8 pages.
 
-Include motivation for linear/uniqueness typing here.
+Include some motivation for linear/uniqueness typing here.
 
 % Background.
 \chapter{Background and Previous Work}
@@ -232,33 +234,57 @@ Another take on the typed assembly language concept, is Bedrock from Adam Chlipa
 
 \section{Summary of Previous Work}
 
-In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects.
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems make mention of Alias Types (REF) and separation logic (REF) as foundational bases, but the author is yet to explore these in depth.
 
 \chapter{Proposal}
 
-Proposal intro here.
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations ($L^3$) using the Coq proof assistant.translating the operational semantics and typing rules from the paper (REF) into inductive Coq definitions
+
+% Proposal intro here. Mention choice of de Bruijn indices and Pottier's \texttt{dblib} library.
 
 \section{Variable naming and binding}
 
 One problem that arises frequently in the formalisation of language semantics is that of \textit{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $e[v/x]$) to describe the semantics of function application:
-% FIXME: formatting, long right arrow and space.
+
 \begin{eqnarray*}
-(\lambda x : \tau. e) v \Rightarrow_\beta e[v/x]
+(\lambda x : \tau. \; e) \; v \Longrightarrow_\beta e[v/x]
 \end{eqnarray*}
 
 The problem of \textit{variable capture}, which we wish to avoid, is demonstrated by the following example:
-% FIXME: formatting
+
 \begin{eqnarray*}
-(\lambda x. \lambda y. x + y) y \Rightarrow_\beta (\lambda y. y + y)
+(\lambda x. \; \lambda y. \; x + y) \; y \; {\centernot\Longrightarrow}_\beta \; (\lambda y. \; y + y)
 \end{eqnarray*}
 
-Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. Intuitively, drastically altering the meaning of terms during substitution is something we would like to avoid.
+Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This drastic altering of the meaning of terms during substitution is something we would like to avoid.
 
 One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in (variable capturing) substitutions. This is the approach taken by \textit{Software Foundations} (REF) in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, it doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture. (might need a stronger argument here).
 
-In our Coq formalisation of $L^3$ we would therefore like to include \textit{capture avoiding substitution} as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meaning of the programs themselves.
+In our Coq formalisation of $L^3$ we would therefore like to include \textit{capture avoiding substitution} as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meanings of programs themselves.
 
 \subsection{Higher-order Abstract Syntax}
+
+When using Higher-order Abstract Syntax (HOAS) to handle variable binding, the binders of the host language (in our case Coq) are used to represent binding constructs in the object language. Twelf encourages use of HOAS through its light-weight syntax (this example adapted from REF):
+
+\begin{verbatim}
+exp : type.
+let : exp -> (exp -> exp) -> exp.
+\end{verbatim}
+
+The full definition for \texttt{exp} is omitted, but this example demonstrates that a let-binding in the \textit{object language}, can be considered in the \textit{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \texttt{let x = 1 + 2 in x + 3} would be encoded as \texttt{let (plus 1 2) ([x] plus x 3)}, where \texttt{plus : nat -> nat -> expr} and \texttt{([x] e)} is syntax for $(\lambda x. \; e)$.
+
+REF: \url{http://twelf.org/wiki/Higher-order_abstract_syntax}
+
+This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \textit{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic (REF TAPL). An (invalid) inductive Coq definition for the above Twelf example would be:
+
+\begin{verbatim}
+Inductive exp : Set :=
+  | exp_plus : nat -> nat -> exp
+  | exp_let : exp -> (exp -> exp) -> exp.
+\end{verbatim}
+
+Coq rejects this definition with the error: \texttt{Non strictly positive occurrence of "exp" in
+ "exp -> (exp -> exp) -> exp"}, as expected. There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained (REF HOAS in Coq) or by mixing de Bruijn indices and HOAS (REF Hybrid thing). As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
 
 \subsection{de Bruijn indices}
 
@@ -267,14 +293,6 @@ In our Coq formalisation of $L^3$ we would therefore like to include \textit{cap
 \section{Coq Formalisation of $L^3$}
 
 \section{Summary of Proposal}
-
-
-
-%\include{background}
-%\include{proposal}
-%\include{mywork}
-%\include{evaluation}
-%\include{conclusion}
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
