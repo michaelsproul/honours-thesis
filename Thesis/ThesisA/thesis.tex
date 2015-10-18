@@ -90,7 +90,7 @@ REF Wright and Felleisen (1992).
 
 \section{Summary of Introduction}
 
-The $L^3$ language was specified in a 2001 (2005? 2007?) paper by Ahmed et al (REF). The paper includes a hand-written proof of type soundness for $L^3$ core, spanning 8 pages.
+The $L^3$ language was specified in a 2001 (2005? 2007?) paper by Ahmed et al (REF). The paper includes a hand-written proof of type soundness for Core $L^3$, spanning 8 pages.
 
 Include some motivation for linear/uniqueness typing here.
 
@@ -180,11 +180,24 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
 
+\pagebreak
+
 \section{The Linear Language with Locations, $L^3$}
 
-Explain $L^3$ and linear capabilities here. Including: runtime erasure of capabilities.
+The Linear Language with Locations $L^3$ (REF), makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, the programmer is freed from maintaining unique pointers -- pointers themselves are freely duplicable.
 
-\pagebreak
+$L^3$ is a \textit{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \textit{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution.
+
+$L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
+
+\begin{eqnarray*}
+(\sigma, \text{new } v) \Rightarrow (\sigma \uplus \{l \mapsto v\},
+	\lquine l, \langle \capa, \ptr l \rangle \rquine)
+\\
+(\sigma, \text{let } \lquine \rho, x \rquine = \lquine l, v \rquine \text{in } e)
+	\Rightarrow
+	(\sigma, e[l/\rho][v/x])
+\end{eqnarray*}
 
 \section{Systems of Capabilities}
 
@@ -230,12 +243,12 @@ Another take on the typed assembly language concept, is Bedrock from Adam Chlipa
 
 \section{Summary of Previous Work}
 
-In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems make mention of Alias Types (REF) and separation logic (REF) as foundational bases, but the author is yet to explore these in depth.
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems make mention of Alias Types (REF) and separation logic (REF) as foundational concepts, but the author is yet to explore these in depth.
 
 \chapter{Proposal}
 \label{ch:proposal}
 
-The aim of this thesis is to formalise the semantics of the Linear Language with Locations ($L^3$ Core) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper (REF) into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \texttt{dblib} library (REF) for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in section (FIXME).
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations (Core $L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper (REF) into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \texttt{dblib} library (REF) for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in section (FIXME).
 
 With the operational semantics and typing rules defined, we will proceed with a syntactic proof of type soundness via progress and preservation. Experience with simpler languages from \textit{Software Foundations} (REF) suggests that the proof of progress will be less involved than the proof of preservation. The choice to aim for a syntactic proof is motivated by the syntactic ``paper" proof given in the $L^3$ paper, and the efficacy of syntactic soundness proofs for languages surveyed in the literature review. Considerations of how the proof will be undertaken are given in section (FIXME).
 
@@ -341,7 +354,7 @@ To quantify the effort involved in the proofs, we will make use of a simple scri
 
 \section{Summary of Proposal}
 
-By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for $L^3$ Core. We will use the syntactic soundness technique first defined by Wright and Felleisen (REF). We will make use of the \texttt{dblib} library (REF) for reasoning about de Bruijn indices in an entirely constructive manner. Time permitting, proofs of soundness for extended $L^3$, or of other properties of $L^3$ Core may be attempted.
+By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen (REF). We will make use of the \texttt{dblib} library (REF) for reasoning about de Bruijn indices in an entirely constructive manner. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
