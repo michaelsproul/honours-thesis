@@ -180,8 +180,6 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
 
-\pagebreak
-
 \section{The Linear Language with Locations, $L^3$}
 
 The Linear Language with Locations $L^3$ (REF), makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, the programmer is freed from maintaining unique pointers -- pointers themselves are freely duplicable.
@@ -199,11 +197,13 @@ $L^3$'s definition includes a description of syntax, operational semantics and t
 	(\sigma, e[l/\rho][v/x])
 \end{eqnarray*}
 
+These two rules from the operational semantics show the behaviour of the \texttt{new} keyword for allocating memory, and the \texttt{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \texttt{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \textit{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
+
 \section{Systems of Capabilities}
 
 \subsection{Cyclone}
 
-Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL (REF). Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are first-class abstractions for the allocation of memory. Dynamic regions extend simpler lexical regions by allowing regions to exist independent of lexical scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness using the Twelf proof assistant (REF).
+Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL (REF). Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are collections of values allocated together (?). Dynamic regions extend simpler lexical regions by allowing regions to exist independent of lexical scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness using the Twelf proof assistant (REF).
 
 The same authors are also responsible for the Cyclone project (REF), which extends the C programming language with regions and uniqueness typing in order to achieve safe memory management without garbage collection or manual intervention. The \rgnUL calculus models many of Cyclone's features, and there exists a translation from Cyclone to \rgnUL via an intermediate language $F^\text{RGN}$ which makes use of a generalised ST monad (REF Monadic regions). No mechanised proofs of correctness for this work exist, although an earlier proof of type soundness for Cyclone (REF formal type soundness for Cyclone's region system) is structured in a way that looks amenable to mechanised verification. On their webpage (REF), the creators of Cyclone note that work on the project has stopped, with many of the ideas living on in Rust. Future formalisations of Rust can hopefully make use of this work.
 
