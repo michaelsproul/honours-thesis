@@ -238,7 +238,7 @@ In summary, previous work on the formalisation of resource-aware type systems ha
 
 \chapter{Proposal}
 
-The aim of this thesis is to formalise the semantics of the Linear Language with Locations ($L^3$) using the Coq proof assistant.translating the operational semantics and typing rules from the paper (REF) into inductive Coq definitions
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations ($L^3$) using the Coq proof assistant.translating the operational semantics and typing rules from the paper (REF) into inductive Coq definitions...
 
 % Proposal intro here. Mention choice of de Bruijn indices and Pottier's \texttt{dblib} library.
 
@@ -286,9 +286,41 @@ Inductive exp : Set :=
 Coq rejects this definition with the error: \texttt{Non strictly positive occurrence of "exp" in
  "exp -> (exp -> exp) -> exp"}, as expected. There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained (REF HOAS in Coq) or by mixing de Bruijn indices and HOAS (REF Hybrid thing). As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
 
-\subsection{de Bruijn indices}
+\subsection{De Bruijn indices and the locally nameless approach}
 
-\subsection{The Locally Nameless approach}
+Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \textit{distances from their binding occurrence} (REF de Bruijn 1972). For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality the absence of integers in the object language. For terms that contain free variables, a fixed naming context is used to map free variables to indices (REF TAPL). For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \textit{1} (the lambda).
+
+Capture avoiding substitution with de Bruijn indices can be simply defined as a recursive function that makes use of a \textit{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
+
+\begin{eqnarray*}
+\uparrow^d_c k & = &
+	\begin{cases}
+	k \quad & \text{if} \quad k < c \\
+	k + d \quad & \text{if} \quad k \geq c
+	\end{cases}\\
+\uparrow^d_c (\lambda. \; t_1) & = & \lambda. \; \uparrow^d_{c + 1} t_1\\
+\uparrow^d_c (t_1 \; t_2) & = & (\uparrow^d_c t_1) \; (\uparrow^d_c t_2)
+\end{eqnarray*}
+
+With shifting defined, the definition of substitution is straight-forward -- we simply shift the free variables of the substituted term each time we move under a lambda.
+
+\begin{eqnarray*}
+[s/j]k & = &
+	\begin{cases}
+	s \quad & \text{if} \quad j = k \\
+	k \quad & \text{otherwise}
+	\end{cases}\\
+\left[s/j\right](\lambda. \; t_1) & = & \lambda. \; [(\uparrow^1_0 s)/(j + 1)] \; t_1\\
+\left[s/j\right](t_1 \; t_2) & = & ([s/j] \; t_1) \; ([s/j] \; t_2)
+\end{eqnarray*}
+
+These equations for shifting and substitution are due to (REF TAPL).
+
+Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, SSPHS (REF) defines a module with several lemmas about substitution, while the Mezzo formalisation (REF) makes use of a stand-alone library called \texttt{dblib}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using the \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
+
+The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library (REF) for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation (REF) uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} (REF).
+
+However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq (REF). Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms (REF). Further, the formalisations of SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' work on uniqueness typing.
 
 \section{Coq Formalisation of $L^3$}
 
