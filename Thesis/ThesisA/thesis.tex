@@ -37,7 +37,7 @@
 \thesisschool{School of Computer Science and Engineering}
 \thesisauthor{Michael Alexander Sproul}
 \thesisZid{z3484357}
-\thesistopic{} % TODO: Find out what this is meant to be?
+\thesistopic{3680}
 \thesisdegree{Bachelor of Science (Honours)}
 \thesisdate{October 2015}
 \thesissupervisor{Dr. Ben Lippmeier}
@@ -54,7 +54,7 @@
 \newcommand{\capa}{\text{cap}}
 \newcommand{\ptr}{\text{ptr }}
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
-%\newcommand{\space}{\text{ }}
+\newcommand{\SSPHS}{\text{SSPHS}}
 
 \begin{document}
 
@@ -200,7 +200,7 @@ The same authors are also responsible for the Cyclone project (REF), which exten
 
 \subsection{Pottier's type-and-capability system with hidden state}
 
-A formalisation for a system very similar to $L^3$ does exist, in a 2013 article by Fran\c{c}ois Pottier (REF). Pottier's system, SSPHS, uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \textit{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process of (de)allocation. Hidden state is realised via a typing rule called the \textit{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state. The result is a type system for a low-level language supporting ownership and strong updates.
+A formalisation for a system very similar to $L^3$ does exist, in a 2013 article by Fran\c{c}ois Pottier (REF). Pottier's system, \SSPHS, uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \textit{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process of (de)allocation. Hidden state is realised via a typing rule called the \textit{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state. The result is a type system for a low-level language supporting ownership and strong updates.
 
 FIXME: Could probably expand on the frame and anti-frame rules here.
 
@@ -208,11 +208,11 @@ Pottier's formalisation is done within the Coq proof assistant and makes use of 
 
 \subsection{Mezzo and high-level systems}
 
-Together with Protzenko, Pottier is also responsible for the Mezzo programming language and its associated Coq formalisation (REF). Mezzo differs from SSPHS and \rgnUL in that it is designed to be high-level and expressive. Its system of ownership is based around linear \textit{permissions}, which allow programmers to design diverse usage \textit{protocols} for functions and data. Mezzo's model of concurrency leverages ownership to guarantee that well-typed programs do not contain data-races, a property that is also formalised in Coq.
+Together with Protzenko, Pottier is also responsible for the Mezzo programming language and its associated Coq formalisation (REF). Mezzo differs from \SSPHS and \rgnUL in that it is designed to be high-level and expressive. Its system of ownership is based around linear \textit{permissions}, which allow programmers to design diverse usage \textit{protocols} for functions and data. Mezzo's model of concurrency leverages ownership to guarantee that well-typed programs do not contain data-races, a property that is also formalised in Coq.
 
 The prototypical compiler for Mezzo uses untyped OCaml as its target language and as such requires garbage collection at runtime. Further, due to OCaml's lack of parallelism, concurrent and race-free Mezzo programs are unable to take advantage of multiple cores. One can imagine further work to compile Mezzo to a low-level language with similar semantics, in order to take advantage of its full feature set.
 
-Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 2000 line library called \texttt{dblib} for handling de Bruijn indices. Like the proof for SSPHS, it uses progress and preservation to prove type soundness.
+Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 2000 line library called \texttt{dblib} for handling de Bruijn indices. Like the proof for \SSPHS, it uses progress and preservation to prove type soundness.
 
 % rgnURAL as a basis for Cyclone. DONE.
 
@@ -224,7 +224,7 @@ Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 20
 
 Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations. Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 (REF) system, blocks are annotated with pre-conditions that place requirements on the types of registers. A semantic model for typed assembly languages has recently appeared (REF Semantic Foundations for TALs), including a Twelf formalisation. Denotational semantics are used in the proof of type soundness, in contrast to the operational semantics and syntactic soundness proofs of previously cited works.
 
-More broadly it is worth noting the contribution of the CompCert (REF) project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or SSPHS as an intermediate language.
+More broadly it is worth noting the contribution of the CompCert (REF) project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or \SSPHS as an intermediate language.
 
 Another take on the typed assembly language concept, is Bedrock from Adam Chlipala's research group (REF). FIXME: Keep going here (Bedrock seems pretty massive).
 
@@ -316,11 +316,11 @@ With shifting defined, the definition of substitution is straight-forward -- we 
 
 These equations for shifting and substitution are due to (REF TAPL).
 
-Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, SSPHS (REF) defines a module with several lemmas about substitution, while the Mezzo formalisation (REF) makes use of a stand-alone library called \texttt{dblib}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using the \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
+Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS (REF) defines a module with several lemmas about substitution, while the Mezzo formalisation (REF) makes use of a stand-alone library called \texttt{dblib}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using the \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
 
 The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library (REF) for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation (REF) uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} (REF).
 
-However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq (REF). Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms (REF). Further, the formalisations of SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' work on uniqueness typing.
+However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq (REF). Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms (REF). Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' work on uniqueness typing.
 
 \section{Coq Formalisation of $L^3$}
 
