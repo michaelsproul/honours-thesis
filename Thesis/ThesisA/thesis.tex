@@ -54,7 +54,7 @@
 \newcommand{\capa}{\text{cap}}
 \newcommand{\ptr}{\text{ptr }}
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
-\newcommand{\SSPHS}{\text{SSPHS}}
+\newcommand{\SSPHS}{\text{SSPHS }}
 
 \begin{document}
 
@@ -238,16 +238,18 @@ In summary, previous work on the formalisation of resource-aware type systems ha
 
 \chapter{Proposal}
 
-The aim of this thesis is to formalise the semantics of the Linear Language with Locations ($L^3$) using the Coq proof assistant.translating the operational semantics and typing rules from the paper (REF) into inductive Coq definitions...
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations ($L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper (REF) into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \texttt{dblib} library (REF) for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in section (FIXME).
 
-% Proposal intro here. Mention choice of de Bruijn indices and Pottier's \texttt{dblib} library.
+With the operational semantics and typing rules defined, we will proceed with a syntactic proof of type soundness via progress and preservation. Experience with simpler languages from \textit{Software Foundations} (REF) suggests that the proof of progress will be less involved than the proof of preservation. The choice to aim for a syntactic proof is motivated by the syntactic ``paper" proof given in the $L^3$ paper, and the efficacy of syntactic soundness proofs for languages surveyed in the literature review. Considerations of how the proof will be undertaken are given in section (FIXME).
+
+Time permitting, the work will conclude with proofs of other properties of $L^3$. One interesting proof may be of the runtime irrelevance of capabilities. As in Pottier's work on \SSPHS this could be done by defining a version of the operational semantics in which capabilities do not appear, and proving that the two sets of semantics are equivalent (REF).
 
 \section{Variable naming and binding}
 
-One problem that arises frequently in the formalisation of language semantics is that of \textit{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $e[v/x]$) to describe the semantics of function application:
+One problem that arises frequently in the formalisation of language semantics is that of \textit{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $[v/x]e$) to describe the semantics of function application:
 
 \begin{eqnarray*}
-(\lambda x : \tau. \; e) \; v \Longrightarrow_\beta e[v/x]
+(\lambda x : \tau. \; e) \; v \Longrightarrow_\beta [v/x]e
 \end{eqnarray*}
 
 The problem of \textit{variable capture}, which we wish to avoid, is demonstrated by the following example:
@@ -320,7 +322,7 @@ Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for u
 
 The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library (REF) for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation (REF) uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} (REF).
 
-However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq (REF). Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms (REF). Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' work on uniqueness typing.
+However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq (REF). Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms (REF). Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
 
 \section{Coq Formalisation of $L^3$}
 
