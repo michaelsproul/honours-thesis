@@ -58,23 +58,15 @@
 
 \begin{document}
 
-%% pages in the ``frontmatter'' section have roman numeral page number
+%% Roman numeral numbering in this section.
 \frontmatter  
 \maketitle
 
-% \include{abstract}
-% \include{acknowledgements}
-% Do I need these?
-% \include{abbreviations}
-
 \tableofcontents
-%\listoffigures
-%\listoftables
 
-%% pages in the ``mainmatter'' section have arabic page numbers and chapters are numbered
+%% Chapter numbers and normal page numbering.
 \mainmatter
 
-% \include{introduction}
 \chapter{Introduction}
 \label{ch:intro}
 
@@ -182,7 +174,7 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 \section{The Linear Language with Locations, $L^3$}
 
-The Linear Language with Locations $L^3$ (REF), makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, the programmer is freed from maintaining unique pointers -- pointers themselves are freely duplicable.
+The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, the programmer is freed from maintaining unique pointers -- pointers themselves are freely duplicable.
 
 $L^3$ is a \textit{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \textit{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution.
 
