@@ -12,10 +12,16 @@
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage{proof}
 \usepackage{centernot}
-% \usepackage[scale=2]{ccicons}
+\usepackage{backref}
+\usepackage{xcolor}
 
-% Disable hideous fluorescent links
-\hypersetup{hidelinks=true}
+% Nicely coloured links.
+\hypersetup{
+    colorlinks,
+    linkcolor={black},
+    citecolor={blue!80!black},
+    urlcolor={blue!80!black}
+}
 
 %%% Class options:
 
@@ -92,7 +98,7 @@ Include some motivation for linear/uniqueness typing here.
 
 If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code* the program is corrupted by an unverified transformation. Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
 
-Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have been quite successful, and have resulted in numerous impressive verification projects -- notably the CompCert verified compiler (REF) and the seL4 micro-kernel (REF). In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
+Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have been quite successful, and have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}. In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
 
 % FIXME: make this a footnote.
 *We don't consider other methods of computation in the present paper, e.g. logic gates and qubits.
@@ -353,8 +359,5 @@ By drawing inspiration from the paper proof of soundness for $L^3$, and similar 
 \backmatter
 \bibliographystyle{alpha}
 \bibliography{pubs}
-
-%\include{appendix1}
-%\include{appendix2}
 
 \end{document}
