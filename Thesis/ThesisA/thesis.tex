@@ -76,21 +76,17 @@
 \chapter{Introduction}
 \label{ch:intro}
 
-Computer systems form an integral part of modern society, both in the form of personal devices and critical infrastructure. Ensuring the correct operation of computer hardware and software is therefore required. One emerging technique for the construction of robust software systems is the use of mathematical formalisations and proofs of correctness. In this paradigm, desirable properties of the software can be proven true using a computer-based \textit{proof assistant}, which itself relies only on a minimal amount of trusted code. For software formalisation and verification to be truly effective, the objects under consideration must have precise mathematical models associated with them. Typically these models are created based on the \textit{semantics} (meaning) of the programming language that the software is written in. Unfortunately for the would-be software verifier, most popular programming languages lack formal semantics and are therefore not amenable to verification techniques. The focus of this thesis is the computer-based formalisation of language semantics for a specific language (\textit{The Linear Language with Locations} -- $L^3$), as a pre-requisite for further verification of software written in this language.
+Computer systems form an integral part of modern society, both in the form of personal devices and critical infrastructure. Ensuring the correct operation of computer hardware and software is therefore required. One emerging technique for the construction of robust software systems is the use of mathematical formalisations and proofs of correctness. In this paradigm, desirable properties of the software can be proven true using a computer-based \textit{proof assistant}, which itself relies on a minimal amount of trusted code. For software formalisation and verification to be truly effective, the objects under consideration must have precise mathematical models associated with them. Typically these models are created based on the \textit{semantics} (meaning) of the programming language that the software is written in. Unfortunately for the would-be software verifier, most popular programming languages lack formal semantics and are therefore not amenable to verification techniques.
 
-\section{Operational Semantics}
+As a basis for the mechanical verification of complex languages, this thesis focuses on the mechanical verification of a small language -- \textit{The Linear Language with Locations}, $L^3$. Although formal semantics for $L^3$ exist, they are yet to be formalised in a computer-based proof. $L^3$ includes features for low-level control, making its mechanical formalisation relevant to the complete verification of low-level systems like operating systems.
 
-\section{Type Systems and Type Safety}
+Type systems for programming languages are said to be \textit{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Fellesien \cite{wright92}.
 
-REF Wright and Felleisen (1992).
+\section{The Curry-Howard correspondence and the Coq proof assistant}
 
-\section{Logic, Type Theory and the Coq proof assistant}
+Recall that the Curry-Howard correspondence establishes an equivalence between logical systems and type systems for programming languages. By considering logical propositions as types, the proof of a proposition $P$ can be given by constructing a value of type $P$ in the equivalent programming language. The Coq proof assistant provides a dependently typed programming language that allows this correspondence to be exploited.
 
 \section{Summary of Introduction}
-
-The $L^3$ language was specified in a 2001 (2005? 2007?) paper by Ahmed et al (REF). The paper includes a hand-written proof of type soundness for Core $L^3$, spanning 8 pages.
-
-Include some motivation for linear/uniqueness typing here.
 
 % Background.
 \chapter{Background and Previous Work}
@@ -99,9 +95,6 @@ Include some motivation for linear/uniqueness typing here.
 If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code* the program is corrupted by an unverified transformation. Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
 
 Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have been quite successful, and have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}. In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
-
-% FIXME: make this a footnote.
-*We don't consider other methods of computation in the present paper, e.g. logic gates and qubits.
 
 \section{Linear and Affine Typing}
 
