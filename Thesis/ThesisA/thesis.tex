@@ -267,13 +267,15 @@ The problem of \textit{variable capture}, which we wish to avoid, is demonstrate
 
 Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This drastic altering of the meaning of terms during substitution is something we would like to avoid.
 
-One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in (variable capturing) substitutions. This is the approach taken by \textit{Software Foundations} (REF) in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, it doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture. (might need a stronger argument here).
+One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in (variable capturing) substitutions. This is the approach taken by \textit{Software Foundations} \cite{pierce15} in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, the $L^3$ specification requires \textit{``standard capture-avoiding substitution"} \cite{ahmed05}.
 
-In our Coq formalisation of $L^3$ we would therefore like to include \textit{capture avoiding substitution} as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meanings of programs themselves.
+% Extra: It doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture.
+
+In our Coq formalisation of $L^3$ we would therefore like to include capture-avoiding substitution as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meanings of programs themselves.
 
 \subsection{Higher-order Abstract Syntax}
 
-When using Higher-order Abstract Syntax (HOAS) to handle variable binding, the binders of the host language (in our case Coq) are used to represent binding constructs in the object language. Twelf encourages use of HOAS through its light-weight syntax (this example adapted from REF):
+When using Higher-order Abstract Syntax (HOAS) to handle variable binding, the binders of the host language (in our case Coq) are used to represent binding constructs in the object language. Twelf encourages use of HOAS through its light-weight syntax (this example adapted from \cite{twelf08}):
 
 \begin{verbatim}
 exp : type.
@@ -282,9 +284,7 @@ let : exp -> (exp -> exp) -> exp.
 
 The full definition for \texttt{exp} is omitted, but this example demonstrates that a let-binding in the \textit{object language}, can be considered in the \textit{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \texttt{let x = 1 + 2 in x + 3} would be encoded as \texttt{let (plus 1 2) ([x] plus x 3)}, where \texttt{plus : nat -> nat -> expr} and \texttt{([x] e)} is syntax for $(\lambda x. \; e)$.
 
-REF: \url{http://twelf.org/wiki/Higher-order_abstract_syntax}
-
-This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \textit{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic (REF TAPL). An (invalid) inductive Coq definition for the above Twelf example would be:
+This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \textit{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \texttt{let}'s higher-order function is a negative occurrence: \texttt{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
 
 \begin{verbatim}
 Inductive exp : Set :=
@@ -293,14 +293,18 @@ Inductive exp : Set :=
 \end{verbatim}
 
 Coq rejects this definition with the error: \texttt{Non strictly positive occurrence of "exp" in
- "exp -> (exp -> exp) -> exp"}, as expected. There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained (REF HOAS in Coq) or by mixing de Bruijn indices and HOAS (REF Hybrid thing). As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
+ "exp -> (exp -> exp) -> exp"}, as expected.
+ 
+There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
 
 \subsection{De Bruijn indices and the locally nameless approach}
 \label{sec:de_bruijn}
 
-Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \textit{distances from their binding occurrence} (REF de Bruijn 1972). For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality the absence of integers in the object language. For terms that contain free variables, a fixed naming context is used to map free variables to indices (REF TAPL). For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \textit{1} (the lambda).
+Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \textit{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality that there are no integer literals in the object language that could be confused for de Bruijn indices.
 
-Capture avoiding substitution with de Bruijn indices can be simply defined as a recursive function that makes use of a \textit{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
+For terms that contain free variables, a fixed naming context is used to map free variables to indices \cite{tapl}. For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \textit{1} -- the lambda.
+
+Capture-avoiding substitution with de Bruijn indices can be defined as a recursive function that makes use of a \textit{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
 
 \begin{eqnarray*}
 \uparrow^d_c k & = &
@@ -324,13 +328,13 @@ With shifting defined, the definition of substitution is straight-forward -- we 
 \left[s/j\right](t_1 \; t_2) & = & ([s/j] \; t_1) \; ([s/j] \; t_2)
 \end{eqnarray*}
 
-These equations for shifting and substitution are due to (REF TAPL).
+These equations for shifting and substitution are due to \cite{tapl}.
 
-Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS (REF) defines a module with several lemmas about substitution, while the Mezzo formalisation (REF) makes use of a stand-alone library called \texttt{dblib}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using the \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
+Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \texttt{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
 
-The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library (REF) for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation (REF) uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} (REF).
+The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library (REF) for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries08}.
 
-However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq (REF). Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms (REF). Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
+However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq \cite{tlc15}. Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' uniqueness typing system. FIXME: Revise this section.
 
 \section{Proof of Type Soundness for $L^3$}
 \label{sec:proof_proposal}
@@ -353,7 +357,7 @@ To quantify the effort involved in the proofs, we will make use of a simple scri
 
 \section{Summary of Proposal}
 
-By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen (REF). We will make use of the \texttt{dblib} library (REF) for reasoning about de Bruijn indices in an entirely constructive manner. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
+By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright92}. We will make use of the \texttt{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
