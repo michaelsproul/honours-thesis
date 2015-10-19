@@ -170,7 +170,7 @@ One key component of his approach is the use of the \textit{kind} (type of types
 
 The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries' system as simple boolean expressions that can be handled by a standard unification algorithm. FIXME: Consider removing?
 
-Importantly, de Vries work includes the only known mechanical verification of a type system similar to Clean's. The formalisation uses the Coq proof assistant, and the \textit{locally nameless} (REF) approach to variable naming that will be discussed in (FIXME: SOME SECTION).
+Importantly, de Vries work includes the only known mechanical verification of a type system similar to Clean's. The formalisation uses the Coq proof assistant, and the \textit{locally nameless} approach to variable naming that is discussed in Section \ref{sec:de_bruijn}.
 
 % Linear + affine logic and control over contraction and weakening. DONE.
 
@@ -201,9 +201,9 @@ These two rules from the operational semantics show the behaviour of the \texttt
 
 \subsection{Cyclone}
 
-Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL (REF). Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are collections of values allocated together (?). Dynamic regions extend simpler lexical regions by allowing regions to exist independent of lexical scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness using the Twelf proof assistant (REF).
+Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL \cite{fluet06}. Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are collections of values allocated together (FIXME). Dynamic regions extend simpler lexical regions by allowing regions to exist independent of lexical scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness using the Twelf proof assistant \cite{pfenning99}.
 
-The same authors are also responsible for the Cyclone project (REF), which extends the C programming language with regions and uniqueness typing in order to achieve safe memory management without garbage collection or manual intervention. The \rgnUL calculus models many of Cyclone's features, and there exists a translation from Cyclone to \rgnUL via an intermediate language $F^\text{RGN}$ which makes use of a generalised ST monad (REF Monadic regions). No mechanised proofs of correctness for this work exist, although an earlier proof of type soundness for Cyclone (REF formal type soundness for Cyclone's region system) is structured in a way that looks amenable to mechanised verification. On their webpage (REF), the creators of Cyclone note that work on the project has stopped, with many of the ideas living on in Rust. Future formalisations of Rust can hopefully make use of this work.
+The same authors are also responsible for the Cyclone project \cite{grossman05}, which extends the C programming language with regions and uniqueness typing in order to achieve safe memory management without garbage collection or manual intervention. The \rgnUL calculus models many of Cyclone's features, and there exists a translation from Cyclone to \rgnUL via an intermediate language $F^\text{RGN}$ which makes use of a generalised ST monad \cite{fluet04}. No mechanised proofs of correctness for this work exist, although an earlier proof of type soundness for Cyclone \cite{jim01} is structured in a way that looks amenable to mechanised verification. On their webpage, the creators of Cyclone note that work on the project has stopped, with many of the ideas living on in Rust \cite{cycloneWeb}. Future formalisations of Rust can hopefully make use of this work.
 
 \subsection{Pottier's type-and-capability system with hidden state}
 
@@ -253,6 +253,7 @@ With the operational semantics and typing rules defined, we will proceed with a 
 Time permitting, the work will conclude with proofs of other properties of $L^3$. One interesting proof may be of the runtime irrelevance of capabilities. As in Pottier's work on \SSPHS this could be done by defining a version of the operational semantics in which capabilities do not appear, and proving that the two sets of semantics are equivalent (REF).
 
 \section{Variable naming and binding}
+\label{sec:var_naming}
 
 One problem that arises frequently in the formalisation of language semantics is that of \textit{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $[v/x]e$) to describe the semantics of function application:
 
@@ -297,6 +298,7 @@ Coq rejects this definition with the error: \texttt{Non strictly positive occurr
  "exp -> (exp -> exp) -> exp"}, as expected. There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained (REF HOAS in Coq) or by mixing de Bruijn indices and HOAS (REF Hybrid thing). As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
 
 \subsection{De Bruijn indices and the locally nameless approach}
+\label{sec:de_bruijn}
 
 Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \textit{distances from their binding occurrence} (REF de Bruijn 1972). For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality the absence of integers in the object language. For terms that contain free variables, a fixed naming context is used to map free variables to indices (REF TAPL). For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \textit{1} (the lambda).
 
