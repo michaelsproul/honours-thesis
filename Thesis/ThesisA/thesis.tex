@@ -83,6 +83,7 @@ As a basis for the mechanical verification of complex languages, this thesis foc
 Type systems for programming languages are said to be \textit{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Fellesien \cite{wright92}.
 
 \section{The Curry-Howard correspondence and the Coq proof assistant}
+\label{sec:curry_howard}
 
 Recall that the Curry-Howard correspondence establishes an equivalence between logical systems and type systems for programming languages. By considering logical propositions as types, the proof of a proposition $P$ can be given by constructing a value of type $P$ in the equivalent programming language. The Coq proof assistant provides a dependently typed programming language that allows this correspondence to be exploited.
 
@@ -92,15 +93,15 @@ Recall that the Curry-Howard correspondence establishes an equivalence between l
 \chapter{Background and Previous Work}
 \label{ch:background}
 
-If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code* the program is corrupted by an unverified transformation. Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
+If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code the program is corrupted by an unverified transformation. Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
 
-Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have been quite successful, and have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}. In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
+Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}. In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
 
 \section{Linear and Affine Typing}
 
-Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable features that can be obtained by enforcing them. The Clean programming language (REF) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language (REF) uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available (like a garbage collector itself, or an operating system).
+Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable properties that can be obtained by enforcing them. The Clean programming language (REF) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language (REF) uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available, like a garbage collector itself, or an operating system.
 
-Linear and affine type systems are based on linear and affine logic respectively \cite{girard87} REF, via the standard mapping from logic to type systems (FIXME see previous section?). In classical and intuitionistic logic there are deduction rules equivalent to the following, called \textit{Contraction} and \textit{Weakening} \cite{wadler90, wadler93}.
+In classical and intuitionistic logic there are deduction rules equivalent to the following, called \textit{Contraction} and \textit{Weakening} \cite{wadler90, wadler93}.
 
 \begin{eqnarray*}
 \infer[\text{Contraction}]{\Gamma, A \vdash B}{
@@ -112,7 +113,11 @@ Linear and affine type systems are based on linear and affine logic respectively
 }
 \end{eqnarray*}
 
-Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic bans the use of both rules, such that every assumption is used \textit{exactly once}. Affine logic on the other hand bans only the use of Contraction, which results in the requirement that every assumption be used \textit{at most once}. When transformed into typing rules, Contraction and Weakening take the form:
+Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic \cite{girard87} selectively restricts the use of both rules, such that every \textit{linear} assumption is used \textit{exactly once}. Affine logic on the other hand restricts only the use of Contraction, which results in every linear assumption being used \textit{at most once}.
+
+\textit{Non-linear} assumptions are still permitted to be used an unlimited number of times. Hence, variants of Contraction and Weakening that operate only on non-linear assumptions are present in linear logic, affine logic and most derivative systems.
+
+When transformed into typing rules (see Section \ref{sec:curry_howard}), Contraction and Weakening take the form:
 
 \begin{eqnarray*}
 \infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
@@ -124,9 +129,13 @@ Contraction allows duplicate assumptions to be discarded, whilst Weakening allow
 }
 \end{eqnarray*}
 
-(Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$).
+Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$.
 
-As in linear and affine logic, linear type theory prevents the use of Contraction and Weakening, whilst affine type theory prevents just the use of Contraction. Our previous observations about the number of times an assumption is used, now translate into observations about the number of times variables are used.
+As in linear and affine logic, linear type theory prevents the use of Contraction and Weakening, whilst affine type theory prevents just the use of Contraction.
+
+Our previous observations about the number of times an assumption is used, now translate into observations about the number of times variables are used.
+
+
 
 Without Contraction, \textit{variables can only appear once in a term}. The dual substitution of $x$ for $y$ and $x$ for $z$ allows a term containing one $y$ and one $z$ to become a term containing two occurrences of $x$. None of the other rules of intuitionistic type theory allow this \cite{wadler93}.
 
@@ -234,7 +243,7 @@ Another take on the typed assembly language concept, is Bedrock from Adam Chlipa
 
 \section{Summary of Previous Work}
 
-In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems make mention of Alias Types (REF) and separation logic (REF) as foundational concepts, but the author is yet to explore these in depth.
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types (REF) and separation logic (REF) as foundational concepts, but we defer discussion of these to future work.
 
 \chapter{Proposal}
 \label{ch:proposal}
