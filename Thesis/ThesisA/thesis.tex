@@ -101,7 +101,7 @@ Historically, low-level \textit{systems software} has been written primarily in 
 
 Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable properties that can be obtained by enforcing them. The Clean programming language (REF) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language (REF) uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available, like a garbage collector itself, or an operating system.
 
-In classical and intuitionistic logic there are deduction rules equivalent to the following, called \textit{Contraction} and \textit{Weakening} \cite{wadler90, wadler93}.
+In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \textit{Contraction} and \textit{Weakening} \cite{wadler90, wadler93}.
 
 \begin{eqnarray*}
 \infer[\text{Contraction}]{\Gamma, A \vdash B}{
@@ -113,11 +113,11 @@ In classical and intuitionistic logic there are deduction rules equivalent to th
 }
 \end{eqnarray*}
 
-Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic \cite{girard87} selectively restricts the use of both rules, such that every \textit{linear} assumption is used \textit{exactly once}. Affine logic on the other hand restricts only the use of Contraction, which results in every linear assumption being used \textit{at most once}.
+Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic \cite{girard87} selectively restricts the use of both rules, such that every \textit{linear} assumption is used \textit{exactly once}. Affine logic on the other hand restricts only the use of Contraction, which results in every linear assumption being used \textit{at most once}. Both are \textit{substructural}, as they restrict the use of structural rules.
 
 \textit{Non-linear} assumptions are still permitted to be used an unlimited number of times. Hence, variants of Contraction and Weakening that operate only on non-linear assumptions are present in linear logic, affine logic and most derivative systems.
 
-When transformed into typing rules (see Section \ref{sec:curry_howard}), Contraction and Weakening take the form:
+When transformed into typing rules (as per Section \ref{sec:curry_howard}), Contraction and Weakening take the form:
 
 \begin{eqnarray*}
 \infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
@@ -129,13 +129,9 @@ When transformed into typing rules (see Section \ref{sec:curry_howard}), Contrac
 }
 \end{eqnarray*}
 
-Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$.
+Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$. Further, substructural type theories include context-splitting operations that allow the linear variables of a typing context to be split between two new contexts which can be used to type-check subterms.
 
-As in linear and affine logic, linear type theory prevents the use of Contraction and Weakening, whilst affine type theory prevents just the use of Contraction.
-
-Our previous observations about the number of times an assumption is used, now translate into observations about the number of times variables are used.
-
-
+As in linear and affine logic, linear type theory restricts the use of both Contraction and Weakening, whilst affine type theory restricts just the use of Contraction. Our previous observations about the number of times an assumption is used, now translate into observations about the number of times variables are used.
 
 Without Contraction, \textit{variables can only appear once in a term}. The dual substitution of $x$ for $y$ and $x$ for $z$ allows a term containing one $y$ and one $z$ to become a term containing two occurrences of $x$. None of the other rules of intuitionistic type theory allow this \cite{wadler93}.
 
@@ -143,7 +139,7 @@ Similarly, without Weakening, \textit{all variables in the context must be used 
 
 From these two observations we can conclude that linear type theory requires all variables to be used \textit{exactly once} in terms, whilst affine type theory requires all variables to be used \textit{at most once} in terms.
 
-It's also worth noting that linear and affine type theory don't entirely ban Contraction and Weakening -- their use is allowed for certain \textit{non-linear} values and types. This is quite practical in the context of programming language implementation as it allows trivially copyable values like integers to be easily duplicated. The mechanism employed by Wadler \cite{wadler93} to selectively allow Contraction and Weakening involves differentiating between linear and non-linear assumptions, and adding type and value-level bang (!) operators to make types and values non-linear. The function for duplication of non-linear values (of type $!A$) is expressed as follows in such a system :
+As in substructural logics, substructural type theories selectively permit Contraction and Weakening for select non-linear values. This is quite practical in the context of programming language implementation as it allows trivially copyable values like integers to be easily duplicated. The mechanism employed by Wadler \cite{wadler93} involves differentiating between linear and non-linear assumptions, and adding type and value-level bang (!) operators to make types and values non-linear. The function for duplication of non-linear values (of type $!A$) is expressed as follows in such a system :
 
 \begin{eqnarray*}
 \varnothing \vdash \lambda \langle x' \rangle . \case x' \of !x \rightarrow \langle !x, !x\rangle :\text{ } !A \yields (!A \otimes !A)
