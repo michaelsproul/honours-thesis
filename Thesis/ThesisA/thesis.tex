@@ -264,7 +264,7 @@ More broadly it is worth noting the contribution of the CompCert \cite{leroy09} 
 
 \section{Summary of Mechanisation Techniques}
 
-The following table contains a summary of languages and type systems and their mechanisations. A tick (\tick) indicates that a property is true for a given language, a cross (\cross) indicates false and a dash (-) indicates that the property is not applicable. The * indicates work to be completed as part of this thesis.
+The following table contains a summary of languages and type systems and their mechanisations. A tick (\tick) indicates that a property is true for a given language, a cross (\cross) indicates that it is false and a dash (-) indicates that the property is not applicable. The * indicates work to be completed as part of this thesis. Note that we also write ``Clean" here to mean Edsko de Vries' uniqueness typing system \cite{deVries07}.
 
 \vspace{10mm}
 
@@ -318,9 +318,9 @@ The problem of \textit{variable capture}, which we wish to avoid, is demonstrate
 (\lambda x. \; \lambda y. \; x + y) \; y \; {\centernot\Longrightarrow}_\beta \; (\lambda y. \; y + y)
 \end{eqnarray*}
 
-Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This drastic altering of the meaning of terms during substitution is something we would like to avoid.
+Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This altering of the meaning of terms during substitution is something we would like to avoid.
 
-One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in (variable capturing) substitutions. This is the approach taken by \textit{Software Foundations} \cite{pierce15} in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, the $L^3$ specification requires \textit{``standard capture-avoiding substitution"} \cite{ahmed05}.
+One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in variable capturing substitutions. This is the approach taken by \textit{Software Foundations} \cite{pierce15} in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, the $L^3$ specification requires \textit{``standard capture-avoiding substitution"} \cite{ahmed05}.
 
 % Extra: It doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture.
 
@@ -387,7 +387,7 @@ Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for u
 
 The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
 
-However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq \cite{tlc15}. Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' uniqueness typing system. FIXME: Revise this section.
+However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq \cite{tlc15}. We elect not to use this library, in order to keep the set of axioms minimal and to aid compatibility with other proofs. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
 
 \section{Proof of Type Soundness for $L^3$}
 \label{sec:proof_proposal}
