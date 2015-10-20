@@ -13,6 +13,7 @@
 \usepackage{centernot}
 \usepackage{backref}
 \usepackage{xcolor}
+\usepackage{tikz}
 
 % Nicely coloured links.
 \hypersetup{
@@ -34,6 +35,10 @@
   }%
   \item\relax}
  {\endlist}
+
+% Tick symbol.
+\def\tick{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+\newcommand{\cross}{$\times$}
 
 %%% Class options:
 
@@ -249,15 +254,39 @@ Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 20
 
 \section{Typed assembly languages and trustworthy compilers}
 
-Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations. Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 \cite{morrisett99, crary99} system, blocks are annotated with pre-conditions that place requirements on the types of registers. A semantic model for typed assembly languages has recently appeared \cite{ahmed10}, including a Twelf formalisation. Denotational semantics are used in the proof of type soundness, in contrast to the operational semantics and syntactic soundness proofs of previously cited works.
+Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations.
+
+Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 \cite{morrisett99, crary99} system, blocks are annotated with pre-conditions that place requirements on the types of registers. This approach to typing is substantially different from the operational semantics and inductive typing judgements used to describe the semantics of the other languages we've surveyed ($L^3$, \rgnUL, \SSPHS). However, recent work by Amal Ahmed \textit{et al.}  has successfully resulted in a more traditional model for typed assembly languages \cite{ahmed10}. This model still differs from the others considered in this thesis in that it uses denotational semantics, Hoare logic and several interconnecting layers in order to minimise the number of axioms required. Ahmed's paper includes a Twelf formalisation of soundness for the TAL semantic framework and an example language.
+
+Another take on the typed assembly language concept, is Bedrock from Adam Chlipala's research group \cite{chlipala11}. Bedrock uses a domain-specific assembly language embedded within Coq to express low-level programs. Aided by user-provided annotations, Bedrock can prove properties about these assembly programs in an automated way using custom Coq tactics. The block annotations resemble the block pre-conditions of TALx86.
 
 More broadly it is worth noting the contribution of the CompCert \cite{leroy09} project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or \SSPHS as an intermediate language.
 
-Another take on the typed assembly language concept, is Bedrock from Adam Chlipala's research group \cite{chlipala11}. FIXME: Keep going here (Bedrock seems pretty massive).
+\section{Summary of Mechanisation Techniques}
 
-% TALx86. DONE.
-% CompCERT. DONE.
-% Bedrock.
+The following table contains a summary of languages and type systems and their mechanisations. A tick (\tick) indicates that a property is true for a given language, a cross (\cross) indicates false and a dash (-) indicates that the property is not applicable. The * indicates work to be completed as part of this thesis.
+
+\vspace{10mm}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{System} & \textbf{DU} & \textbf{SU} & \textbf{Cp} & \textbf{Poly} & \textbf{Other} & \textbf{Mechanised?} & \textbf{Naming}\\
+\hline
+Clean \cite{deVries07} & \tick & \cross & \cross & \tick & - & \tick (Coq) & LN\\
+\hline
+Rust \cite{rustWeb} & \tick & \cross & - & \tick 	& No GC & \cross & - \\
+\hline
+$L^3$ \cite{ahmed05} & \tick & \tick & \tick & $\times$ & - & Yes* (Coq) & DB*\\
+\hline
+\rgnUL \cite{fluet06} & \tick & - & \tick & \tick & Cyclone base & \tick (Twelf) & HOAS\\
+\hline
+\SSPHS \cite{pottier13} & \tick & \tick & \tick & \tick & Hidden state & \tick (Coq) & DB\\
+\hline
+Mezzo \cite{mezzo14} &  \tick & \tick & \tick & \tick & Data-race free & \tick (Coq) & DB\\
+\hline
+\end{tabular}
+
+Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphism, LN=Locally Nameless, DB=De Bruijn Indices, HOAS=Higher-order Abstract Syntax.
 
 \section{Summary of Previous Work}
 
