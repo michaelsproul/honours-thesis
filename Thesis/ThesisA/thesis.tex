@@ -198,7 +198,7 @@ Importantly, de Vries work includes the only known mechanical verification of a 
 
 \section{The Linear Language with Locations, $L^3$}
 
-The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, the programmer is freed from maintaining unique pointers -- pointers themselves are freely duplicable.
+The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, the programmer is freed from maintaining unique pointers, which are freely duplicable.
 
 $L^3$ is a \textit{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \textit{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution.
 
@@ -214,6 +214,8 @@ $L^3$'s definition includes a description of syntax, operational semantics and t
 \end{eqnarray*}
 
 These two rules from the operational semantics show the behaviour of the \texttt{new} keyword for allocating memory, and the \texttt{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \texttt{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \textit{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
+
+$L^3$'s rules for managing capabilities are closer to standard linear typing than Clean's uniqueness typing. Part of the reason for this is that capabilities are intended to be erased at compile time, and as such considerations of FIXME.
 
 \section{Systems of Capabilities}
 
