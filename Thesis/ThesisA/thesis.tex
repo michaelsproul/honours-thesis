@@ -9,7 +9,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{url}
 \usepackage{multicol}
-\usepackage[nottoc,numbib]{tocbibind}
+%\usepackage[nottoc,numbib]{tocbibind}
 \usepackage{proof}
 \usepackage{centernot}
 \usepackage{backref}
@@ -80,7 +80,7 @@ Computer systems form an integral part of modern society, both in the form of pe
 
 As a basis for the mechanical verification of complex languages, this thesis focuses on the mechanical verification of a small language -- \textit{The Linear Language with Locations}, $L^3$. Although formal semantics for $L^3$ exist, they are yet to be formalised in a computer-based proof. $L^3$ includes features for low-level control, making its mechanical formalisation relevant to the complete verification of low-level systems like operating systems.
 
-Type systems for programming languages are said to be \textit{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Fellesien \cite{wright92}.
+Type systems for programming languages are said to be \textit{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Fellesien \cite{wright94}.
 
 \section{The Curry-Howard correspondence and the Coq proof assistant}
 \label{sec:curry_howard}
@@ -227,7 +227,7 @@ Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 20
 
 \section{Typed assembly languages and trustworthy compilers}
 
-Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations. Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 \cite{crary99} system, blocks are annotated with pre-conditions that place requirements on the types of registers. A semantic model for typed assembly languages has recently appeared \cite{ahmed10}, including a Twelf formalisation. Denotational semantics are used in the proof of type soundness, in contrast to the operational semantics and syntactic soundness proofs of previously cited works.
+Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations. Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 \cite{morrisett99, crary99} system, blocks are annotated with pre-conditions that place requirements on the types of registers. A semantic model for typed assembly languages has recently appeared \cite{ahmed10}, including a Twelf formalisation. Denotational semantics are used in the proof of type soundness, in contrast to the operational semantics and syntactic soundness proofs of previously cited works.
 
 More broadly it is worth noting the contribution of the CompCert \cite{leroy09} project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or \SSPHS as an intermediate language.
 
@@ -239,7 +239,7 @@ Another take on the typed assembly language concept, is Bedrock from Adam Chlipa
 
 \section{Summary of Previous Work}
 
-In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types (REF) and separation logic (REF) as foundational concepts, but we defer discussion of these to future work.
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer discussion of these to future work.
 
 \chapter{Proposal}
 \label{ch:proposal}
@@ -332,7 +332,7 @@ These equations for shifting and substitution are due to \cite{tapl}.
 
 Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \texttt{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
 
-The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library (REF) for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries08}.
+The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries08}.
 
 However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq \cite{tlc15}. Philosophically, the author has found constructive mathematics one of the most interesting aspects of learning Coq, and is keen to keep using it. Practically, abandoning constructiveness also means sacrificing Coq's ability to generate executable specifications, as the Curry-Howard isomorphism breaks down in the presence of non-constructive axioms. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices, and they are considerably closer to $L^3$ than de Vries' uniqueness typing system. FIXME: Revise this section.
 
@@ -357,11 +357,12 @@ To quantify the effort involved in the proofs, we will make use of a simple scri
 
 \section{Summary of Proposal}
 
-By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright92}. We will make use of the \texttt{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
+By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright94}. We will make use of the \texttt{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
 \backmatter
+\pagebreak
 \bibliographystyle{alpha}
 \bibliography{pubs}
 
