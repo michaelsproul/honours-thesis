@@ -9,7 +9,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage{url}
 \usepackage{multicol}
-%\usepackage[nottoc,numbib]{tocbibind}
 \usepackage{proof}
 \usepackage{centernot}
 \usepackage{backref}
@@ -22,6 +21,19 @@
     citecolor={blue!80!black},
     urlcolor={blue!80!black}
 }
+
+% Abstract env.
+\newenvironment{abstract}
+ {
+  \begin{center}
+  \bfseries \abstractname\vspace{-.5em}\vspace{0pt}
+  \end{center}
+  \list{}{
+    \setlength{\leftmargin}{.5cm}%
+    \setlength{\rightmargin}{\leftmargin}%
+  }%
+  \item\relax}
+ {\endlist}
 
 %%% Class options:
 
@@ -67,6 +79,10 @@
 %% Roman numeral numbering in this section.
 \frontmatter  
 \maketitle
+
+\begin{abstract}
+We provide a mechanically verified proof of type soundness for the previously unverified Linear Language with Locations, $L^3$. The language includes several low-level facilities for control over memory and \textit{ownership}, allowing it to act as a base for the verification of systems software. $L^3$ is typical of modern resource-aware calculi in that it makes use of capabilities and substructural typing. Our syntactic proof of type soundness within the Coq proof assistant is a mechanisation of the existing soundness proof.
+\end{abstract}
 
 \tableofcontents
 
