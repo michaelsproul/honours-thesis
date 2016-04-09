@@ -1,0 +1,483 @@
+\documentclass[]{unswthesis}
+
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage{amsmath, amssymb}
+\usepackage{mathtools}
+\usepackage[utf8]{inputenc}
+\usepackage{url}
+\usepackage{multicol}
+\usepackage{proof}
+\usepackage{centernot}
+\usepackage{backref}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+% Nicely coloured links.
+\hypersetup{
+    colorlinks,
+    linkcolor={black},
+    citecolor={blue!80!black},
+    urlcolor={blue!80!black}
+}
+
+% Abstract env.
+\newenvironment{abstract}
+ {
+  \begin{center}
+  \bfseries \abstractname\vspace{-.5em}\vspace{0pt}
+  \end{center}
+  \list{}{
+    \setlength{\leftmargin}{.5cm}%
+    \setlength{\rightmargin}{\leftmargin}%
+  }%
+  \item\relax}
+ {\endlist}
+
+% Tick symbol.
+\def\tick{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+\newcommand{\cross}{$\times$}
+
+%%% Class options:
+
+%  undergrad (default)
+%  hdr
+
+%  11pt (default)
+%  12pt
+
+%  final (default)
+%  draft
+
+%  oneside (default for hdr)
+%  twoside (default for undergrad)
+
+
+%% Thesis details
+\thesistitle{Computer-verified proof of type soundness for the Linear Language with Locations, $L^3$}
+\thesisschool{School of Computer Science and Engineering}
+\thesisauthor{Michael Alexander Sproul}
+\thesisZid{z3484357}
+\thesistopic{3680}
+\thesisdegree{Bachelor of Science (Honours)}
+\thesisdate{October 2015}
+\thesissupervisor{Dr. Ben Lippmeier}
+
+%% My own LaTeX macros, definitions, etc.
+\let\oldemptyset\emptyset
+\let\emptyset\varnothing
+\newcommand{\case}{\text{ case }}
+\newcommand{\of}{\text{of }}
+\newcommand{\yields}{\multimap}
+\newcommand{\steps}{\Rightarrow}
+\newcommand{\lquine}{\left\ulcorner}
+\newcommand{\rquine}{\right\urcorner}
+\newcommand{\capa}{\text{cap}}
+\newcommand{\ptr}{\text{ptr }}
+\newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
+\newcommand{\SSPHS}{\text{SSPHS }}
+
+\begin{document}
+
+%% Roman numeral numbering in this section.
+\frontmatter  
+\maketitle
+
+\begin{abstract}
+We provide a mechanically verified proof of type soundness for the previously unverified Linear Language with Locations, $L^3$. The language includes several low-level facilities for control over memory and \textit{ownership}, allowing it to act as a base for the verification of systems software. $L^3$ is typical of modern resource-aware calculi in that it makes use of capabilities and substructural typing. Our syntactic proof of type soundness within the Coq proof assistant is a mechanisation of the existing soundness proof.
+\end{abstract}
+
+\tableofcontents
+
+%% Chapter numbers and normal page numbering.
+\mainmatter
+
+\chapter{Introduction}
+\label{ch:intro}
+
+Computer systems form an integral part of modern society, both in the form of personal devices and critical infrastructure. Ensuring the correct operation of computer hardware and software is therefore required. One emerging technique for the construction of robust software systems is the use of mathematical formalisations and proofs of correctness. In this paradigm, desirable properties of the software can be proven true using a computer-based \textit{proof assistant}, which itself relies on a minimal amount of trusted code. For software formalisation and verification to be truly effective, the objects under consideration must have precise mathematical models associated with them. Typically these models are created based on the \textit{semantics} (meaning) of the programming language that the software is written in. Unfortunately for the would-be software verifier, most popular programming languages lack formal semantics and are therefore not amenable to verification techniques.
+
+As a basis for the mechanical verification of complex languages, this thesis focuses on the mechanical verification of a small language -- \textit{The Linear Language with Locations}, $L^3$. Although formal semantics and semi-formal proofs of correctness exist for $L^3$, no computer-based proofs exist. We verify $L^3$ because it is typical of modern resource-aware calculi in its use of capabilities -- whilst remaining simple. $L^3$'s concepts of ownership make its mechanisation relevant to the complete verification of low-level systems like garbage collectors and operating systems, which are at the cutting edge of verification research.
+
+Type systems for programming languages are said to be \textit{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Fellesien \cite{wright94}.
+
+\section{The Curry-Howard correspondence and the Coq proof assistant}
+\label{sec:curry_howard}
+
+Recall that the Curry-Howard correspondence establishes an equivalence between logical systems and type systems for programming languages. By considering logical propositions as types, the proof of a proposition $P$ can be given by constructing a value of type $P$ in the equivalent programming language. The Coq proof assistant provides a dependently typed programming language with inductive data-types that allows complex propositions to be expressed and proved in this manner. Coq proofs make use of \textit{tactics} which abstract over repetitive reasoning.
+
+\section{Summary of Introduction}
+
+We will prove type soundness for the Linear Language with Locations, using the Coq proof assistant. We hope that the verification of $L^3$ will provide insight on the tractability of mechanical verifying low-level languages with capabilities. Our broad goal is to further the construction of computer-checked proofs for all parts of the software stack.
+
+% Background.
+\chapter{Background and Previous Work}
+\label{ch:background}
+
+If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code the program is corrupted by an unverified transformation. Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
+
+Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}. In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
+
+\section{Linear and Affine Typing}
+
+Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable properties that can be obtained by enforcing them. The Clean programming language (introduced in \cite{clean87}) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \textit{destructive updates} whilst preserving referential transparency. The Rust programming language \cite{rustWeb} uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available, like a garbage collector itself, or an operating system.
+
+In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \textit{Contraction} and \textit{Weakening} \cite{wadler90, wadler93}.
+
+\begin{eqnarray*}
+\infer[\text{Contraction}]{\Gamma, A \vdash B}{
+	\Gamma, A, A \vdash B
+}
+\qquad
+\infer[\text{Weakening}]{\Gamma, A \vdash B}{
+    \Gamma \vdash B
+}
+\end{eqnarray*}
+
+Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic \cite{girard87} selectively restricts the use of both rules, such that every \textit{linear} assumption is used \textit{exactly once}. Affine logic on the other hand restricts only the use of Contraction, resulting in each linear assumption being used \textit{at most once}. Both are \textit{substructural} in that they restrict the use of structural rules.
+
+\textit{Non-linear} assumptions can still be used an unlimited number of times. Hence, variants of Contraction and Weakening that operate only on non-linear assumptions are present in linear logic, affine logic and similar substructural systems.
+
+When transformed into typing rules (as per Section \ref{sec:curry_howard}), Contraction and Weakening take the form:
+
+\begin{eqnarray*}
+\infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
+	\Gamma, y : A, z : A \vdash u :: B
+}
+\qquad
+\infer[\text{Weakening}]{\Gamma, x : A \vdash y :: B}{
+    \Gamma\vdash y :: B
+}
+\end{eqnarray*}
+
+Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$. Further, substructural type theories include context-splitting operations that allow the linear variables of a typing context to be split between two new contexts which can be used to type-check subterms.
+
+As in linear and affine logic, linear type theory restricts the use of both Contraction and Weakening, whilst affine type theory restricts just the use of Contraction. Our previous observations about the number of times an assumption is used, now translate into observations about the number of times variables are used.
+
+Without Contraction, \textit{variables can only appear once in a term}. The dual substitution of $x$ for $y$ and $x$ for $z$ allows a term containing one $y$ and one $z$ to become a term containing two occurrences of $x$. None of the other rules of intuitionistic type theory allow this \cite{wadler93}.
+
+Similarly, without Weakening, \textit{all variables in the context must be used in the term}. This follows from the fact that Weakening introduces an unused variable to the context and no other rule of intuitionistic type theory allows this \cite{wadler93}.
+
+From these two observations we can conclude that linear type theory requires all variables to be used \textit{exactly once} in terms, whilst affine type theory requires all variables to be used \textit{at most once} in terms.
+
+As in substructural logics, substructural type theories selectively permit Contraction and Weakening for select non-linear values. This is quite practical in the context of programming language implementation as it allows trivially copyable values like integers to be easily duplicated. The mechanism employed by Wadler \cite{wadler93} involves differentiating between linear and non-linear assumptions, and adding type and value-level bang (!) operators to make types and values non-linear. The function for duplication of non-linear values (of type $!A$) is expressed as follows in Wadler's system:
+
+\begin{eqnarray*}
+\varnothing \vdash \lambda \langle x' \rangle . \case x' \of !x \rightarrow \langle !x, !x\rangle :\text{ } !A \yields (!A \otimes !A)
+\end{eqnarray*}
+
+See \cite{wadler93} for full notational details.
+
+\section{Uniqueness Typing}
+
+Although linear and affine type theory capture the essence of uniquely referenced values, they are insufficient to describe the concept of \textit{uniqueness} as it appears in languages like Clean. In his 2007 paper, de Vries \cite{deVries07} notes that terms of a unique type should be \textit{guaranteed to never have been shared}, which is sufficient to guarantee a unique pointer at runtime. In contrast, terms of linear (or affine) type are \textit{guaranteed not to be shared in the future}, which is insufficient to guarantee a unique pointer.
+
+The distinctness of linearity and uniqueness is further highlighted by the \textit{dereliction} rule present in some versions of linear type theory, and the rule that we'll refer to as \textit{uniqueness removal} present in Clean's type system. Let $\alpha^\odot$ and $\alpha^\otimes$ stand for linear and non-linear versions of a base type $\alpha$. Similarly, let $\alpha^\bullet$ and $\alpha^\times$ stand for unique and shared versions of a base type $\alpha$. We have:
+
+\begin{eqnarray*}
+(\lambda x. \; x) \; : & \alpha^\otimes \rightarrow \alpha^\odot & \text{(linear dereliction)}\\
+(\lambda x. \; x) \; : & \alpha^\bullet \rightarrow \alpha^\times & \text{(uniqueness removal)}
+\end{eqnarray*}
+
+The dereliction rule allows a non-linear value to be transformed into a linear one. As noted by de Vries \cite{deVriesPhD08}, an analogous rule for unique types that converts shared values to unique ones cannot possibly be sound. The ``unique" value resulting from such a rule would not necessarily be unique because other shared references may still exist.
+
+Conversely, uniqueness removal only makes sense in the context of uniqueness types. A unique value may sacrifice its uniqueness to become shared, but a linear value which models the existence of a single resource should not be transformed into an unlimited supply of that resource.
+
+Note that dereliction need not form a part of type systems based on linear logic, and that it is absent from Wadler's presentations \cite{wadler90, wadler93} and all systems considered in the next sections. Further note that if uniqueness is to be exploited to make garbage collection unnecessary -- as in the case of Rust -- then the uniqueness removal rule is undesirable as it prevents values from having a unique owner.
+
+Due to the non-equivalence of linearity and uniqueness, de Vries constructed a distinct set of semantics and typing rules to model Clean's type system \cite{deVries07}.
+
+One key component of his approach is the use of the \textit{kind} (type of types) system to track uniqueness and non-uniqueness. As in Haskell, de Vries' uniqueness system includes a kind for data (\texttt{*}) which is the kind of all inhabited types (and \texttt{Void}). In addition, there is a uniqueness kind $\mathcal{U}$ inhabited by two types $\bullet$ and $\times$ representing uniqueness and non-uniqueness respectively. A third kind, $\mathcal{T}$ is the kind of base types (like \texttt{Int}). These kinds are brought together by a type constructor $\texttt{Attr} ::_k \mathcal{T} \rightarrow \mathcal{U} \rightarrow *$ which applies a uniqueness attribute to a base type to form a type that is inhabited. For example, \texttt{Attr} $\bullet$ \texttt{Int} or $\texttt{Int}^\bullet$ is the type of uniquely referenced integers.
+
+The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries' system as simple boolean expressions that can be handled by a standard unification algorithm.
+
+Importantly, de Vries' work includes the only known mechanical verification of a type system similar to Clean's. The formalisation uses the Coq proof assistant, and the \textit{locally nameless} approach to variable naming that is discussed in Section \ref{sec:de_bruijn}.
+
+% Linear + affine logic and control over contraction and weakening. DONE.
+
+% Uniqueness typing as an alternative (mention dereliction, non guarantees). DONE.
+
+% de Vries formalisation of Clean's uniqueness typing using attributes.
+
+\section{The Linear Language with Locations, $L^3$}
+
+The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, pointers themselves become duplicable and can be stored in numerous locations freely.
+
+$L^3$ is a \textit{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \textit{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \texttt{Int} can be overwritten with a \texttt{Bool} and the type system can statically track this change.
+
+$L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
+
+\begin{eqnarray*}
+(\sigma, \text{new } v) \Rightarrow (\sigma \uplus \{l \mapsto v\},
+	\lquine l, \langle \capa, \ptr l \rangle \rquine)
+\\
+(\sigma, \text{let } \lquine \rho, x \rquine = \lquine l, v \rquine \text{in } e)
+	\Rightarrow
+	(\sigma, e[l/\rho][v/x])
+\end{eqnarray*}
+
+These two rules from the operational semantics show the behaviour of the \texttt{new} keyword for allocating memory, and the \texttt{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \texttt{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \textit{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
+
+$L^3$'s rules for managing capabilities are closer to standard linear typing than de Vries' rules for modelling Clean's uniqueness typing. Typing assumptions are treated linearly, there are context-splitting operations and contraction and weakening are permitted for values of bang (!) type. This is in contrast to the use of kinds and attribute type constructors in de Vries' model.
+
+Conceptually, because the rules that introduce capabilities are baked into the type system, capabilities are guaranteed \textit{not to have been shared} (uniqueness) and \textit{not to be shared in the future} (linearity). The use of capabilities also yields all of the same properties yielded by substructural and uniqueness typing -- notably destructive updates and the potential to eliminate garbage collection. It is typical of many of the later systems which we cover in the next section.
+
+\section{Systems of Capabilities}
+
+\subsection{Cyclone}
+
+Several systems extend and generalise the capability-based approach employed in $L^3$. Fluet, Morrisett and Ahmed followed up their paper on $L^3$ with a region-based system that borrows many ideas from $L^3$, called \rgnUL \cite{fluet06}. Notably, it makes use of linear capabilities to provide safe access to \textit{dynamic regions}, which are first-class abstractions for the allocation of memory. Dynamic regions extend simpler lexical regions by allowing regions to exist independent of lexical scopes. Accompanying the \rgnUL paper is a mechanised proof of type soundness using the Twelf proof assistant \cite{pfenning99}. 
+
+The same authors are also responsible for the Cyclone project \cite{grossman05}, which extends the C programming language with regions and uniqueness typing in order to achieve safe memory management without garbage collection or manual intervention. The \rgnUL calculus models Cyclone's core features, and there exists a translation from Cyclone to \rgnUL via an intermediate language $F^\text{RGN}$ which makes use of a generalised ST monad \cite{fluet06, fluet04}. No mechanised proofs of correctness for this work exist, although an earlier semi-formal proof of type soundness for Cyclone \cite{jim01} is structured in a way that looks amenable to mechanised verification. On their webpage \cite{cycloneWeb}, the creators of Cyclone note that work on the project has stopped, with many of the ideas living on in Rust. Future formalisations of Rust can hopefully make use of this work.
+
+\subsection{Pottier's type-and-capability system with hidden state}
+
+A mechanical formalisation for a system even more similar to $L^3$ than \rgnUL is given in a 2013 article by Fran\c{c}ois Pottier \cite{pottier13}. Pottier's system, \SSPHS, uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \textit{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process. Hidden state is realised via a typing rule called the \textit{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state.
+
+The concept of hidden state is distinct from, yet related to, the existential types that $L^3$ uses to conceal exact locations. \SSPHS also employs hidden state for the purpose of general resource management, rather than just memory management. The ability to express memory management in the language obsoletes $L^3$ and similar systems' explicit rules for memory management, which Pottier describes as ``magic" \cite{pottier13}.
+
+All of $L^3$'s features, including strong updates, are covered by Pottier's system. It also subsumes \rgnUL, with support for polymorphism and regions. Unlike previous systems it also guarantees the runtime-irrelevance of capabilities, which are proved to be erasable.
+
+Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his \texttt{dblib} library, discussed in Section \ref{sec:de_bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
+
+\subsection{Mezzo}
+
+Together with Thibaut Balabonski and Jonathan Protzenko, Pottier is also responsible for the Mezzo programming language and its associated Coq formalisation \cite{mezzo14}. Mezzo differs from \SSPHS and \rgnUL in that it is designed to be high-level and expressive. Like the other systems examined, its system of ownership is based around linear \textit{permissions}, which allow programmers to design diverse usage \textit{protocols} for functions and data. Mezzo's model of concurrency leverages ownership to guarantee that well-typed programs do not contain data-races, a property that is also formalised in Coq.
+
+Mezzo includes mechanisms for deferring permissions checks to runtime in order to gain more expressive power, at the cost of some synchronisation overhead. Its surface syntax is also designed to be more minimal than languages like $L^3$ which favour explicit annotations. Both of these aspects reflect Mezzo's ambition to be a user-facing programming language that provides control over resources.
+
+The prototypical compiler for Mezzo uses untyped OCaml as its target language and as such requires garbage collection at runtime. Further, due to OCaml's lack of parallelism, concurrent and race-free Mezzo programs are currently unable to take advantage of multiple cores. One can imagine further work to compile Mezzo to a low-level language with similar semantics, in order to take advantage of its full feature set.
+
+Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 2000 line library called \texttt{dblib} for handling de Bruijn indices. Like the proof for \SSPHS, it uses progress and preservation to prove type soundness.
+
+\section{Typed assembly languages and trustworthy compilers}
+
+Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \textit{typed assembly languages} (TALs), which extend regular assembly languages with type annotations.
+
+Well-typed TAL programs typically guarantee memory safety given an axiomatisation of a machine architecture. In the TALx86 \cite{morrisett99, crary99} system, blocks are annotated with pre-conditions that place requirements on the types of registers. This approach to typing is substantially different from the operational semantics and inductive typing judgements used to describe the semantics of the other languages we've surveyed ($L^3$, \rgnUL, \SSPHS). However, recent work by Amal Ahmed \textit{et al.}  has successfully resulted in a more traditional model for typed assembly languages \cite{ahmed10}. This model still differs from the others considered in this thesis in that it uses denotational semantics, Hoare logic and several interconnecting layers in order to minimise the number of axioms required. Ahmed's paper includes a Twelf formalisation of soundness for the TAL semantic framework and an example language.
+
+Another take on the typed assembly language concept, is Bedrock from Adam Chlipala's research group \cite{chlipala11}. Bedrock uses a domain-specific assembly language embedded within Coq to express low-level programs. Aided by user-provided annotations, Bedrock can prove properties about these assembly programs in an automated way using custom Coq tactics. The block annotations resemble the block pre-conditions of TALx86.
+
+More broadly it is worth noting the contribution of the CompCert \cite{leroy09} project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or \SSPHS as an intermediate language.
+
+\section{Summary of Mechanisation Techniques}
+
+The following table contains a summary of languages and type systems and their mechanisations. A tick (\tick) indicates that a property is true for a given language, a cross (\cross) indicates that it is false and a dash (-) indicates that the property is not applicable. The * indicates work to be completed as part of this thesis. Note that we also write ``Clean" here to mean Edsko de Vries' uniqueness typing system \cite{deVries07}.
+
+\vspace{10mm}
+
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+\textbf{System} & \textbf{DU} & \textbf{SU} & \textbf{Cp} & \textbf{Poly} & \textbf{Other} & \textbf{Mechanised?} & \textbf{Naming}\\
+\hline
+Clean \cite{deVries07} & \tick & \cross & \cross & \tick & - & \tick (Coq) & LN\\
+\hline
+Rust \cite{rustWeb} & \tick & \cross & - & \tick 	& No GC & \cross & - \\
+\hline
+$L^3$ \cite{ahmed05} & \tick & \tick & \tick & $\times$ & - & Yes* (Coq) & DB*\\
+\hline
+\rgnUL \cite{fluet06} & \tick & - & \tick & \tick & Cyclone base & \tick (Twelf) & HOAS\\
+\hline
+\SSPHS \cite{pottier13} & \tick & \tick & \tick & \tick & Hidden state & \tick (Coq) & DB\\
+\hline
+Mezzo \cite{mezzo14} &  \tick & \tick & \tick & \tick & Data-race free & \tick (Coq) & DB\\
+\hline
+\end{tabular}
+
+Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphism, LN=Locally Nameless, DB=De Bruijn Indices, HOAS=Higher-order Abstract Syntax.
+
+\section{Summary of Previous Work}
+
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer discussion of these to future work.
+
+\chapter{Proposal}
+\label{ch:proposal}
+
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations (Core $L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper \cite{ahmed05} into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \texttt{dblib} library \cite{dblib13} for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in Section \ref{sec:de_bruijn}.
+
+With the operational semantics and typing rules defined, we will proceed with a syntactic proof of type soundness via progress and preservation. Experience with simpler languages from \textit{Software Foundations} \cite{pierce15} suggests that the proof of progress will be less involved than the proof of preservation. The choice to aim for a syntactic proof is motivated by the semi-formal syntactic proof given in the $L^3$ paper, and the efficacy of syntactic soundness proofs for languages surveyed in the literature review. Considerations of how the proof will be undertaken are given in Section \ref{sec:proof_proposal}.
+
+Time permitting, the work will conclude with proofs of other properties of $L^3$. One interesting proof may be of the runtime irrelevance of capabilities. As in Pottier's  work on \SSPHS \cite{pottier13} this could be done by defining a version of the operational semantics in which capabilities do not appear, and proving that the two sets of semantics are equivalent.
+
+Section \ref{sec:research_questions} includes research questions that this thesis hopes to address, whilst Section \ref{sec:timeline} gives an approximate timeline for the completion of the work.
+
+\section{Variable naming and binding}
+\label{sec:var_naming}
+
+One problem that arises frequently in the formalisation of language semantics is that of \textit{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $[v/x]e$) to describe the semantics of function application:
+
+\begin{eqnarray*}
+(\lambda x : \tau. \; e) \; v \Longrightarrow_\beta [v/x]e
+\end{eqnarray*}
+
+The problem of \textit{variable capture}, which we wish to avoid, is demonstrated by the following example:
+
+\begin{eqnarray*}
+(\lambda x. \; \lambda y. \; x + y) \; y \; {\centernot\Longrightarrow}_\beta \; (\lambda y. \; y + y)
+\end{eqnarray*}
+
+Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This altering of the meaning of terms during substitution is something we would like to avoid.
+
+One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in variable capturing substitutions. This is the approach taken by \textit{Software Foundations} \cite{pierce15} in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, the $L^3$ specification requires \textit{``standard capture-avoiding substitution"} \cite{ahmed05}.
+
+% Extra: It doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture.
+
+In our Coq formalisation of $L^3$ we would therefore like to include capture-avoiding substitution as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meanings of programs themselves.
+
+\subsection{Higher-order Abstract Syntax}
+
+When using Higher-order Abstract Syntax (HOAS) to handle variable binding, the binders of the host language (in our case Coq) are used to represent binding constructs in the object language. Twelf encourages use of HOAS through its light-weight syntax (this example adapted from \cite{twelf08}):
+
+\begin{verbatim}
+exp : type.
+let : exp -> (exp -> exp) -> exp.
+\end{verbatim}
+
+The full definition for \texttt{exp} is omitted, but this example demonstrates that a let-binding in the \textit{object language}, can be considered in the \textit{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \texttt{let x = 1 + 2 in x + 3} would be encoded as \texttt{let (plus 1 2) ([x] plus x 3)}, where \texttt{plus : nat -> nat -> expr} and \texttt{([x] e)} is syntax for $(\lambda x. \; e)$.
+
+This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \textit{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \texttt{let}'s higher-order function is a negative occurrence: \texttt{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
+
+\begin{verbatim}
+Inductive exp : Set :=
+  | exp_plus : nat -> nat -> exp
+  | exp_let : exp -> (exp -> exp) -> exp.
+\end{verbatim}
+
+Coq rejects this definition with the error: \texttt{Non strictly positive occurrence of "exp" in
+ "exp -> (exp -> exp) -> exp"}, as expected.
+ 
+There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
+
+\subsection{De Bruijn indices and the locally nameless approach}
+\label{sec:de_bruijn}
+
+Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \textit{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality that there are no integer literals in the object language that could be confused for de Bruijn indices.
+
+For terms that contain free variables, a fixed naming context is used to map free variables to indices \cite{tapl}. For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \textit{1} -- the lambda.
+
+Capture-avoiding substitution with de Bruijn indices can be defined as a recursive function that makes use of a \textit{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
+
+\begin{eqnarray*}
+\uparrow^d_c k & = &
+	\begin{cases}
+	k \quad & \text{if} \quad k < c \\
+	k + d \quad & \text{if} \quad k \geq c
+	\end{cases}\\
+\uparrow^d_c (\lambda. \; t_1) & = & \lambda. \; \uparrow^d_{c + 1} t_1\\
+\uparrow^d_c (t_1 \; t_2) & = & (\uparrow^d_c t_1) \; (\uparrow^d_c t_2)
+\end{eqnarray*}
+
+With shifting defined, the definition of substitution is straight-forward -- we simply shift the free variables of the substituted term each time we move under a lambda.
+
+\begin{eqnarray*}
+[s/j]k & = &
+	\begin{cases}
+	s \quad & \text{if} \quad j = k \\
+	k \quad & \text{otherwise}
+	\end{cases}\\
+\left[s/j\right](\lambda. \; t_1) & = & \lambda. \; [(\uparrow^1_0 s)/(j + 1)] \; t_1\\
+\left[s/j\right](t_1 \; t_2) & = & ([s/j] \; t_1) \; ([s/j] \; t_2)
+\end{eqnarray*}
+
+These equations for shifting and substitution are due to \cite{tapl}.
+
+Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \texttt{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
+
+The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
+
+However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq \cite{tlc15}. We elect not to use this library, in order to keep the set of axioms minimal and to aid compatibility with other proofs. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
+
+\section{Proof of Type Soundness for $L^3$}
+\label{sec:proof_proposal}
+
+To aid in the syntactic proof of type soundness for $L^3$ several sources will be drawn upon for inspiration. The paper proof of soundness for $L^3$ should provide some hints of lemmas to prove and techniques for proving them, like which variable to do induction on. The paper proof of soundness for core $L^3$ spans only 8 pages, so the work could always expand to verify the extended version of $L^3$ which requires a further 14 pages of paper proof.
+
+Other sources of inspiration will be the proofs of soundness for Mezzo and \SSPHS -- particularly for Coq-specific verification techniques. The Twelf proof of soundness for \rgnUL might also be useful for more general techniques.
+
+\section{Research Questions}
+\label{sec:research_questions}
+
+By conducting the above research, we hope to answer the following research questions:
+
+\begin{itemize}
+\item Does the $L^3$ type system admit straight-forward verification in the style of \rgnUL, Mezzo and other modern capability systems, or do the generalisations and simplifications or these systems make verification simpler?
+\item Is the \texttt{dblib} library for de Bruijn indices general enough to allow the verification of languages it wasn't designed for? Specifically, is it possible to define term and location substitution for $L^3$ using an unmodified version of \texttt{dblib}?
+\item How much effort is involved in the translation of syntactic soundness proofs from paper to the Coq proof assistant?
+\end{itemize}
+
+To quantify the effort involved in the proofs, we will make use of a simple script that records every minute spent inside the Coq IDE.
+
+\section{Timeline}
+\label{sec:timeline}
+
+I plan to complete most of the practical work over the summer so that the thesis write-up can be completed in Semester 1 2016. In case of delays, semester 1 can also act as an emergency buffer.
+
+\textbf{Over summer (3 months $\approx$ 12 weeks total):}
+
+\begin{itemize}
+\item $L^3$'s operational semantics and type system in Coq (2 weeks).
+\item Prove progress (4 weeks).
+\item Prove preservation, and related lemmas (6 weeks).
+\end{itemize}
+
+We expect that some definitions will need to be adjusted along the way.
+
+\textbf{Semester 1 2016 (12 weeks)}:
+
+\begin{itemize}
+\item Finalise proofs completed over the summer break (6 weeks).
+\item Write-up results and findings (6 weeks).
+\end{itemize}
+
+Time permitting, the previously discussed extra proofs could be undertaken either during summer, or after the completion of the main part of the thesis write-up.
+
+\section{Summary of Proposal}
+
+By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright94}. We will make use of the \texttt{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
+
+\chapter{Own Work}
+
+\section{Context Splitting}
+
+Context splitting is defined as an inductive predicate over contexts:
+
+\begin{verbatim}
+Inductive context_split : env A -> env A -> env A -> Prop :=
+  ...
+\end{verbatim}
+
+One may wonder if the presence of an accompanying \texttt{split\_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements "inline":
+
+\begin{verbatim}
+Inductive context_split : env A -> env A -> env A -> Prop :=
+  | split_nil : context_split nil nil nil
+  | split_left E E1 E2 v
+  	  (SplitPre : context_split E E1 E2) :
+  	  context_split (v :: E) (v :: E1) (None :: E2)
+  | split_right E E1 E2 v
+  	  (SplitPre : context_split E E1 E2) :
+  	  context_split (v :: E) (None :: E1) (v :: E2).
+\end{verbatim}
+
+Although for the purposes of forward reasoning both definitions are equally convenient, when performing inversion on terms of type \texttt{context\_split} it is often convenient to be able to abstract over the splitting of individual elements, particularly as this means there are less cases which have to be handled.
+
+For example, in the proof of \texttt{insert\_none\_split\_backwards}, using context splitting on single elements saves duplicating or creating automation for the main part of the proof (TODO).
+
+(PUT PROOF HERE)
+
+\chapter{Evaluation}
+
+\chapter{Conclusion}
+
+
+
+%% chapters in the ``backmatter'' section do not have chapter numbering
+%% text in the ``backmatter'' is single spaced
+\backmatter
+\pagebreak
+\bibliographystyle{alpha}
+\bibliography{pubs}
+
+\end{document}
