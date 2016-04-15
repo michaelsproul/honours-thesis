@@ -1,0 +1,5 @@
+Some grievances to air in the thesis:
+
+* C is shit, demonstrably so. C.f. broken behaviour of CompCert.
+* Coq's tactics are shit. They violate the principles of good software development.
+  Discuss MTac's potential to address these deficiences.
