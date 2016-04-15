@@ -1,0 +1,24 @@
+Framework: Virtues, and instruments for assessing them.
+
+Virtues:
+    Easy to read and understand (virtue)
+    Easy to maintain and extend (virtue)
+    Easy to utilise (as a dependency, virtue)
+
+Things I avoided in the name of Quality:
+    * Too much nesting.
+    * Long proofs of lemmas.
+    * REFERING TO AUTOMATICALLY GENERATED FUCKING NAMES.
+    * Extra bullshit axioms (not good for clients).
+    * Copied sections of proof script.
+    * Custom LTac (annoying to debug, representative of insufficient abstraction in lemmas).
+
+
+* Flexibility across different versions of the theorem prover.
+
+    -> Minimal repetition.
+    -> Short lemma length.
+    -> Minimal custom LTac (poor abstraction facilities).
+
+NOTE: I can assess DbLib according to these principles as well. Maybe EFMT as well.
+NOTE: What is "simplicity", undefinable? Can vaguely assess it using various metrics.
