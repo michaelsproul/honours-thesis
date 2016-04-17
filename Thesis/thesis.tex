@@ -439,6 +439,43 @@ By drawing inspiration from the paper proof of soundness for $L^3$, and similar 
 
 \chapter{Own Work}
 
+TODO: Some sort of intro paragraph.
+
+\section{Research Questions}
+
+The primary research question that this thesis attempts to answer relates to the development of verified proofs about low-level substructural languages. Specifically,
+
+\begin{itemize}
+\item What are the common properties of all substructural languages, and can these properties be exploited to avoid duplicated work in the context of automated theorem proving?
+\end{itemize}
+
+In the context of Coq, this is can concretely be phrased:
+
+\begin{itemize}
+\item Is it possible to write Coq lemmas and definitions which are useful for the verification of numerous substructural type systems?
+\end{itemize}
+
+%TODO: Maybe a note about DbLib here.
+
+%TODO: If I do stuff about $L^3$ I might have to nest some stuff under a specific LLC section.
+
+\section{Outline of Own Work}
+
+\begin{itemize}
+\item Development of general definitions and lemmas about context splitting and other actions on typing environments.
+\item Proof of type soundness for a basic linear lambda calculus.
+\end{itemize}
+
+The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in the proofs of \textbf{preservation} and \textbf{progress} which together establish soundness.
+
+We say that a lemma or definition is \textit{language-specific} if it relates to features of the language 
+
+can be divided into parts which are unique to the language itself, and parts which are universally applicable to any
+
+\section{Basic Definitions}
+
+
+
 \section{Context Splitting}
 
 Context splitting is defined as an inductive predicate over contexts:
@@ -466,6 +503,10 @@ Although for the purposes of forward reasoning both definitions are equally conv
 For example, in the proof of \texttt{insert\_none\_split\_backwards}, using context splitting on single elements saves duplicating or creating automation for the main part of the proof (TODO).
 
 (PUT PROOF HERE)
+
+\section{Progress}
+
+\section{Preservation}
 
 \chapter{Evaluation}
 
