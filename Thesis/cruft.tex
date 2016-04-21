@@ -1,0 +1,14 @@
+One might imagine a system where each bit of syntax is defined individually and composed into a unified term, for example:
+
+\begin{verbatim}
+Inductive fn (A : Type) :=
+  | TVar : nat -> fn A
+  | TApp : A -> A -> fn A
+  | TAbs : A -> fn A.
+
+Inductive term :=
+  | TBool : bool -> term
+  | TFn : fn term -> term.
+\end{verbatim}
+
+One problem with this approach is that constructors like \texttt{TApp} no longer really make sense, as the first argument has to have type \texttt{A}, but terms like \texttt{TAbs }

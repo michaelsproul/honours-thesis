@@ -466,15 +466,35 @@ In the context of Coq, this is can concretely be phrased:
 \item Proof of type soundness for a basic linear lambda calculus.
 \end{itemize}
 
-The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in the proofs of \textbf{preservation} and \textbf{progress} which together establish soundness.
+The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in proof of \textbf{preservation} and \textbf{progress} which together establish soundness.
 
-We say that a lemma or definition is \textit{language-specific} if it relates to features of the language 
+We say that a lemma or definition is \textit{universal} if it is applicable to the verification of other linearly typed languages (using the DbLib library). Conversely, we say that a lemma is \textit{language-specific} if it is not universal, and is concerned with some specific part of the concrete language being verified.
 
-can be divided into parts which are unique to the language itself, and parts which are universally applicable to any
+As is somewhat standard in Coq proofs about programming languages [REF], we use inductive definitions for the terms, types and typing judgements of the language. These definitions are language-specific, and all subsequent lemmas that reference them are also necessarily language-specific.
 
-\section{Basic Definitions}
+%These definitions are language-specific, as attempting to make them universal results in numerous other problems.
 
+\section{Syntax and Types}
 
+To define the syntax of the linear lambda calculus (LLC) we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \texttt{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The syntax for types is:
+
+\begin{verbatim}
+Inductive ty := ...
+\end{verbatim}
+
+Now, with LLC's types defined, we can define the syntax of terms:
+
+\begin{verbatim}
+Inductive term := ...
+\end{verbatim}
+
+Variables are represented by the \texttt{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \texttt{term}. Later when defining the typing judgement we will see that a variable \texttt{TVar i} is well-typed only if the typing context contains a type at index $i$.
+
+TODO: Note about why we place these definitions into \texttt{Type} rather than Prop or Set.
+
+Another basic language-specific definition that is required for the proof of soundness is that describing values.
+
+\section{Integrating with DbLib}
 
 \section{Context Splitting}
 
@@ -503,6 +523,8 @@ Although for the purposes of forward reasoning both definitions are equally conv
 For example, in the proof of \texttt{insert\_none\_split\_backwards}, using context splitting on single elements saves duplicating or creating automation for the main part of the proof (TODO).
 
 (PUT PROOF HERE)
+
+\section{Typing Judgements}
 
 \section{Progress}
 
