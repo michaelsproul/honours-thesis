@@ -14,6 +14,10 @@
 \usepackage{backref}
 \usepackage{xcolor}
 \usepackage{tikz}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{minted}
+\usepackage{csquotes}
 
 % Nicely coloured links.
 \hypersetup{
@@ -78,6 +82,8 @@
 \newcommand{\ptr}{\text{ptr }}
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 \newcommand{\SSPHS}{\text{SSPHS }}
+\let\oldc\c
+\let\c\texttt
 
 \begin{document}
 
@@ -443,10 +449,10 @@ TODO: Some sort of intro paragraph.
 
 \section{Research Questions}
 
-The primary research question that this thesis attempts to answer relates to the development of verified proofs about low-level substructural languages. Specifically,
+The primary research question that this thesis attempts to answer relates to the efficient development of verified proofs about low-level substructural languages. Specifically,
 
 \begin{itemize}
-\item What are the common properties of all substructural languages, and can these properties be exploited to avoid duplicated work in the context of automated theorem proving?
+\item What are the common properties of all proofs about substructural languages, and can these properties be exploited to avoid duplicated work in the context of automated theorem proving?
 \end{itemize}
 
 In the context of Coq, this is can concretely be phrased:
@@ -490,11 +496,63 @@ Inductive term := ...
 
 Variables are represented by the \texttt{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \texttt{term}. Later when defining the typing judgement we will see that a variable \texttt{TVar i} is well-typed only if the typing context contains a type at index $i$.
 
-TODO: Note about why we place these definitions into \texttt{Type} rather than Prop or Set.
+In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \textit{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \texttt{value t} with the following definition:
 
-Another basic language-specific definition that is required for the proof of soundness is that describing values.
+\begin{verbatim}
+Inductive value :=
+\end{verbatim}
+
+Note that the type of \texttt{value} is \texttt{term -> Prop}. Given a \texttt{term}, \texttt{t}, a Coq term with type \texttt{value t} \textit{witnesses} the truth of the proposition \texttt{value t}, which itself has type \texttt{Prop}. This is in contrast to \texttt{ty} and \texttt{term} which have type \texttt{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \texttt{Prop}s.
 
 \section{Integrating with DbLib}
+
+DbLib provides functions for substitution and lifting that abstract over the manipulation of de Bruijn indices. Client libraries wanting to make use of DbLib need only implement a few fundamental operations via Coq's \textit{type-classes} (ref Coq and Haskell type classes). For the linear lambda calculus we can use essentially the same definitions as for the simply typed lambda calculus, which are provided as an example with the library.
+
+First, we must inform DbLib which of our term constructors is for variables. DbLib allows the types of \textit{values} (\texttt{V}) and \textit{terms} (\texttt{T}) to differ, but we don't make use of this capability, instead using \texttt{term}s everywhere and the \texttt{value} predicate. The type-class has the following definition in DbLib:
+
+\begin{verbatim}
+Class Var (V : Type) := {
+  var: nat -> V
+}.
+\end{verbatim}
+
+Our instance is straight-forward:
+
+\begin{minted}{coq}
+Instance Var_term : Var term := {
+  var := TVar
+}.
+\end{minted}
+
+% FIXME: Could cut this stuff about Var.
+
+To convey how variables are bound and scoped, we must implement DbLib's \c{Traverse} type-class, which has a single function called \c{traverse}. From the DbLib documentation:
+
+\begin{displayquote}
+\c{traverse} can be thought of as a semantic substitution function. The idea is, \c{traverse f l t} traverses the term \c{t}, incrementing the index \c{l} whenever a binder is entered, and, at every variable \c{x}, it invokes \c{f l x}. This produces a value, which is grafted instead of \c{x}.
+\end{displayquote}
+
+The only binders in our linear lambda calculus are lambda abstractions, so our implementation of traverse simply has to increment \c{l} when recursing below one. This is the same as for the simply typed lambda calculus.
+
+\begin{minted}{coq}
+Fixpoint traverse_term (f : nat -> nat -> term) l t :=
+  match t with
+  | TUnit => TUnit
+  | TTrue => TTrue
+  | TFalse => TFalse
+  | TVar x =>
+      f l x
+  | TAbs t e =>
+      TAbs t (traverse_term f (1 + l) e)
+  | TApp e1 e2 =>
+      TApp (traverse_term f l e1) (traverse_term f l e2)
+  end.
+\end{minted}
+
+To ensure that the client's implementation of traverse behaves sensibly and can be manipulated accordingly, DbLib requires the implementation of five further type-classes that establish semantic properties of traverse. Also provided are five tactics for proving these properties automatically, which were found to be sufficient for our simple use-case.
+
+Given these type-class definitions, DbLib provides a substitution function that we can make use of in the operational semantics of our language.
+
 
 \section{Context Splitting}
 
@@ -504,6 +562,8 @@ Context splitting is defined as an inductive predicate over contexts:
 Inductive context_split : env A -> env A -> env A -> Prop :=
   ...
 \end{verbatim}
+
+
 
 One may wonder if the presence of an accompanying \texttt{split\_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements "inline":
 
@@ -524,6 +584,8 @@ For example, in the proof of \texttt{insert\_none\_split\_backwards}, using cont
 
 (PUT PROOF HERE)
 
+\section{Operational Semantics}
+
 \section{Typing Judgements}
 
 \section{Progress}
@@ -542,5 +604,9 @@ For example, in the proof of \texttt{insert\_none\_split\_backwards}, using cont
 \pagebreak
 \bibliographystyle{alpha}
 \bibliography{pubs}
+
+\chapter{Appendix}
+
+DbLib version (git commit hash): blah
 
 \end{document}
