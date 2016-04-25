@@ -532,7 +532,7 @@ To convey how variables are bound and scoped, we must implement DbLib's \c{Trave
 \c{traverse} can be thought of as a semantic substitution function. The idea is, \c{traverse f l t} traverses the term \c{t}, incrementing the index \c{l} whenever a binder is entered, and, at every variable \c{x}, it invokes \c{f l x}. This produces a value, which is grafted instead of \c{x}.
 \end{displayquote}
 
-The only binders in our linear lambda calculus are lambda abstractions, so our implementation of traverse simply has to increment \c{l} when recursing below one. This is the same as for the simply typed lambda calculus.
+The only binders in our linear lambda calculus are lambda abstractions, so our implementation of traverse only has to increment \c{l} when recursing below a \c{TAbs} constructor. This is the same as for the simply typed lambda calculus.
 
 \begin{minted}{coq}
 Fixpoint traverse_term (f : nat -> nat -> term) l t :=
@@ -553,8 +553,24 @@ To ensure that the client's implementation of traverse behaves sensibly and can 
 
 Given these type-class definitions, DbLib provides a substitution function that we can make use of in the operational semantics of our language.
 
+\section{Representing Typing Contexts}
 
-\section{Context Splitting}
+Before defining an inductive predicate for our typing relation, a representation for typing environments must be selected. In semi-formal proofs, typing judgements are written $H \vdash e : \tau$, and the environment $H$ is assumed to permit various operations such as looking up the type of a variable $x$ (denoted $H[i]$) and (re)assigning a type to a variable $x$, (denoted $H[x \to \tau]$).
+
+As noted in the background section, control over the actions permitted on typing contexts is at the core of substructural typing. Together with our choice to use de Bruijn indices for variable naming, this narrows down our choice of representation. We have the following options to consider:
+
+\begin{itemize}
+\item \textbf{Functions}: Some Coq formalisations of languages with structural typing (REF) make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ f = fun y => if x = y then Some $\tau$ else f y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbtirary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
+\item \textbf{Lists of Types}: Unsuitable (TODO).
+\item \textbf{Lists of Optional Types}: Suitable (TODO).
+\item \textbf{Dependent Vectors}: Suitable? (TODO)
+\end{itemize} 
+
+For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations, and can be TODO.
+
+\subsection{Emptiness}
+
+\subsection{Context Splitting}
 
 Context splitting is defined as an inductive predicate over contexts:
 
@@ -563,11 +579,9 @@ Inductive context_split : env A -> env A -> env A -> Prop :=
   ...
 \end{verbatim}
 
-
-
 One may wonder if the presence of an accompanying \texttt{split\_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements "inline":
 
-\begin{verbatim}
+\begin{minted}{coq}
 Inductive context_split : env A -> env A -> env A -> Prop :=
   | split_nil : context_split nil nil nil
   | split_left E E1 E2 v
@@ -576,7 +590,7 @@ Inductive context_split : env A -> env A -> env A -> Prop :=
   | split_right E E1 E2 v
   	  (SplitPre : context_split E E1 E2) :
   	  context_split (v :: E) (None :: E1) (v :: E2).
-\end{verbatim}
+\end{minted}
 
 Although for the purposes of forward reasoning both definitions are equally convenient, when performing inversion on terms of type \texttt{context\_split} it is often convenient to be able to abstract over the splitting of individual elements, particularly as this means there are less cases which have to be handled.
 
