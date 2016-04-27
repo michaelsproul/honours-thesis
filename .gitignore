@@ -2,3 +2,4 @@
 *.pyg
 Thesis/ThesisA/thesis.pdf
 Thesis/thesis.pdf
+.DS_Store

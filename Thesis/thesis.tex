@@ -18,6 +18,7 @@
 \usepackage[english]{babel}
 \usepackage{minted}
 \usepackage{csquotes}
+\usepackage{underscore}
 
 % Nicely coloured links.
 \hypersetup{
@@ -82,8 +83,14 @@
 \newcommand{\ptr}{\text{ptr }}
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 \newcommand{\SSPHS}{\text{SSPHS }}
+
+% Text formatting.
 \let\oldc\c
 \let\c\texttt
+\let\oldi\i
+\let\i\textit
+\let\oldb\b
+\let\b\textbf
 
 \begin{document}
 
@@ -195,7 +202,7 @@ Note that dereliction need not form a part of type systems based on linear logic
 
 Due to the non-equivalence of linearity and uniqueness, de Vries constructed a distinct set of semantics and typing rules to model Clean's type system \cite{deVries07}.
 
-One key component of his approach is the use of the \textit{kind} (type of types) system to track uniqueness and non-uniqueness. As in Haskell, de Vries' uniqueness system includes a kind for data (\texttt{*}) which is the kind of all inhabited types (and \texttt{Void}). In addition, there is a uniqueness kind $\mathcal{U}$ inhabited by two types $\bullet$ and $\times$ representing uniqueness and non-uniqueness respectively. A third kind, $\mathcal{T}$ is the kind of base types (like \texttt{Int}). These kinds are brought together by a type constructor $\texttt{Attr} ::_k \mathcal{T} \rightarrow \mathcal{U} \rightarrow *$ which applies a uniqueness attribute to a base type to form a type that is inhabited. For example, \texttt{Attr} $\bullet$ \texttt{Int} or $\texttt{Int}^\bullet$ is the type of uniquely referenced integers.
+One key component of his approach is the use of the \textit{kind} (type of types) system to track uniqueness and non-uniqueness. As in Haskell, de Vries' uniqueness system includes a kind for data (\c{*}) which is the kind of all inhabited types (and \c{Void}). In addition, there is a uniqueness kind $\mathcal{U}$ inhabited by two types $\bullet$ and $\times$ representing uniqueness and non-uniqueness respectively. A third kind, $\mathcal{T}$ is the kind of base types (like \c{Int}). These kinds are brought together by a type constructor $\c{Attr} ::_k \mathcal{T} \rightarrow \mathcal{U} \rightarrow *$ which applies a uniqueness attribute to a base type to form a type that is inhabited. For example, \c{Attr} $\bullet$ \c{Int} or $\c{Int}^\bullet$ is the type of uniquely referenced integers.
 
 The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries' system as simple boolean expressions that can be handled by a standard unification algorithm.
 
@@ -211,7 +218,7 @@ Importantly, de Vries' work includes the only known mechanical verification of a
 
 The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \textit{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, pointers themselves become duplicable and can be stored in numerous locations freely.
 
-$L^3$ is a \textit{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \textit{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \texttt{Int} can be overwritten with a \texttt{Bool} and the type system can statically track this change.
+$L^3$ is a \textit{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \textit{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \c{Int} can be overwritten with a \c{Bool} and the type system can statically track this change.
 
 $L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
 
@@ -224,7 +231,7 @@ $L^3$'s definition includes a description of syntax, operational semantics and t
 	(\sigma, e[l/\rho][v/x])
 \end{eqnarray*}
 
-These two rules from the operational semantics show the behaviour of the \texttt{new} keyword for allocating memory, and the \texttt{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \texttt{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \textit{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
+These two rules from the operational semantics show the behaviour of the \c{new} keyword for allocating memory, and the \c{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \c{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \textit{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
 
 $L^3$'s rules for managing capabilities are closer to standard linear typing than de Vries' rules for modelling Clean's uniqueness typing. Typing assumptions are treated linearly, there are context-splitting operations and contraction and weakening are permitted for values of bang (!) type. This is in contrast to the use of kinds and attribute type constructors in de Vries' model.
 
@@ -246,7 +253,7 @@ The concept of hidden state is distinct from, yet related to, the existential ty
 
 All of $L^3$'s features, including strong updates, are covered by Pottier's system. It also subsumes \rgnUL, with support for polymorphism and regions. Unlike previous systems it also guarantees the runtime-irrelevance of capabilities, which are proved to be erasable.
 
-Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his \texttt{dblib} library, discussed in Section \ref{sec:de_bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
+Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his \c{dblib} library, discussed in Section \ref{sec:de_bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
 
 \subsection{Mezzo}
 
@@ -256,7 +263,7 @@ Mezzo includes mechanisms for deferring permissions checks to runtime in order t
 
 The prototypical compiler for Mezzo uses untyped OCaml as its target language and as such requires garbage collection at runtime. Further, due to OCaml's lack of parallelism, concurrent and race-free Mezzo programs are currently unable to take advantage of multiple cores. One can imagine further work to compile Mezzo to a low-level language with similar semantics, in order to take advantage of its full feature set.
 
-Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 2000 line library called \texttt{dblib} for handling de Bruijn indices. Like the proof for \SSPHS, it uses progress and preservation to prove type soundness.
+Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 2000 line library called \c{dblib} for handling de Bruijn indices. Like the proof for \SSPHS, it uses progress and preservation to prove type soundness.
 
 \section{Typed assembly languages and trustworthy compilers}
 
@@ -301,7 +308,7 @@ In summary, previous work on the formalisation of resource-aware type systems ha
 \chapter{Proposal}
 \label{ch:proposal}
 
-The aim of this thesis is to formalise the semantics of the Linear Language with Locations (Core $L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper \cite{ahmed05} into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \texttt{dblib} library \cite{dblib13} for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in Section \ref{sec:de_bruijn}.
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations (Core $L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper \cite{ahmed05} into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \c{dblib} library \cite{dblib13} for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in Section \ref{sec:de_bruijn}.
 
 With the operational semantics and typing rules defined, we will proceed with a syntactic proof of type soundness via progress and preservation. Experience with simpler languages from \textit{Software Foundations} \cite{pierce15} suggests that the proof of progress will be less involved than the proof of preservation. The choice to aim for a syntactic proof is motivated by the semi-formal syntactic proof given in the $L^3$ paper, and the efficacy of syntactic soundness proofs for languages surveyed in the literature review. Considerations of how the proof will be undertaken are given in Section \ref{sec:proof_proposal}.
 
@@ -341,9 +348,9 @@ exp : type.
 let : exp -> (exp -> exp) -> exp.
 \end{verbatim}
 
-The full definition for \texttt{exp} is omitted, but this example demonstrates that a let-binding in the \textit{object language}, can be considered in the \textit{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \texttt{let x = 1 + 2 in x + 3} would be encoded as \texttt{let (plus 1 2) ([x] plus x 3)}, where \texttt{plus : nat -> nat -> expr} and \texttt{([x] e)} is syntax for $(\lambda x. \; e)$.
+The full definition for \c{exp} is omitted, but this example demonstrates that a let-binding in the \textit{object language}, can be considered in the \textit{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \c{let x = 1 + 2 in x + 3} would be encoded as \c{let (plus 1 2) ([x] plus x 3)}, where \c{plus : nat -> nat -> expr} and \c{([x] e)} is syntax for $(\lambda x. \; e)$.
 
-This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \textit{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \texttt{let}'s higher-order function is a negative occurrence: \texttt{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
+This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \textit{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \c{let}'s higher-order function is a negative occurrence: \c{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
 
 \begin{verbatim}
 Inductive exp : Set :=
@@ -351,7 +358,7 @@ Inductive exp : Set :=
   | exp_let : exp -> (exp -> exp) -> exp.
 \end{verbatim}
 
-Coq rejects this definition with the error: \texttt{Non strictly positive occurrence of "exp" in
+Coq rejects this definition with the error: \c{Non strictly positive occurrence of "exp" in
  "exp -> (exp -> exp) -> exp"}, as expected.
  
 There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
@@ -389,9 +396,9 @@ With shifting defined, the definition of substitution is straight-forward -- we 
 
 These equations for shifting and substitution are due to \cite{tapl}.
 
-Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \texttt{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \texttt{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
+Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \c{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \c{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
 
-The alternative to \texttt{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
+The alternative to \c{dblib} would have been to use Arthur Chargu\'{e}raud's \textit{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \textit{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \textit{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
 
 However, LN does depend on Chargu\'{e}raud's TLC library for \textit{non-constructive} logic within Coq \cite{tlc15}. We elect not to use this library, in order to keep the set of axioms minimal and to aid compatibility with other proofs. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
 
@@ -409,7 +416,7 @@ By conducting the above research, we hope to answer the following research quest
 
 \begin{itemize}
 \item Does the $L^3$ type system admit straight-forward verification in the style of \rgnUL, Mezzo and other modern capability systems, or do the generalisations and simplifications or these systems make verification simpler?
-\item Is the \texttt{dblib} library for de Bruijn indices general enough to allow the verification of languages it wasn't designed for? Specifically, is it possible to define term and location substitution for $L^3$ using an unmodified version of \texttt{dblib}?
+\item Is the \c{dblib} library for de Bruijn indices general enough to allow the verification of languages it wasn't designed for? Specifically, is it possible to define term and location substitution for $L^3$ using an unmodified version of \c{dblib}?
 \item How much effort is involved in the translation of syntactic soundness proofs from paper to the Coq proof assistant?
 \end{itemize}
 
@@ -441,7 +448,7 @@ Time permitting, the previously discussed extra proofs could be undertaken eithe
 
 \section{Summary of Proposal}
 
-By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright94}. We will make use of the \texttt{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
+By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright94}. We will make use of the \c{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
 
 \chapter{Own Work}
 
@@ -482,7 +489,7 @@ As is somewhat standard in Coq proofs about programming languages [REF], we use 
 
 \section{Syntax and Types}
 
-To define the syntax of the linear lambda calculus (LLC) we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \texttt{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The syntax for types is:
+To define the syntax of the linear lambda calculus (LLC) we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \c{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The syntax for types is:
 
 \begin{verbatim}
 Inductive ty := ...
@@ -494,21 +501,21 @@ Now, with LLC's types defined, we can define the syntax of terms:
 Inductive term := ...
 \end{verbatim}
 
-Variables are represented by the \texttt{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \texttt{term}. Later when defining the typing judgement we will see that a variable \texttt{TVar i} is well-typed only if the typing context contains a type at index $i$.
+Variables are represented by the \c{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \c{term}. Later when defining the typing judgement we will see that a variable \c{TVar i} is well-typed only if the typing context contains a type at index $i$.
 
-In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \textit{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \texttt{value t} with the following definition:
+In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \textit{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \c{value t} with the following definition:
 
 \begin{verbatim}
 Inductive value :=
 \end{verbatim}
 
-Note that the type of \texttt{value} is \texttt{term -> Prop}. Given a \texttt{term}, \texttt{t}, a Coq term with type \texttt{value t} \textit{witnesses} the truth of the proposition \texttt{value t}, which itself has type \texttt{Prop}. This is in contrast to \texttt{ty} and \texttt{term} which have type \texttt{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \texttt{Prop}s.
+Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \textit{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
 
 \section{Integrating with DbLib}
 
 DbLib provides functions for substitution and lifting that abstract over the manipulation of de Bruijn indices. Client libraries wanting to make use of DbLib need only implement a few fundamental operations via Coq's \textit{type-classes} (ref Coq and Haskell type classes). For the linear lambda calculus we can use essentially the same definitions as for the simply typed lambda calculus, which are provided as an example with the library.
 
-First, we must inform DbLib which of our term constructors is for variables. DbLib allows the types of \textit{values} (\texttt{V}) and \textit{terms} (\texttt{T}) to differ, but we don't make use of this capability, instead using \texttt{term}s everywhere and the \texttt{value} predicate. The type-class has the following definition in DbLib:
+First, we must inform DbLib which of our term constructors is for variables. DbLib allows the types of \textit{values} (\c{V}) and \textit{terms} (\c{T}) to differ, but we don't make use of this capability, instead using \c{term}s everywhere and the \c{value} predicate. The type-class has the following definition in DbLib:
 
 \begin{verbatim}
 Class Var (V : Type) := {
@@ -560,26 +567,65 @@ Before defining an inductive predicate for our typing relation, a representation
 As noted in the background section, control over the actions permitted on typing contexts is at the core of substructural typing. Together with our choice to use de Bruijn indices for variable naming, this narrows down our choice of representation. We have the following options to consider:
 
 \begin{itemize}
-\item \textbf{Functions}: Some Coq formalisations of languages with structural typing (REF) make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ f = fun y => if x = y then Some $\tau$ else f y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbtirary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
+\item \textbf{Functions}: Some Coq formalisations of languages with structural typing (REF) make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ f = fun y => if x = y then Some $\tau$ else f y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
 \item \textbf{Lists of Types}: Unsuitable (TODO).
 \item \textbf{Lists of Optional Types}: Suitable (TODO).
 \item \textbf{Dependent Vectors}: Suitable? (TODO)
 \end{itemize} 
 
-For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations, and can be TODO.
+For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations. The next two sections describe these two aspects of our formalisation, and this thesis's contribution to a general framework for substructural languages.
 
 \subsection{Emptiness}
 
+We define the following predicate for environments which is compatible with any environment from DbLib. We say that an environment is \i{empty} if it contains no typing information. Hence, the empty list environment (\c{nil}) is empty, as is any number of \c{None} values.
+
+\begin{minted}{coq}
+Inductive is_empty {A} : env A -> Prop :=
+  | is_empty_nil : is_empty nil
+  | is_empty_cons E (EmptyTail : is_empty E) : is_empty (None :: E).
+\end{minted}
+
+The necessity of a predicate for emptiness arises from the forthcoming definition of context splitting. Essentially, we require that sub-expressions be typed under an environment of the same length as their parent expressions. This requirement allows context splitting to split environments whilst preserving their length, which is simpler than accounting for changes in environment length when splitting.
+
+In order to be useful in the verification of our language (and others), lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a full list of the lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
+
+\begin{minted}{coq}
+Lemma empty_repeat : forall A (E : env A),
+  is_empty E ->
+  E = repeat (length E) None.
+(* Proof by easy induction on is_empty E *)
+
+Lemma empty_repeat_none : forall A n,
+  is_empty (repeat n None : env A).
+(* Proof by easy induction on n *)
+
+FIXME: More here.
+\end{minted}
+
 \subsection{Context Splitting}
 
-Context splitting is defined as an inductive predicate over contexts:
+% You've met context splitting before.
+% High-level description.
+% Coq code.
+% Inductive definition vs function definition (nah).
+% Discussion of split single.
+% Discussion of difficulty of existence lemmas -> worth having in a library.
+% Discussion of similarity to other approaches (de Vries mixin approach).
+%    Justification that the definition is general enough.
+% GOOD REASONS WHY insert/tl is frustrating!
 
-\begin{verbatim}
+Context splitting is the operation by which a typing environment, implemented as a \c{list (option T)}, is split so that it may be used to type two expressions. We use the notation $E = E_1 \circ E_2$ to represent the splitting of $E$ into two environments $E_1$ and $E_2$ such that each variable from $E$ appears in only one of $E_1$ and $E_2$.
+
+In the linear lambda calculus, the typing rule for application requires that the context used to type $(e_1 e_1)$ can be split into two contexts that type $e_1$ and $e_2$ individually. This splitting causes variables from the typing context to be used at most once in the expression $(e_1 e_2)$, as each element of the context must be assigned to either the left or right sub-expression.
+
+As mentioned in the section above on emptiness, we require that context splitting preserve the length of the environment being split. In Coq, we define an inductive predicate over contexts so that \c{context_split E E1 E1} $\equiv E = E_1 \circ E_2$.
+
+\begin{minted}{coq}
 Inductive context_split : env A -> env A -> env A -> Prop :=
   ...
-\end{verbatim}
+\end{minted}
 
-One may wonder if the presence of an accompanying \texttt{split\_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements "inline":
+One may wonder if the presence of an accompanying \c{split_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements inline:
 
 \begin{minted}{coq}
 Inductive context_split : env A -> env A -> env A -> Prop :=
@@ -592,11 +638,35 @@ Inductive context_split : env A -> env A -> env A -> Prop :=
   	  context_split (v :: E) (None :: E1) (v :: E2).
 \end{minted}
 
-Although for the purposes of forward reasoning both definitions are equally convenient, when performing inversion on terms of type \texttt{context\_split} it is often convenient to be able to abstract over the splitting of individual elements, particularly as this means there are less cases which have to be handled.
+Although for the purposes of forward reasoning both definitions are equally convenient, when performing inversion on terms of type \c{context_split E E1 E2} it is often useful to be able to abstract over the splitting of individual elements, particularly as this means there are less cases which have to be handled.
 
-For example, in the proof of \texttt{insert\_none\_split\_backwards}, using context splitting on single elements saves duplicating or creating automation for the main part of the proof (TODO).
+For example, in the proof of \c{insert_none_split_backwards}, using context splitting on single elements saves duplicating or creating automation for the main part of the proof. The statement of the lemma is:
 
-(PUT PROOF HERE)
+\begin{minted}{coq}
+Lemma insert_none_split_backwards : forall A (E : env A) E1 E2 x,
+  context_split (raw_insert x None E) E1 E2 ->
+  exists E1' E2',
+    E1 = raw_insert x None E1' /\
+    length E1' = length E /\
+    E2 = raw_insert x None E2' /\
+    length E2' = length E /\
+    context_split E E1' E2'.
+\end{minted}
+
+Intuitively, this lemma states that if we have inserted \c{None} into the typing context at the position for variable \c{x}, then the two environments resulting from the split of this environment must also contain \c{None} at position \c{x}. The proof is by case analysis on whether or not the variable inserted is past the end of the environment (\c{x >= length E}). In the case where it \i{is not} past the end, and \c{x} is greater than 0, we reach a goal of the form:
+
+\begin{minted}{coq}
+exists X1 X2 : env A,
+  e1 :: E1' = raw_insert (S x') None X1 /\
+  length X1 = S (length E') /\
+  e2 :: E2' = raw_insert (S x') None X2 /\
+  length X2 = S (length E') /\
+  context_split (e :: E') X1 X2
+\end{minted}
+
+Here, we have \c{E = e :: E'}, \c{E1 = e1 :: E1'}, \c{E2 = e2 :: E2'}, \c{x = S x'} relative to the statement of the lemma.
+
+Without a \c{split_single} definition, inversion of \c{context_split (e :: raw_insert x' None E') (e1 :: E1') (e2 :: E2')} forces us to consider the cases where \c{e1 = None /\ e2 = Some t} and \c{e1 = Some t /\ e2 = None} separately. The proof was originally conducted in this style, but it was much more cumbersome. The two separate cases required different calls to the \c{exists} tactic; \c{exists (None :: E1'), (Some t, E2')} and \c{exists (Some t :: E1'), (None :: E2')}.
 
 \section{Operational Semantics}
 
