@@ -1,3 +1,6 @@
+open: thesis.pdf
+	open thesis.pdf
+
 thesis.pdf:
 	pdflatex -shell-escape thesis.tex
 

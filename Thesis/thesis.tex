@@ -666,7 +666,9 @@ exists X1 X2 : env A,
 
 Here, we have \c{E = e :: E'}, \c{E1 = e1 :: E1'}, \c{E2 = e2 :: E2'}, \c{x = S x'} relative to the statement of the lemma.
 
-Without a \c{split_single} definition, inversion of \c{context_split (e :: raw_insert x' None E') (e1 :: E1') (e2 :: E2')} forces us to consider the cases where \c{e1 = None /\ e2 = Some t} and \c{e1 = Some t /\ e2 = None} separately. The proof was originally conducted in this style, but it was much more cumbersome. The two separate cases required different calls to the \c{exists} tactic; \c{exists (None :: E1'), (Some t, E2')} and \c{exists (Some t :: E1'), (None :: E2')}.
+Without a \c{split_single} definition, inversion of \c{context_split (e :: raw_insert x' None E') (e1 :: E1') (e2 :: E2')} forces us to consider the cases where \c{e1 = None, e2 = Some t} and \c{e1 = Some t, e2 = None} separately. In this proof, this isn't an important distinction, because we really just need to apply the inductive hypothesis to obtain \c{E1''} and \c{E2''} such that \c{E1' = raw_insert x' None E1''} and \c{E2' = raw_insert x' None E2''}. We can then instantiate \c{X1} and \c{X2} with \c{exists (e1 :: E1''), (e2 :: E2'')} and knock over the remaining goals with facts from the proof context. This all works with a \c{split_single} definition, but without one, the two cases have to be handled with two different calls to the \c{exists} tactic; requiring duplication of proof script, or custom LTac to parametrise these calls.
+
+Hence, \c{split_single} is a more general and useful way for dealing with context splitting, as it allows us to prove facts of the form \c{context_split (e :: E) (e1 :: E1) (e2 :: E2)} without knowing the exact values of \c{e}, \c{e1} and \c{e2}.
 
 \section{Operational Semantics}
 
