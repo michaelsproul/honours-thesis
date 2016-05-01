@@ -305,6 +305,30 @@ Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphi
 
 In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer discussion of these to future work.
 
+\section{Evaluation Framework}
+
+\subsection{Conceptual Goals}
+
+\subsection{Implementation Goals}
+
+The construction of a large Coq proof, as in the development of any complex piece of software, demands attention to quality of design and implementation. Due to the lack of well established engineering techniques for interactive proofs we describe and justify some of our own criteria here. Discussion of Adam Chlipala's automated style of theorem proving is given as part of a large discussion about proof automation in the evaluation section.
+
+Firstly, our Coq proofs should be \b{easy to read and understand}. By this we mean that additional complexity or obfuscation that detracts from the \i{intent} of the proof should be kept to a minimum. Coq proofs differ from most other bits of code in that they are often difficult to read without knowing the goal and hypotheses at each step, so our criteria for readability must take this into account.
+
+Some heuristics we can use to assess readability are:
+
+\begin{itemize}
+\item Different levels of indentation for goals and sub-goals.
+\item Minimal nesting of cases and sub-cases; prefer lemmas.
+\item Meaningful variable names at every step; avoid auto-generated names.
+\item Short proofs of lemmas.
+\end{itemize}
+
+These heuristics are adapted from common software engineering practice, and should be familiar to anyone with a programming background. Short proofs of lemmas are like short functions, and preferring a small lemma to more code in the same lemma is like preferring a utility function to more code in the same function body. The meaningful naming of variables \i{at every step} links back to our altered definition of readability where we imagine that the reader is stepping through the proof examining the goals and hypotheses at each step.
+
+The aim of readable proofs is to give the proofs a sense of quality, but readability also aids another goal; \i{maintainability}. Proofs, particularly libraries of proofs, are not static entities and must be constructed so that they can be updated as easily as possible as features are added and new versions of related software are released (including the theorem prover itself).
+
+
 \chapter{Proposal}
 \label{ch:proposal}
 
@@ -610,9 +634,10 @@ FIXME: More here.
 % Inductive definition vs function definition (nah).
 % Discussion of split single.
 % Discussion of difficulty of existence lemmas -> worth having in a library.
+% GOOD REASONS WHY insert/tl is frustrating!
 % Discussion of similarity to other approaches (de Vries mixin approach).
 %    Justification that the definition is general enough.
-% GOOD REASONS WHY insert/tl is frustrating!
+
 
 Context splitting is the operation by which a typing environment, implemented as a \c{list (option T)}, is split so that it may be used to type two expressions. We use the notation $E = E_1 \circ E_2$ to represent the splitting of $E$ into two environments $E_1$ and $E_2$ such that each variable from $E$ appears in only one of $E_1$ and $E_2$.
 
@@ -624,6 +649,8 @@ As mentioned in the section above on emptiness, we require that context splittin
 Inductive context_split : env A -> env A -> env A -> Prop :=
   ...
 \end{minted}
+
+\subsubsection{Single element splits}
 
 One may wonder if the presence of an accompanying \c{split_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements inline:
 
@@ -668,21 +695,82 @@ Here, we have \c{E = e :: E'}, \c{E1 = e1 :: E1'}, \c{E2 = e2 :: E2'}, \c{x = S 
 
 Without a \c{split_single} definition, inversion of \c{context_split (e :: raw_insert x' None E') (e1 :: E1') (e2 :: E2')} forces us to consider the cases where \c{e1 = None, e2 = Some t} and \c{e1 = Some t, e2 = None} separately. In this proof, this isn't an important distinction, because we really just need to apply the inductive hypothesis to obtain \c{E1''} and \c{E2''} such that \c{E1' = raw_insert x' None E1''} and \c{E2' = raw_insert x' None E2''}. We can then instantiate \c{X1} and \c{X2} with \c{exists (e1 :: E1''), (e2 :: E2'')} and knock over the remaining goals with facts from the proof context. This all works with a \c{split_single} definition, but without one, the two cases have to be handled with two different calls to the \c{exists} tactic; requiring duplication of proof script, or custom LTac to parametrise these calls.
 
-Hence, \c{split_single} is a more general and useful way for dealing with context splitting, as it allows us to prove facts of the form \c{context_split (e :: E) (e1 :: E1) (e2 :: E2)} without knowing the exact values of \c{e}, \c{e1} and \c{e2}.
+Hence, \c{split_single} is a more general and useful way for dealing with context splitting, as it allows us to prove goals of the form \c{context_split (e :: E) (e1 :: E1) (e2 :: E2)} without knowing the exact values of \c{e}, \c{e1} and \c{e2}. If the exact values \i{are} required for a proof, they can still be considered by performing inversion on the \c{split_single e e1 e2} fact.
+
+\subsubsection{Properties of Context Splitting}
+
+We prove several basic properties of context splitting, such as commutativity, as well as lemmas motivated by the proof of soundness for the linear lambda calculus. 
+
+\textbf{Length} If $E = E_1 \circ E_2$, then the lengths of all three contexts are the same.
+
+\textbf{Commutativity}
+
+If we can split $E = E_1 \circ E_2$, then we can also split $E = E_2 \circ E_1$. In Coq, proof is by a straight-forward induction on the structure of the \c{context_split}, and depends on a similar commutative property of \c{split_single}.
+
+\begin{minted}{coq}
+Lemma split_commute : forall A (E : env A) E1 E2,
+  context_split E E1 E2 -> context_split E E2 E1.
+Proof with boom.
+  intros A E E1 E2 Split.
+  induction Split...
+Qed.
+\end{minted}
+
+\textbf{Associativity} If $E = E_0 \circ (E_1 \circ E_2)$ then $E = (E_0 \circ E_1) \circ E_2$.
+
+In Coq we need an existential to express the existence of a context that splits into $E_0$ and $E_1$.
+
+\begin{minted}{coq}
+Lemma split_assoc : forall A (E E0 E1 E2 E12 : env A),
+  context_split E E0 E12 ->
+  context_split E12 E1 E2 ->
+  (exists E01, context_split E E01 E2 /\ context_split E01 E0 E1).
+\end{minted}
+
+The justification for calling this operation associativity is the view of $(\circ)$ as a \textit{partial} binary operator for combining contexts. From this view, context splitting is a partial commutative monoid, with \c{repeat n None} as the identity element. Further work could try to exploit structure like this to improve proof automation.
+
+\textbf{4-way Splits}
+
+In his proofs about uniqueness typing Edsko de Vries [REF] establishes all of these properties, but proves the associativity lemma using a 4-way split lemma like this: $E = (E_{1a} \circ E_{1b}) \circ (E_{2a} \circ E_{2b}) \Rightarrow E = (E_{1a} \circ E_{2a}) \circ (E_{2a} \circ E_{2b})$. In addition to associativity being provable from this lemma, the opposite is also true, and we prove a version of this lemma called \c{split_swap} using a few simple applications of commutativity and associativity.
+
+\textbf{Rotation} The proof of preservation requires a lemma of the form: $E = E_0 \circ (E_1 \circ E_2) \Rightarrow E = E_1 \circ (E_0 \circ E_2)$, which is provable using the other lemmas above.
+
+\textbf{Emptiness} Lemmas about empty contexts as the identity element for context splitting are provable using a few lines of proof script. For details, see \c{Context.v} (UPDATEME).
+
+% TODO: Note rewriting rules for commutativity somewhere, maybe in the automation section?
+
+\subsubsection{Lemmas Required for Soundness}
+
+In order to prove preservation, several lemmas about the interaction between inserts and context splitting were required. These lemmas represent a large portion of the work involved in the proof of soundness for the linear lambda calculus.
 
 \section{Operational Semantics}
 
-\section{Typing Judgements}
+\section{Typing Rules}
 
 \section{Progress}
 
 \section{Preservation}
 
+\subsection{Substitution}
+
+Inductive loading, etc.
+
 \chapter{Evaluation}
 
+\section{Generality and Applicability}
+
+\section{Quality of Coq Proofs}
+
+Robustness, as measured by evaluation criteria.
+
+\subsection{Automation and Tactic Scripts}
+
+In his book \i{Certified Programming with Dependent Types}, Adam Chlipala advocates:
+
+\i{``The more uninteresting drudge work a proof domain involves, the more important it is to work to prove theorems with single tactics."}
+\i{``I like to say that if you find yourself caring about indentation in a proof script, it is a sign that the script is structured poorly."}
+
 \chapter{Conclusion}
-
-
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
