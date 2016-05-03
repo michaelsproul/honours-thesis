@@ -747,7 +747,35 @@ In his proofs about uniqueness typing Edsko de Vries [REF] establishes all of th
 
 \subsubsection{Lemmas Required for Soundness}
 
-In order to prove preservation, several lemmas about the interaction between inserts and context splitting were required. These lemmas represent a large portion of the work involved in the proof of soundness for the linear lambda calculus.
+In order to prove soundness, several lemmas about the interaction between inserts and context splitting were required. Although many of the lemmas are conceptually simple, some required significant effort and represent a large portion of the work involved in the proof of soundness for the linear lambda calculus. Many lemmas also involve the insertion of \c{None} values into contexts, which is a consequence of the strengthened induction required to prove the substiution lemma (see the next section on substitution (TODO)).
+
+The first, and perhaps most difficult to prove, was \c{insert_none_split_backwards}, discussed previously in the section about \c{split_single}. Refer to the statement of the lemma above (FIXME?). We attribute the difficulty in proving the lemma to the fact that we initially lacked ways to express many of the intuitive reasons for the lemma's truth. With the right definitions and lemmas in place, the proof became quite straight-forward.
+
+DbLib's \c{insert} function behaves in two different ways depending on the relationship between the variable \c{x} being inserted and the length of the existing environment, \c{E}. If \c{x < length E}, then the type for \c{x} is inserted \i{between} existing elements, with subsequent elements being shunted along. Conversely, if \c{x >= length E}, then the type of \c{x} is inserted \i{after} existing elements, with the intervening space padded by \c{None} values. These two cases are quite different to reason about, and any attempt at a direct inductive proof on \c{x} or one of the environments inevitably leads to wanting to know which of the two cases one is considering. For this reason, the first step of our proof is to split on the comparison between \c{x} and \c{length E}.
+
+To handle the case where \c{x >= length E} and padding \c{None} values are inserted, we note that all the values past the end of the old environment will all be \c{None}. Equipped with a simple definition of a \c{repeat} function on lists, and some lemmas about list append, this case is proved.
+
+\begin{minted}{coq}
+Lemma insert_none_def : forall A x (E : env A),
+  x >= length E ->
+  raw_insert x None E = E ++ repeat (S (x - length E)) None.
+
+Lemma split_app : forall A (E : env A) E1 E2 n,
+    context_split (E ++ repeat n None) E1 E2 ->
+    exists E1' E2',
+      E1 = E1' ++ repeat n None /\
+      E2 = E2' ++ repeat n None /\
+      context_split E E1' E2'.
+\end{minted} 
+
+The other case where the new \c{None} value is inserted in between existing elements is handled by an induction on \c{x}, which is made simpler by knowing the bound on \c{x}, i.e. \c{x < length E}. For example, it absolves the prover from having to deal with the case where the environment is empty, which proved to be a nuisance in early versions of the proof. Particuarly as \c{length (tl E1) = length (tl E2)} does not imply that \c{length E1 = length E2} as one may expect outside a total programming language.
+
+TODO: More here about the other couple of insertion/split lemmas.
+
+% New plan:
+% Talk about insert_none_split_backwards, context_split_insert.
+% Talk about substitution lemma.
+% Talk about preservation.
 
 \section{Operational Semantics}
 
@@ -759,11 +787,13 @@ In order to prove preservation, several lemmas about the interaction between ins
 
 \subsection{Substitution}
 
-Inductive loading, etc.
+Inductive loading, etc. Discussion of \i{language-specific} lemmas about typing and stuff.
 
 \chapter{Evaluation}
 
 \section{Generality and Applicability}
+
+How useful is what I've done for the verification of other systems? (Answer: pretty ok)
 
 \section{Quality of Coq Proofs}
 
