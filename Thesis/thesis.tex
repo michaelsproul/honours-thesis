@@ -324,10 +324,16 @@ Some heuristics we can use to assess readability are:
 \item Short proofs of lemmas.
 \end{itemize}
 
-These heuristics are adapted from common software engineering practice, and should be familiar to anyone with a programming background. Short proofs of lemmas are like short functions, and preferring a small lemma to more code in the same lemma is like preferring a utility function to more code in the same function body. The meaningful naming of variables \i{at every step} links back to our altered definition of readability where we imagine that the reader is stepping through the proof examining the goals and hypotheses at each step.
+These heuristics are adapted from common software engineering practice (references?), and should be familiar to anyone with a programming background. Short proofs of lemmas are like short functions, and preferring a small lemma to more code in the same lemma is like preferring a utility function to more code in the same function body. The meaningful naming of variables \i{at every step} links back to our altered definition of readability where we imagine that the reader is stepping through the proof examining the goals and hypotheses at each step.
 
-The aim of readable proofs is to give the proofs a sense of quality, but readability also aids another goal; \i{maintainability}. Proofs, particularly libraries of proofs, are not static entities and must be constructed so that they can be updated as easily as possible as features are added and new versions of related software are released (including the theorem prover itself).
+One aim of readable proofs is to convey key insights, but readability also aids \b{maintainability}. Proofs, particularly libraries of proofs, are not static entities and must be constructed so that they can be updated as easily as possible as features are added and new versions of related software are released. Between different versions of the theorem prover the behaviour of tactics can change in ways that are not backwards compatible. References to automatically named variables are considered fragile as a change in the automatic name generation can invalidate the reference and all subsequent proof steps.
 
+\begin{itemize}
+\item Markers to enforce different cases and sub-cases.
+\item No repetition of proof script.
+\end{itemize}
+
+TODO: Keep expanding this section.
 
 \chapter{Proposal}
 \label{ch:proposal}
