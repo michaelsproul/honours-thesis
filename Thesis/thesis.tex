@@ -311,7 +311,7 @@ In summary, previous work on the formalisation of resource-aware type systems ha
 
 \subsection{Implementation Goals}
 
-The construction of a large Coq proof, as in the development of any complex piece of software, demands attention to quality of design and implementation. Due to the lack of well established engineering techniques for interactive proofs we describe and justify some of our own criteria here. Discussion of Adam Chlipala's automated style of theorem proving is given as part of a large discussion about proof automation in the evaluation section.
+The construction of a large Coq proof, as in the development of any complex piece of software, demands attention to quality of design and implementation. Due to the lack of well established engineering techniques for interactive proofs we describe and justify some of our own criteria here. Discussion of Adam Chlipala's automated style of theorem proving is given as part of a larger discussion about proof automation in the evaluation section.
 
 Firstly, our Coq proofs should be \b{easy to read and understand}. By this we mean that additional complexity or obfuscation that detracts from the \i{intent} of the proof should be kept to a minimum. Coq proofs differ from most other bits of code in that they are often difficult to read without knowing the goal and hypotheses at each step, so our criteria for readability must take this into account.
 
@@ -489,7 +489,7 @@ TODO: Some sort of intro paragraph.
 The primary research question that this thesis attempts to answer relates to the efficient development of verified proofs about low-level substructural languages. Specifically,
 
 \begin{itemize}
-\item What are the common properties of all proofs about substructural languages, and can these properties be exploited to avoid duplicated work in the context of automated theorem proving?
+\item What are the common properties of all proofs about substructural languages, and can these properties be exploited to avoid duplicated work in the context of interactive theorem proving?
 \end{itemize}
 
 In the context of Coq, this is can concretely be phrased:
@@ -506,7 +506,7 @@ In the context of Coq, this is can concretely be phrased:
 
 \begin{itemize}
 \item Development of general definitions and lemmas about context splitting and other actions on typing environments.
-\item Proof of type soundness for a basic linear lambda calculus.
+\item Proof of type soundness for a linear lambda calculus.
 \end{itemize}
 
 The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in proof of \textbf{preservation} and \textbf{progress} which together establish soundness.
@@ -521,23 +521,37 @@ As is somewhat standard in Coq proofs about programming languages [REF], we use 
 
 To define the syntax of the linear lambda calculus (LLC) we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \c{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The syntax for types is:
 
-\begin{verbatim}
-Inductive ty := ...
-\end{verbatim}
+\begin{minted}{coq}
+Inductive ty : Set :=
+    | TyUnit
+    | TyFun : ty -> ty -> ty
+    | TyBool.
+\end{minted}
 
 Now, with LLC's types defined, we can define the syntax of terms:
 
-\begin{verbatim}
-Inductive term := ...
-\end{verbatim}
+\begin{minted}{coq}
+Inductive term : Set :=
+    | TUnit | TTrue | TFalse
+    | TVar : nat -> term
+    | TAbs : ty -> term -> term
+    | TApp : term -> term -> term.
+\end{minted}
+
+FIXME: Should I drop bools? They're not particularly useful.
 
 Variables are represented by the \c{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \c{term}. Later when defining the typing judgement we will see that a variable \c{TVar i} is well-typed only if the typing context contains a type at index $i$.
 
 In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \textit{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \c{value t} with the following definition:
 
-\begin{verbatim}
-Inductive value :=
-\end{verbatim}
+\begin{minted}{coq}
+Inductive value : term -> Prop :=
+    | VUnit : value TUnit
+    | VVar : forall x, value (TVar x)
+    | VAbs : forall t e, value (TAbs t e)
+    | VTrue : value TTrue
+    | VFalse : value TFalse
+\end{minted}
 
 Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \textit{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
 
@@ -588,19 +602,19 @@ Fixpoint traverse_term (f : nat -> nat -> term) l t :=
 
 To ensure that the client's implementation of traverse behaves sensibly and can be manipulated accordingly, DbLib requires the implementation of five further type-classes that establish semantic properties of traverse. Also provided are five tactics for proving these properties automatically, which were found to be sufficient for our simple use-case.
 
-Given these type-class definitions, DbLib provides a substitution function that we can make use of in the operational semantics of our language.
+Given these type-class definitions, DbLib provides a substitution function that we can make use of in the operational semantics for our language.
 
 \section{Representing Typing Contexts}
 
-Before defining an inductive predicate for our typing relation, a representation for typing environments must be selected. In semi-formal proofs, typing judgements are written $H \vdash e : \tau$, and the environment $H$ is assumed to permit various operations such as looking up the type of a variable $x$ (denoted $H[i]$) and (re)assigning a type to a variable $x$, (denoted $H[x \to \tau]$).
+Before defining an inductive predicate for our typing relation, a representation for typing environments must be selected. In semi-formal proofs, typing judgements are written $H \vdash e : \tau$, and the environment $H$ is assumed to permit various operations such as looking up the type of a variable $x$ (denoted $H[x]$) and (re)assigning a type to a variable $x$, (denoted $H[x \to \tau]$).
 
 As noted in the background section, control over the actions permitted on typing contexts is at the core of substructural typing. Together with our choice to use de Bruijn indices for variable naming, this narrows down our choice of representation. We have the following options to consider:
 
 \begin{itemize}
-\item \textbf{Functions}: Some Coq formalisations of languages with structural typing (REF) make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ f = fun y => if x = y then Some $\tau$ else f y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
+\item \textbf{Functions}: Some Coq formalisations of languages with structural typing (REF) make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ H = fun y => if x = y then Some $\tau$ else H y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
 \item \textbf{Lists of Types}: Unsuitable (TODO).
 \item \textbf{Lists of Optional Types}: Suitable (TODO).
-\item \textbf{Dependent Vectors}: Suitable? (TODO)
+\item \textbf{Dependent Vectors}: Suitable? (TODO/DROP)
 \end{itemize} 
 
 For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations. The next two sections describe these two aspects of our formalisation, and this thesis's contribution to a general framework for substructural languages.
@@ -617,7 +631,7 @@ Inductive is_empty {A} : env A -> Prop :=
 
 The necessity of a predicate for emptiness arises from the forthcoming definition of context splitting. Essentially, we require that sub-expressions be typed under an environment of the same length as their parent expressions. This requirement allows context splitting to split environments whilst preserving their length, which is simpler than accounting for changes in environment length when splitting.
 
-In order to be useful in the verification of our language (and others), lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a full list of the lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
+In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a full list of the lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
 
 \begin{minted}{coq}
 Lemma empty_repeat : forall A (E : env A),
@@ -652,11 +666,20 @@ In the linear lambda calculus, the typing rule for application requires that the
 As mentioned in the section above on emptiness, we require that context splitting preserve the length of the environment being split. In Coq, we define an inductive predicate over contexts so that \c{context_split E E1 E1} $\equiv E = E_1 \circ E_2$.
 
 \begin{minted}{coq}
-Inductive context_split : env A -> env A -> env A -> Prop :=
-  ...
+Inductive split_single {A} : option A -> option A -> option A -> Prop :=
+  | split_none : split_single None None None
+  | split_left (v : A) : split_single (Some v) (Some v) None
+  | split_right (v : A) : split_single (Some v) None (Some v).
+
+Inductive context_split {A} : env A -> env A -> env A -> Prop :=
+  | split_nil : context_split nil nil nil
+  | split_cons E E1 E2 v v1 v2
+      (SplitElem : split_single v v1 v2)
+      (SplitPre : context_split E E1 E2) :
+      context_split (v :: E) (v1 :: E1) (v2 :: E2).
 \end{minted}
 
-\subsubsection{Single element splits}
+\subsubsection{Single Element Splits}
 
 One may wonder if the presence of an accompanying \c{split_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements inline:
 
@@ -753,7 +776,7 @@ The first, and perhaps most difficult to prove, was \c{insert_none_split_backwar
 
 DbLib's \c{insert} function behaves in two different ways depending on the relationship between the variable \c{x} being inserted and the length of the existing environment, \c{E}. If \c{x < length E}, then the type for \c{x} is inserted \i{between} existing elements, with subsequent elements being shunted along. Conversely, if \c{x >= length E}, then the type of \c{x} is inserted \i{after} existing elements, with the intervening space padded by \c{None} values. These two cases are quite different to reason about, and any attempt at a direct inductive proof on \c{x} or one of the environments inevitably leads to wanting to know which of the two cases one is considering. For this reason, the first step of our proof is to split on the comparison between \c{x} and \c{length E}.
 
-To handle the case where \c{x >= length E} and padding \c{None} values are inserted, we note that all the values past the end of the old environment will all be \c{None}. Equipped with a simple definition of a \c{repeat} function on lists, and some lemmas about list append, this case is proved.
+To handle the case where \c{x >= length E} and padding \c{None} values are inserted, we note that the values past the end of the old environment will all be \c{None}. Equipped with a simple definition of a \c{repeat} function on lists, and some lemmas about list append, this case is proved.
 
 \begin{minted}{coq}
 Lemma insert_none_def : forall A x (E : env A),
