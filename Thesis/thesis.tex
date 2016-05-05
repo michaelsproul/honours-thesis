@@ -841,7 +841,7 @@ Function applications make use of the \c{context_split} operation to ensure that
 
 \section{Operational Semantics}
 
-For the semantics of our language we use call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
+For the semantics of our language we use a call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
 
 \begin{minted}{coq}
 Inductive step : term -> term -> Prop :=
@@ -858,9 +858,36 @@ Inductive step : term -> term -> Prop :=
       step (TApp v1 e2) (TApp v1 e2').
 \end{minted}
 
-The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. Note the use of DbLib's \c{subst} function to create the result of the computation. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \Longrightarrow e[v/0]$.
+The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. It states that function application is equivalent to the substitution of the argument value for the bound variable in the body of the function. For substitution, note the use of DbLib's \c{subst} function. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \rightarrow e[v/0]$.
+
+We are using a \i{call-by-value} evaluation strategy, which means that only the outer-most reducible expressions (\i{redexes}) are reduced, and only when their argument is a value \cite{tapl}. Note that as a result there is no rule for stepping a $\lambda$-abstraction when its body is capable of stepping, as in: $e \rightarrow e' \implies (\lambda 0 : \tau. \, e) \rightarrow (\lambda 0 : \tau. \, e')$.
+
+The two rules for stepping an application $(e_1 \; e_2)$ ensure that $e_1$ is fully evaluated before evaluating $e_2$. This is captured by the \c{value v1} argument to \c{StepApp2}. By making this restriction an evaluator never needs to choose which side should be evaluated first, thus removing non-determinism. If we include the $\beta$-rule in our consideration we see that the stepping relation as a whole is deterministic, although this property isn't verified in our Coq proofs.
 
 \section{Progress}
+
+With typing rules and small step semantics established we can state the progress lemma which contributes to the proof of type soundness.
+
+\begin{minted}{coq}
+Theorem progress : forall E e t,
+  is_empty E ->
+  E |- e ~: t ->
+  (exists e', step e e') \/ value e.
+\end{minted}
+
+This theorem states that any closed term $e$ that is well-typed can either be stepped using the small step semantic relation, or is already a value and cannot be evaluated further.
+
+Proof is by induction on the typing derivation \c{E |- e ~: t}. Unlike the proof of preservation presented in the next section, the proof of progress requires very few supporting lemmas about context splitting or substitution. Most of the cases in the induction require reasoning about the interaction between typing and term structure, which can be handled by simple inversions. For example, one of the supporting lemmas states that any value assigned a function type under an empty environment, must necessarily be a $\lambda$-abstraction:
+
+\begin{minted}{coq}
+Lemma fun_value_is_abs : forall E e t1 t2,
+  is_empty E ->
+  E |- e ~: TyFun t1 t2 ->
+  value e ->
+  (exists e', e = TAbs t1 e').
+\end{minted}
+
+Given that most of the verification effort was expended reasoning about context splitting, substitution and other lemmas required for preservation, the effort required to prove progress represents a relatively small fraction of the total effort. The fact that progress and preservation each form ``half" of the soudness proof does not imply that the difficulty of proving soundness is split evenly between them.
 
 \section{Preservation}
 
