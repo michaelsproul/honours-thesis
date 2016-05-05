@@ -83,6 +83,7 @@
 \newcommand{\ptr}{\text{ptr }}
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 \newcommand{\SSPHS}{\text{SSPHS }}
+\newcommand{\types}{\vdash}
 
 % Text formatting.
 \let\oldc\c
@@ -629,7 +630,7 @@ Inductive is_empty {A} : env A -> Prop :=
   | is_empty_cons E (EmptyTail : is_empty E) : is_empty (None :: E).
 \end{minted}
 
-The necessity of a predicate for emptiness arises from the forthcoming definition of context splitting. Essentially, we require that sub-expressions be typed under an environment of the same length as their parent expressions. This requirement allows context splitting to split environments whilst preserving their length, which is simpler than accounting for changes in environment length when splitting.
+The necessity of a predicate for emptiness arises from the forthcoming definition of context splitting. Essentially, we require that sub-expressions be typed under an environment of the same length as their parent expressions. This requirement allows context splitting to split environments whilst preserving their length, which is simpler than accounting for changes in environment length when splitting. FIXME: This isn't right, as the typing rules for abstraction actually *increase* the length of the context unconditionally!
 
 In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a full list of the lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
 
@@ -800,9 +801,64 @@ TODO: More here about the other couple of insertion/split lemmas.
 % Talk about substitution lemma.
 % Talk about preservation.
 
+\section{Typing Rules}
+
+Typing rules determine which terms are considered well-formed. We define an inductive predicate \c{has_type : (env ty) -> term -> ty -> Prop} so that \c{has_type E e t} is inhabited if the environment $E$ determines $e : t$. In standard mathematical notation this is $E \types e : t$, which we mirror using the Coq notation \c{E |- e ~: t}.
+
+\begin{minted}{coq}
+Reserved Notation "E '|-' e '~:' t" (at level 40).
+
+Inductive has_type : (env ty) -> term -> ty -> Prop :=
+  | HasTyUnit E
+      (UnitEmpty : is_empty E) :
+      E |- TUnit ~: TyUnit
+  | HasTyTrue E
+      (TrueEmpty : is_empty E) :
+      E |- TTrue ~: TyBool
+  | HasTyFalse E
+      (FalseEmpty : is_empty E) :
+      E |- TFalse ~: TyBool
+  | HasTyVar E x t
+      (VarPre : is_empty E) :
+      insert x t E |- TVar x ~: t
+  | HasTyAbs E e t1 t2
+      (AbsPre : (insert 0 t1 E) |- e ~: t2) :
+      E |- TAbs t1 e ~: (TyFun t1 t2)
+  | HasTyApp E E1 E2 e1 e2 t1 t2
+      (AppPreSplit : context_split E E1 E2)
+      (AppPreWT1 : E1 |- e1 ~: TyFun t1 t2)
+      (AppPreWT2 : E2 |- e2 ~: t1) :
+      E  |- TApp e1 e2 ~: t2
+
+where "E '|-' e '~:' t" := (has_type E e t).
+\end{minted}
+
+Here we see the definitions for emptiness and context splitting coming into play. In linear lambda calculus variables must be used exactly once, so a single variable \c{x} is well-typed only under an environment containing a type for \c{x} and nothing else, as captured by the \c{HasTyVar} rule. Similarly, primitive values must be typed under environments containing no free variables.
+
+A lambda abstraction $(\lambda \hat{0} : \tau. \; e)$ is well-typed if the body can be typed under an environment extended by the type for its binder, $(0 : \tau)$. This is the only rule that requires the \i{input} context (\c{insert 0 t1 E}) to differ in length to the \i{output} context (\c{E}).
+
+Function applications make use of the \c{context_split} operation to ensure that the variables used to type an application $(e_1 e_2)$ are split between $e_1$ and $e_2$ without duplication. The rule also ensures that the type of the application (\c{t2}) is consistent with the type of the function being applied (\c{t1 -> t2}) and the type of the argument (\c{t1}).
+
 \section{Operational Semantics}
 
-\section{Typing Rules}
+For the semantics of our language we use call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
+
+\begin{minted}{coq}
+Inductive step : term -> term -> Prop :=
+  | StepAppAbs e e' v t
+      (BetaPreVal : value v)
+      (BetaPreSubst : subst v 0 e = e') :
+      step (TApp (TAbs t e) v) e'
+  | StepApp1 e1 e1' e2
+      (App1Step : step e1 e1') :
+      step (TApp e1 e2) (TApp e1' e2)
+  | StepApp2 v1 e2 e2'
+      (App2Val : value v1)
+      (App2Step : step e2 e2') :
+      step (TApp v1 e2) (TApp v1 e2').
+\end{minted}
+
+The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. Note the use of DbLib's \c{subst} function to create the result of the computation. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \Longrightarrow e[v/0]$.
 
 \section{Progress}
 
