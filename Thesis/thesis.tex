@@ -891,6 +891,18 @@ Given that most of the verification effort was expended reasoning about context 
 
 \section{Preservation}
 
+The preservation lemma states that a if well-typed closed term $e$ can take a step to another term $e'$, then $e'$ is also well-typed. In other words, the type of a term is \i{preserved} as it is evaluated in accordance with the small-step semantics.
+
+\begin{minted}{coq}
+Theorem preservation : forall E e e' t,
+  is_empty E ->
+  E |- e ~: t ->
+  step e e' ->
+  E |- e' ~: t.
+\end{minted}
+
+Proof is by induction on the stepping of $e$ to $e'$, \c{step e e'}. In the three cases that result for each of the three stepping rules, the two for applications are proved directly from the inductive hypothesis. The remaining case for $\beta$-reduction involves interaction between substitution, typing and context splitting, and is proved via a supporting \i{substitution} lemma.
+
 \subsection{Substitution}
 
 Inductive loading, etc. Discussion of \i{language-specific} lemmas about typing and stuff.
