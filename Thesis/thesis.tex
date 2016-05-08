@@ -901,11 +901,35 @@ Theorem preservation : forall E e e' t,
   E |- e' ~: t.
 \end{minted}
 
-Proof is by induction on the stepping of $e$ to $e'$, \c{step e e'}. In the three cases that result for each of the three stepping rules, the two for applications are proved directly from the inductive hypothesis. The remaining case for $\beta$-reduction involves interaction between substitution, typing and context splitting, and is proved via a supporting \i{substitution} lemma.
+Proof is by induction on the stepping of $e$ to $e'$, \c{step e e'}. In the three cases that result from the three stepping rules, the two for applications are proved directly from the inductive hypothesis. The remaining case for $\beta$-reduction involves interaction between substitution, typing and context splitting, and is proved via a supporting \i{substitution} lemma.
 
 \subsection{Substitution}
 
-Inductive loading, etc. Discussion of \i{language-specific} lemmas about typing and stuff.
+The substitution lemma states that the result of a substitution is well-typed if the terms involved are well-typed. With substructural typing, we must also consider the supply of free variables to both terms using context spliting, so the lemma takes the form:
+
+\begin{eqnarray*}
+\infer[\text{Substitution}]{
+    E_1 \circ E_2 \types e_2 [e_1/x] : \tau_2
+}{
+    E_1 \types e_1 : \tau_1 \quad E_2, x : \tau_1 \types e_2 : \tau_2
+}
+\end{eqnarray*}
+
+Substitution lemmas similar to this are common in proofs of similar complexity, as in Software Foundations (REF) and the examples accompanying DbLib. In Software Foundations, a weakening lemma is used in the proof of the substitution lemma, but with substructural typing this technique is unavailable.
+
+In Coq the lemma is:
+
+\begin{minted}{coq}
+Lemma substitution: forall E2 e2 t1 t2 x,
+  insert x t1 E2 |- e2 ~: t2 ->
+  forall E E1 e1, E1 |- e1 ~: t1 ->
+  context_split E E1 E2 ->
+  E |- (subst e1 x e2) ~: t2.
+\end{minted}
+
+Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 ~: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g. $E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate subgoals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic (REF) which makes use of Conor's humorously named ``John Major" heterogenous equality (\c{JMeq}). Heterogenous equality requires the addition of an extra axiom, the consideration of which is discussed in the Evaluation chapter.
+
+Simple inversion removes the cases that are absurd due to the \c{insert x t1 E2} environment, leaving three cases for variables, $\lambda$-abstractions and applications. Of these the variable and $\lambda$-abstraction cases are...
 
 \chapter{Evaluation}
 
