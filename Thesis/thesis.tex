@@ -929,7 +929,11 @@ Lemma substitution: forall E2 e2 t1 t2 x,
 
 Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 ~: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g. $E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate subgoals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic (REF) which makes use of Conor's humorously named ``John Major" heterogenous equality (\c{JMeq}). Heterogenous equality requires the addition of an extra axiom, the consideration of which is discussed in the Evaluation chapter.
 
-Simple inversion removes the cases that are absurd due to the \c{insert x t1 E2} environment, leaving three cases for variables, $\lambda$-abstractions and applications. Of these the variable and $\lambda$-abstraction cases are...
+Simple inversion removes the cases that are absurd due to the \c{insert x t1 E2} environment, leaving three cases for variables, $\lambda$-abstractions and applications. The variable case is handled by some straight-forward reasoning about empty contexts, and requires no new supporting lemmas, while the other two cases form the motivation for several of the lemmas about inserts and context splitting.
+
+The $\lambda$-abstraction case requires a proof that the term being substituted is well-typed under the environment for the abstraction sans binder, i.e. \c{(None :: E1) |- shift 0 e1 ~: t1}. This motivates \c{typing_insert_none}, which in turn motivates \c{insert_none_split}. Although \c{typing_insert_none} is more general in that it allows us to prove facts of the form \c{raw_insert x None E |- e ~: t} and not just \c{raw_insert 0 None E |- e ~: t}, generalising for all $x$ makes related lemmas easier to prove by enabling induction on $x$. This technique is sometimes referred to as \i{inductive loading}.
+
+The application case requires \c{typing_insert_none_subst} and \c{context_split_insert}. TODO: Keep going here.
 
 \chapter{Evaluation}
 
