@@ -933,7 +933,17 @@ Simple inversion removes the cases that are absurd due to the \c{insert x t1 E2}
 
 The $\lambda$-abstraction case requires a proof that the term being substituted is well-typed under the environment for the abstraction sans binder, i.e. \c{(None :: E1) |- shift 0 e1 ~: t1}. This motivates \c{typing_insert_none}, which in turn motivates \c{insert_none_split}. Although \c{typing_insert_none} is more general in that it allows us to prove facts of the form \c{raw_insert x None E |- e ~: t} and not just \c{raw_insert 0 None E |- e ~: t}, generalising for all $x$ makes related lemmas easier to prove by enabling induction on $x$. This technique is sometimes referred to as \i{inductive loading}.
 
-The application case requires \c{typing_insert_none_subst} and \c{context_split_insert}. TODO: Keep going here.
+The application case requires that one side of the application be well-typed without referring to the substitution variable $x$. This motivates the following lemma, \c{typing_insert_none_subst}:
+
+\begin{minted}{coq}
+Lemma typing_insert_none_subst : forall E e x junk t,
+  raw_insert x None E |- e ~: t ->
+  E |- subst junk x e ~: t.
+\end{minted}
+
+This in turn motivates the rest of the lemmas about inserting none into a typing context, including the difficult to prove \c{insert_none_split_backwards} -- discussed above.
+
+To prove this lemma, DbLib was extended with a \i{lowering} operation that is conceptually inverse of lifting. In the case where variables are lowered by 1 we call the operation \i{unshifting}, by analogy with lifting by 1 (shifting). The lemma is proved by establishing that a similar lemma holds for \c{unshift x e}, and an equivalence of \c{unshift x e} and \c{subst junk x e} when \c{x} does not appear free in \c{e} (see \c{contains_var}).
 
 \chapter{Evaluation}
 
