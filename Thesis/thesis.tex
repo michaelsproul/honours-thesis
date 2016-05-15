@@ -61,13 +61,22 @@
 
 
 %% Thesis details
-\thesistitle{Computer-verified proof of type soundness for the Linear Language with Locations, $L^3$}
+
+% TODO: Choose a title...
+% Re-usable lemmas for the formalisation of linearly-typed languages
+% A library-based approach to context splitting
+% Towards a framework for the mechanised verification of substructural type systems
+% A library based approach to the verification of linear type systems
+% Code: library, lemmas, definitions, engineering.
+% Effective verification of linear types in Coq.
+% Proof engineering for formalisations of languages with linear types
+\thesistitle{A library based approach to the verification of languages with linear types}
 \thesisschool{School of Computer Science and Engineering}
 \thesisauthor{Michael Alexander Sproul}
 \thesisZid{z3484357}
 \thesistopic{3680}
 \thesisdegree{Bachelor of Science (Honours)}
-\thesisdate{October 2015}
+\thesisdate{May 2016}
 \thesissupervisor{Dr. Ben Lippmeier}
 
 %% My own LaTeX macros, definitions, etc.
@@ -84,9 +93,10 @@
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 \newcommand{\SSPHS}{\text{SSPHS }}
 \newcommand{\types}{\vdash}
+\newcommand{\Francois}{Fran\frenchc{c}ois }
 
 % Text formatting.
-\let\oldc\c
+\let\frenchc\c
 \let\c\texttt
 \let\oldi\i
 \let\i\textit
@@ -96,11 +106,14 @@
 \begin{document}
 
 %% Roman numeral numbering in this section.
-\frontmatter  
+\frontmatter
 \maketitle
 
+% Mention:
+% DbLib, context splitting, DILL, L^3.
+
 \begin{abstract}
-We provide a mechanically verified proof of type soundness for the previously unverified Linear Language with Locations, $L^3$. The language includes several low-level facilities for control over memory and \textit{ownership}, allowing it to act as a base for the verification of systems software. $L^3$ is typical of modern resource-aware calculi in that it makes use of capabilities and substructural typing. Our syntactic proof of type soundness within the Coq proof assistant is a mechanisation of the existing soundness proof.
+We present a library of proofs to aid in the mechanical verification of languages with substructural type systems. We identify \i{context splitting} as a widely applicable technique in the verification of these languages, and argue that our proofs are relevant to any language that uses multiple contexts to separate linear assumptions from non-linear ones, in the style of Dual Intuitionistic Linear Logic. Our work is implemented using the Coq interactive theorem prover and builds upon \Francois Pottier's \c{DbLib} library for variable binding using De Bruijn indices. We provide a proof of type soundness for a Linear Lambda Calculus (LLC) and highlight how similar techniques can be applied to \i{The Linear Language with Locations}, $L^3$ -- which is representative of a class of more complex languages with destructive updates.
 \end{abstract}
 
 \tableofcontents
@@ -248,7 +261,7 @@ The same authors are also responsible for the Cyclone project \cite{grossman05},
 
 \subsection{Pottier's type-and-capability system with hidden state}
 
-A mechanical formalisation for a system even more similar to $L^3$ than \rgnUL is given in a 2013 article by Fran\c{c}ois Pottier \cite{pottier13}. Pottier's system, \SSPHS, uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \textit{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process. Hidden state is realised via a typing rule called the \textit{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state.
+A mechanical formalisation for a system even more similar to $L^3$ than \rgnUL is given in a 2013 article by \Francois Pottier \cite{pottier13}. Pottier's system, \SSPHS, uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \textit{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process. Hidden state is realised via a typing rule called the \textit{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state.
 
 The concept of hidden state is distinct from, yet related to, the existential types that $L^3$ uses to conceal exact locations. \SSPHS also employs hidden state for the purpose of general resource management, rather than just memory management. The ability to express memory management in the language obsoletes $L^3$ and similar systems' explicit rules for memory management, which Pottier describes as ``magic" \cite{pottier13}.
 
