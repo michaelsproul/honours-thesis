@@ -134,44 +134,28 @@ The \b{main contribution} of this thesis is a software library for the interacti
 
 As a proof-of-concept for our approach we have undertaken a proof of \i{type soundness} for the Linear Lambda Calculus. Type soundness is a key result in establishing the sensibility of a language and we argue that our approach is also applicable to soundness proofs for more complex languages with the same foundations. Specifically, we argue that a proof of soundness for \i{The Linear Language with Locations} ($L^3$) could make effective use of our library, and that $L^3$ is representative of languages that build upon the Linear Lambda Calculus by adding destructive updates and shared pointers.
 
-% Our broad goal is to further the construction of computer-checked proofs for all parts of the software stack.
+\section{Coq and the Curry-Howard Correspondence}
+\label{sec:curry_howard}
+
+Recall that the Curry-Howard correspondence establishes an equivalence between logical systems and type systems for programming languages. By considering logical propositions as types, the proof of a proposition $P$ can be given by constructing a value of type $P$ in the equivalent programming language. The Coq proof assistant provides a dependently typed programming language with inductive data-types that allows complex propositions to be expressed and proved in this manner. Coq proofs make use of \i{tactics} which abstract over repetitive reasoning.
 
 % Background.
 \chapter{Background and Previous Work}
 \label{ch:background}
 
-\section{Coq and the Curry-Howard Isomorphism}
-\label{sec:curry_howard}
-
-Recall that the Curry-Howard correspondence establishes an equivalence between logical systems and type systems for programming languages. By considering logical propositions as types, the proof of a proposition $P$ can be given by constructing a value of type $P$ in the equivalent programming language. The Coq proof assistant provides a dependently typed programming language with inductive data-types that allows complex propositions to be expressed and proved in this manner. Coq proofs make use of \i{tactics} which abstract over repetitive reasoning.
-
-\section{Summary of Introduction}
-
-We will prove type soundness for the Linear Language with Locations, using the Coq proof assistant. We hope that the verification of $L^3$ will provide insight on the tractability of mechanical verifying low-level languages with capabilities.
-
-\section{Type Soundness}
-
-Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Soundness is GREAT.
-
-In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Felleisen \cite{wright94}.
-
-
-
-% intro?
-If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code the program is corrupted by an unverified transformation.
-
-Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
-
-% intro
-
-
 \section{The Unsuitability of C}
 
-Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}. In this work we consider type systems for languages that could potentially act as verification-friendly successors to the domains where C currently excels (operating systems, language runtimes, embedded devices). Our core hypothesis is that \textit{uniqueness types} and the destructive updates they enable should simplify the verification of systems software.
+TODO: Flesh this out (or delete it?).
 
-\section{Linear and Affine Typing}
+Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Attempts to assign semantics to C have resulted in numerous impressive verification projects -- notably the CompCert verified compiler \cite{leroy09} and the seL4 micro-kernel \cite{klein14}.
+
+\section{Overview of Linear and Affine Typing}
 
 Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable properties that can be obtained by enforcing them. The Clean programming language (introduced in \cite{clean87}) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \i{destructive updates} whilst preserving referential transparency. The Rust programming language \cite{rustWeb} uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available, like a garbage collector itself, or an operating system.
+
+At their core, all of these systems enforce their constraints using typing rules derived from linear logic \cite{girard87}. To get a feel for linear logic, we first turn our attention to the Linear Lambda Calculus. We then continue by discussing more complex languages and the techniques used in their mechanical formalisation.
+
+\section{The Linear Lambda Calculus}
 
 In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening} \cite{wadler90, wadler93}.
 
@@ -249,6 +233,12 @@ Importantly, de Vries' work includes the only known mechanical verification of a
 % Uniqueness typing as an alternative (mention dereliction, non guarantees). DONE.
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
+
+\section{Type Soundness}
+
+Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Soundness is GREAT.
+
+In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Felleisen \cite{wright94}.
 
 \section{The Linear Language with Locations, $L^3$}
 
@@ -649,9 +639,9 @@ Before defining an inductive predicate for our typing relation, a representation
 As noted in the background section, control over the actions permitted on typing contexts is at the core of substructural typing. Together with our choice to use de Bruijn indices for variable naming, this narrows down our choice of representation. We have the following options to consider:
 
 \begin{itemize}
-\item \textbf{Functions}: Some Coq formalisations of languages with structural typing (REF) make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ H = fun y => if x = y then Some $\tau$ else H y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
-\item \textbf{Lists of Types}: Unsuitable (TODO).
-\item \textbf{Lists of Optional Types}: Suitable (TODO).
+\item \textbf{Functions}: Some Coq formalisations of languages with structural typing \cite{pierce15} make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ H = fun y => if x = y then Some $\tau$ else H y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
+\item \textbf{Lists of Types}: We could consider using a list of types so that the type for variable $\hat{i}$ is at index $i$. This is preferable to using a function because we can inspect and destructure a list, and can also perform induction. However, splitting an environment becomes problematic because we need to keep the type for variable $\hat{i}$ at index $i$, even if some or all of the types at indexes less than $i$ should no longer be available because they were assigned to the other side of the split. Essentially, if we are to use a list, we need a filler value to occupy the evacuated positions. This leads to our next option...
+\item \textbf{Lists of Optional Types}: What if we rather than using a list of types, we use a list of \c{option type}, so that types which are no longer available are represented by \c{None} entries? This fulfils all of our requirements: we can look-up types, alter them, add new entries and split an environment so that variables and their types are divided between the two new environments.
 \item \textbf{Dependent Vectors}: Suitable? (TODO/DROP)
 \end{itemize}
 
