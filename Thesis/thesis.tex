@@ -798,7 +798,7 @@ In his proofs about uniqueness typing Edsko de Vries [REF] establishes all of th
 
 \subsubsection{Lemmas Required for Soundness}
 
-In order to prove soundness, several lemmas about the interaction between inserts and context splitting were required. Although many of the lemmas are conceptually simple, some required significant effort and represent a large portion of the work involved in the proof of soundness for the linear lambda calculus. Many lemmas also involve the insertion of \c{None} values into contexts, which is a consequence of the strengthened induction required to prove the substiution lemma (see the next section on substitution (TODO)).
+In order to prove soundness, several lemmas about the interaction between inserts and context splitting were required. Although many of the lemmas are conceptually simple, some required significant effort and represent a large portion of the work involved in the proof of soundness for the linear lambda calculus. Many lemmas also involve the insertion of \c{None} values into contexts, which is a consequence of the strengthened induction required to prove the substitution lemma (see the next section on substitution (TODO)).
 
 The first, and perhaps most difficult to prove, was \c{insert_none_split_backwards}, discussed previously in the section about \c{split_single}. Refer to the statement of the lemma above (FIXME?). We attribute the difficulty in proving the lemma to the fact that we initially lacked ways to express many of the intuitive reasons for the lemma's truth. With the right definitions and lemmas in place, the proof became quite straight-forward.
 
@@ -819,7 +819,7 @@ Lemma split_app : forall A (E : env A) E1 E2 n,
       context_split E E1' E2'.
 \end{minted}
 
-The other case where the new \c{None} value is inserted in between existing elements is handled by an induction on \c{x}, which is made simpler by knowing the bound on \c{x}, i.e. \c{x < length E}. For example, it absolves the prover from having to deal with the case where the environment is empty, which proved to be a nuisance in early versions of the proof. Particuarly as \c{length (tl E1) = length (tl E2)} does not imply that \c{length E1 = length E2} as one may expect outside a total programming language.
+The other case where the new \c{None} value is inserted in between existing elements is handled by an induction on \c{x}, which is made simpler by knowing the bound on \c{x}, i.e. \c{x < length E}. For example, it absolves the prover from having to deal with the case where the environment is empty, which proved to be a nuisance in early versions of the proof. Particularly as \c{length (tl E1) = length (tl E2)} does not imply that \c{length E1 = length E2} as one may expect outside a total programming language.
 
 TODO: More here about the other couple of insertion/split lemmas.
 
