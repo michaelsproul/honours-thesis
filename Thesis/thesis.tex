@@ -19,6 +19,7 @@
 \usepackage{minted}
 \usepackage{csquotes}
 \usepackage{underscore}
+\usepackage{tabto}
 
 % Nicely coloured links.
 \hypersetup{
@@ -27,6 +28,11 @@
     citecolor={blue!80!black},
     urlcolor={blue!80!black}
 }
+
+% Put boxes around figures? Maybe.
+\usepackage{float}
+\floatstyle{boxed}
+\restylefloat{figure}
 
 % Abstract env.
 \newenvironment{abstract}
@@ -94,6 +100,7 @@
 \newcommand{\SSPHS}{\text{SSPHS }}
 \newcommand{\types}{\vdash}
 \newcommand{\Francois}{Fran\frenchc{c}ois }
+\newcommand{\lolly}{\multimap}
 
 % Text formatting.
 \let\frenchc\c
@@ -156,6 +163,39 @@ Linear, affine and uniqueness typing are closely-related features of type system
 At their core, all of these systems enforce their constraints using typing rules derived from linear logic \cite{girard87}. To get a feel for linear logic, we first turn our attention to the Linear Lambda Calculus. We then continue by discussing more complex languages and the techniques used in their mechanical formalisation.
 
 \section{The Linear Lambda Calculus}
+
+\begin{figure}[h]
+\caption{Typing Rules for DILL Linear Lambda Calculus}
+\begin{displaymath}
+\arraycolsep=1.4pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infer[\text{(Int-Var)}]{\Gamma, x : A; \emptyset \types x : A}{} &
+\infer[\text{(Lin-Var)}]{\Gamma; x : A \types x : A}{} \\
+\infer[\text{(Unit-I)}]{\Gamma; \emptyset \types * : I}{} &
+\infer[\text{(Unit-E)}]
+  {\Gamma; \Delta_1, \Delta_2 \types \text{let $*$ be $t$ in $u$} : A}
+  {\Gamma; \Delta_1 \types t : I  &  \Gamma; \Delta_2 \types u : A} \\
+\infer[\text{($\otimes$-I)}]
+  {\Gamma; \Delta_1, \Delta_2 \types t \otimes u : A \otimes B}
+  {\Gamma; \Delta_1 \types t : A  &  \Gamma; \Delta_2 \types u : B} &
+\infer[\text{($\otimes$-E)}]
+  {\Gamma; \Delta_1, \Delta_2 \types \text{let $x \otimes y : A \otimes B$ be $u$ in $t$} : C}
+  {\Gamma; \Delta_1 \types u : A \otimes B  &  \Gamma; \Delta_2, x : A, y : B \types t : C} \\
+\infer[\text{($\lolly$-I)}]
+  {\Gamma; \Delta \types (\lambda x : A. t) : A \lolly B}
+  {\Gamma; \Delta, x : A \types t : B} &
+\infer[\text{($\lolly$-E)}]
+  {\Gamma; \Delta_1, \Delta_2 \types (u \; t) : B}
+  {\Gamma; \Delta_1 \types u : A \lolly B  &  \Gamma; \Delta_2 \types A} \\
+\infer[\text{(!-I)}]
+  {\Gamma; \emptyset \types !t : !A}
+  {\Gamma; \emptyset \types t : A} &
+\infer[\text{(!-E)}]
+  {\Gamma; \Delta_1, \Delta_2 \types \text{let $!x : A$ be $u$ in $t$} : B}
+  {\Gamma; \Delta_1 \types u : !A  &  \Gamma, x : A; \Delta_2 \types t : B} \\
+\end{array}
+\end{displaymath}
+\end{figure}
 
 In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening} \cite{wadler90, wadler93}.
 
