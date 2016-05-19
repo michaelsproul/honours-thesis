@@ -135,11 +135,13 @@ Computer systems form an integral part of modern society, both in the form of pe
 
 The C Programming Language, in which large amounts of low-level \i{systems software} is written, is an example of a language that is difficult to reason about because of its murky semantics. According to the language specification the results of some operations are classified as \i{undefined behaviour}, meaning that the compiler has no obligation to produce a specific result (REF). Ideally, we would like to rule out undefined behaviour at compile time through the use of a type system. In this thesis we focus on the formal semantics of languages with strong type systems that are more well-suited to low-level software verification than C.
 
-In particular, we are interested in \i{resource-aware} languages which exploit \i{substructural} type systems based on linear logic (REF) to track how values are consumed and destroyed. This is useful in the context of systems software as it can enable every piece of heap-allocated memory to be automatically de-allocated without the use of a garbage collector, for example, by performing de-allocation when the unique reference to the memory goes out of scope. We begin by discussing the Linear Lambda Calculus (LLC), which is a simple extension of $\lambda$-calculus with a linear type system. We then go on to describe more expressive languages that include features like shared pointers and destructive updates.
+In particular, we are interested in \i{resource-aware} languages which exploit \i{substructural} type systems based on linear logic (REF) to track how values are consumed and destroyed. Intuitively, a \i{linear} value is one that is guaranteed to be used exactly once. In the context of systems software, we can use a variant of linearity to assign each piece of heap-allocated memory a unique owner variable. When a variable goes out of scope we can safely and automatically free the memory it owns, without the need for a garbage-collector.
+
+We begin by discussing the Linear Lambda Calculus (LLC), which is a simple extension of $\lambda$-calculus with a linear type system. We then go on to describe more expressive languages that include features like shared pointers and destructive updates.
 
 The \b{main contribution} of this thesis is a software library for the interactive theorem prover Coq. The library includes definitions and lemmas primarily about \i{context splitting}, which is a technique used in many substructural type systems. Our code is an extension of \Francois Pottier's \c{DbLib} library which aims to de-duplicate the effort required to reason about variable binding, just as we hope to de-duplicate the effort required to reason about linear typing.
 
-As a proof-of-concept for our approach we have undertaken a proof of \i{type soundness} for the Linear Lambda Calculus. Type soundness is a key result in establishing the sensibility of a language and we argue that our approach is also applicable to soundness proofs for more complex languages with the same foundations. Specifically, we argue that a proof of soundness for \i{The Linear Language with Locations} ($L^3$) could make effective use of our library, and that $L^3$ is representative of languages that build upon the Linear Lambda Calculus by adding destructive updates and shared pointers.
+As a proof-of-concept for our approach we have undertaken a proof of \i{type soundness} for a Linear Lambda Calculus (LLC). Type soundness is a key result in establishing the sensibility of a language and we argue that our approach is also applicable to soundness proofs for more complex languages with the same foundations. Specifically, we argue that a proof of soundness for \i{The Linear Language with Locations} ($L^3$) could make effective use of our library, and that $L^3$ is representative of languages that build upon the Linear Lambda Calculus by adding destructive updates and shared pointers.
 
 \section{Coq and the Curry-Howard Correspondence}
 \label{sec:curry_howard}
@@ -163,6 +165,32 @@ Linear, affine and uniqueness typing are closely-related features of type system
 At their core, all of these systems enforce their constraints using typing rules derived from linear logic \cite{girard87}. To get a feel for linear logic, we first turn our attention to the Linear Lambda Calculus. We then continue by discussing more complex languages and the techniques used in their mechanical formalisation.
 
 \section{The Linear Lambda Calculus}
+
+For our presentation of the linear lambda calculus we follow the work of Plotkin and Barber (REF) on Dual Intuitionistic Linear Logic (DILL). First, the structure of terms:
+
+TODO: DILL Syntax here.
+
+The meta-variables $t$, $t_i$ and $u$ range over terms, while the meta-variable $x$ ranges over a countably infinite set of variable names. The core constructs of the language are those of the lambda calculus: variables ($x$), abstractions ($\lambda x : A. t$) and applications $(u \, t)$.
+
+To best understand the other constructs, it makes sense to introduce the types and typing rules. We have the following types, denoted by meta-variable $\tau$:
+
+TODO: DILL types
+
+We write the judgement $\Gamma; \Delta \types t : \tau$ to denote that a term $t$ has type $\tau$ relative to two typing environments $\Gamma$ and $\Delta$ which record the types of free variables in $t$. The two typing environments are the origin of the name \b{Dual} Intuitionistic Linear Logic, and are part of DILL's mechanism for differentiating non-linear and linear values. The first environment, $\Gamma$, records the types of non-linear intuitionistic variables, and behaves exactly like a typing environment for the simply-typed lambda calculus. In contrast, the second environment $\Delta$ records the types of linear variables which must be used exactly once. Although a language with \i{just} linear values is easily conceivable, it is both more practical and flexible to allow non-linear values to exist alongside linear ones.
+
+To define which typing judgements are well-formed, we use inference rules in the style of natural deduction:
+
+% For example, in a high-level linear language, it makes sense to treat small and easily copyable types like \c{Int} as non-linear rather than linear.
+
+% In the simply-typed (non-linear) lambda calculus and many of the languages described later, a single typing environment suffices.
+
+% For the simply-typed (non-linear) lambda calculus, typing judgements are typically written $H \types t : \tau$, where $H$ is an environment. In a linear language however, we need to make a distinction between variables which can be duplicated freely, and variables which must be used once. The approach take by DILL achieves this by using two typing.
+
+% DILL achieves this by using two environments rather than one, so that where $\Gamma$ records the types of all duplicable (intuitionistic) variables, and $\Delta$
+
+% In Dual Intuitionistic Linear Logic however, we make use of \i{two} environments that record the types of free intuitionistic variables and linear variables respectively respectively, $\Gamma; \Delta \types t : \tau$.
+
+% Types are assigned to terms relative to \i{two} typing environments, rather than just one as is typical for the simply typed lambda calculus. The use of two contexts is the origin of the name \b{Dual} Intuitionistic Linear Logic, and the intent
 
 \begin{figure}[h]
 \caption{Typing Rules for DILL Linear Lambda Calculus}
@@ -196,6 +224,14 @@ At their core, all of these systems enforce their constraints using typing rules
 \end{array}
 \end{displaymath}
 \end{figure}
+
+There are two rules for typing variables, corresponding to intuitionistic (Int-Var) and linear variables (Lin-Var) respectively. In both cases we allow extra intuitionistic variables to be present in the environment, as we are free to ignore them. Conversely, linear variables must be used exactly once, so there can't be any present when typing a non-linear variable and there can't be any extra ones present when typing a linear variable. Hence the linear contexts for the two rules are $\emptyset$ and $x : A$ respectively.
+
+% A rule suffixed by \b{-I} is an introduction rule which states how a new inhabitant of a type is introduced, while a \b{-E} suffix denotes an elimination rule which states how an inhabitant of a type can be understood within the larger system (FIXME).
+
+The unit type, $\mathcal{I}$ is inhabited by a single term $*$. The term \b{let $*$ be $t$ in $u$} allows for the \i{elimination} of a term $t$ of type $I$, as shown by the rule $(Unit-E)$.
+
+% The terms denoted by meta-variable $v$ are the \i{values}. Values are terms of the language that we consider to be fully/completely evaluated.
 
 In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening} \cite{wadler90, wadler93}.
 
