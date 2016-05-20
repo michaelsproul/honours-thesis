@@ -76,7 +76,7 @@
 % Code: library, lemmas, definitions, engineering.
 % Effective verification of linear types in Coq.
 % Proof engineering for formalisations of languages with linear types
-\thesistitle{A library based approach to the verification of languages with linear types}
+\thesistitle{A Library Based Approach to the Verification of Languages with Linear Types}
 \thesisschool{School of Computer Science and Engineering}
 \thesisauthor{Michael Alexander Sproul}
 \thesisZid{z3484357}
@@ -102,6 +102,8 @@
 \newcommand{\Francois}{Fran\frenchc{c}ois }
 \newcommand{\lolly}{\multimap}
 
+\newcommand{\letbe}[3]{\text{let $#1$ be $#2$ in $#3$}}
+
 % Text formatting.
 \let\frenchc\c
 \let\c\texttt
@@ -109,6 +111,8 @@
 \let\i\textit
 \let\oldb\b
 \let\b\textbf
+\let\oldt\t
+\let\t\text
 
 \begin{document}
 
@@ -176,7 +180,11 @@ To best understand the other constructs, it makes sense to introduce the types a
 
 TODO: DILL types
 
-We write the judgement $\Gamma; \Delta \types t : \tau$ to denote that a term $t$ has type $\tau$ relative to two typing environments $\Gamma$ and $\Delta$ which record the types of free variables in $t$. The two typing environments are the origin of the name \b{Dual} Intuitionistic Linear Logic, and are part of DILL's mechanism for differentiating non-linear and linear values. The first environment, $\Gamma$, records the types of non-linear intuitionistic variables, and behaves exactly like a typing environment for the simply-typed lambda calculus. In contrast, the second environment $\Delta$ records the types of linear variables which must be used exactly once. Although a language with \i{just} linear values is easily conceivable, it is both more practical and flexible to allow non-linear values to exist alongside linear ones.
+We write the judgement $\Gamma; \Delta \types t : \tau$ to denote that a term $t$ has type $\tau$ relative to two typing environments $\Gamma$ and $\Delta$ which record the types of free variables in $t$. The two typing environments are the origin of the name \b{Dual} Intuitionistic Linear Logic, and are part of DILL's mechanism for differentiating non-linear and linear values.
+
+Typing environments can have many representations, and for the purposes of precise mechanical formalisation this will become very important (see section FIXME). In ``semi-formal" contexts, including Barber's presentation of DILL, the environments are defined to be sequences of variable-type pairs $x_0 : A_0, x_1 : A_1, \dots$ such that no variable appears more than once. Comma-separated environments like $(\Gamma, x : A)$ and $(\Delta_1, \Delta_2)$ are understood to be the concatenation of two environments with disjoint sets of variables.
+
+The first environment, $\Gamma$, records the types of non-linear intuitionistic variables. In contrast, the second environment $\Delta$ records the types of linear variables which must be used exactly once. Although a language with \i{just} linear values is easily conceivable, it is both more practical and flexible to allow non-linear values to exist alongside linear ones.
 
 To define which typing judgements are well-formed, we use inference rules in the style of natural deduction:
 
@@ -201,13 +209,13 @@ To define which typing judgements are well-formed, we use inference rules in the
 \infer[\text{(Lin-Var)}]{\Gamma; x : A \types x : A}{} \\
 \infer[\text{(Unit-I)}]{\Gamma; \emptyset \types * : I}{} &
 \infer[\text{(Unit-E)}]
-  {\Gamma; \Delta_1, \Delta_2 \types \text{let $*$ be $t$ in $u$} : A}
+  {\Gamma; \Delta_1, \Delta_2 \types \letbe{*}{t}{u} : A}
   {\Gamma; \Delta_1 \types t : I  &  \Gamma; \Delta_2 \types u : A} \\
 \infer[\text{($\otimes$-I)}]
   {\Gamma; \Delta_1, \Delta_2 \types t \otimes u : A \otimes B}
   {\Gamma; \Delta_1 \types t : A  &  \Gamma; \Delta_2 \types u : B} &
 \infer[\text{($\otimes$-E)}]
-  {\Gamma; \Delta_1, \Delta_2 \types \text{let $x \otimes y : A \otimes B$ be $u$ in $t$} : C}
+  {\Gamma; \Delta_1, \Delta_2 \types \letbe{x \otimes y : A \otimes B}{u}{t} : C}
   {\Gamma; \Delta_1 \types u : A \otimes B  &  \Gamma; \Delta_2, x : A, y : B \types t : C} \\
 \infer[\text{($\lolly$-I)}]
   {\Gamma; \Delta \types (\lambda x : A. t) : A \lolly B}
@@ -216,24 +224,60 @@ To define which typing judgements are well-formed, we use inference rules in the
   {\Gamma; \Delta_1, \Delta_2 \types (u \; t) : B}
   {\Gamma; \Delta_1 \types u : A \lolly B  &  \Gamma; \Delta_2 \types A} \\
 \infer[\text{(!-I)}]
-  {\Gamma; \emptyset \types !t : !A}
+  {\Gamma; \emptyset \types {!t} : {!A}}
   {\Gamma; \emptyset \types t : A} &
 \infer[\text{(!-E)}]
-  {\Gamma; \Delta_1, \Delta_2 \types \text{let $!x : A$ be $u$ in $t$} : B}
-  {\Gamma; \Delta_1 \types u : !A  &  \Gamma, x : A; \Delta_2 \types t : B} \\
+  {\Gamma; \Delta_1, \Delta_2 \types \letbe{!x : A}{u}{t} : B}
+  {\Gamma; \Delta_1 \types u : {!A}  &  \Gamma, x : A; \Delta_2 \types t : B} \\
 \end{array}
 \end{displaymath}
 \end{figure}
 
-There are two rules for typing variables, corresponding to intuitionistic (Int-Var) and linear variables (Lin-Var) respectively. In both cases we allow extra intuitionistic variables to be present in the environment, as we are free to ignore them. Conversely, linear variables must be used exactly once, so there can't be any present when typing a non-linear variable and there can't be any extra ones present when typing a linear variable. Hence the linear contexts for the two rules are $\emptyset$ and $x : A$ respectively.
+There are two rules for typing variables, corresponding to intuitionistic (Int-Var) and linear variables (Lin-Var) respectively. In both cases we allow extra intuitionistic variables to be present in the environment, as we are free to ignore them. Conversely, linear variables must be used exactly once, so there can't be any present when typing a non-linear variable, and there can't be any extra ones present when typing a linear variable. Hence the linear contexts for the two rules are $\emptyset$ and $x : A$ respectively.
 
 % A rule suffixed by \b{-I} is an introduction rule which states how a new inhabitant of a type is introduced, while a \b{-E} suffix denotes an elimination rule which states how an inhabitant of a type can be understood within the larger system (FIXME).
 
-The unit type, $\mathcal{I}$ is inhabited by a single term $*$. The term \b{let $*$ be $t$ in $u$} allows for the \i{elimination} of a term $t$ of type $I$, as shown by the rule $(Unit-E)$.
+The unit type, $I$, is inhabited by a single term $*$. The term \b{let $*$ be $t$ in $u$} allows for the \i{elimination} of any term $t$ of type $I$, as shown by the rule (Unit-E). Every type constructor has an introduction rule and an elimination rule, suffixed \b{-I} and \b{-E} respectively.
 
-% The terms denoted by meta-variable $v$ are the \i{values}. Values are terms of the language that we consider to be fully/completely evaluated.
+The product type $A \otimes B$ represents a pair of values and is inhabited by terms of the form $t \otimes u$, if $t : A$ and $u : B$, as demonstrated by its introduction rule ($\otimes$-I). In order to guarantee that linear variables are used exactly once in $t \otimes u$, it is required that the linear context $(\Delta_1, \Delta_2)$ is the result of joining the two variable-disjoint linear contexts of $t$ and $u$. Alternately, the environment for $t \otimes u$ can be \i{split} into the two environments for $t$ and $u$. This is the \b{context splitting} operation that is at the core of many substructural type systems, and is the focus of our Coq library. Note that we use both the words \i{environment} and \i{context} to refer to typing environments.
 
-In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening} \cite{wadler90, wadler93}.
+The elimination rule for products ($\otimes$-E) also makes use of context splitting to ensure linearity. The rule states that if we have a term $u : A \otimes B$ and a term $t : C$ that is well-typed with free variables $x : A$ and $y : B$, then the expression that makes the components of $u$ available as $x$ and $y$ in $t$ also has type $C$. DILL uses the notation \b{let $x \otimes y : A \otimes B$ be $u$ in $t$} for this expression, which is equivalent to \c{let (x, y) = u in t} in Haskell syntax. The intuitionistic context $\Gamma$ from the \b{let} expression is available to both premises, whilst the linear context $(\Delta_1, \Delta_2)$ is split so that some variables are used to type $u$ ($\Delta_1$), and others are used to type $t$ in combination with the components of $u$ ($\Delta_2, x : A, y : B$).
+
+The \i{lollipop} type, $A \lolly B$, is the type of functions that consume a linear value of type $A$ and produce a value of type $B$. As we shall see, regular functions $A \to B$ can be encoded as $!A \lolly B$. Introducing a new value of lollipop type is done by writing a $\lambda$-abstraction, $(\lambda x : A. \; t)$ which is well-typed only if its body $t$ is well-typed under a linear environment extended with the type of the binder: $\Delta, x : A$. This rule, ($\lolly$-I) is identical to the rule for typing $\lambda$-abstractions in the STLC except for the fact that it places the binder in the linear context.
+
+The elimination rule for lollipop types ($\lolly$-E) uses a function application $(u \; t)$, where $u : A \lolly B$ and $t : A$. The context splitting is identical to the context splitting in the ($\otimes$-I) rule, with the linear context for $(u \; t)$ splitting into two sub-contexts for each of the sub-expressions $u$ and $t$.
+
+Finally we come to the \i{bang} type, $!A$, which allows the embedding of intuitionistic terms within the language. The introduction rule for bang types, (!-I), states that if a term $t$ can be assigned the type $A$ without reference to any linear variables, then we can construct a term ${!t} : {!A}$ which represents a duplicable version of $t$. Intuitively, this makes sense, as we can refer to the variables in the intuitionistic context for $t$ as many times as we like whilst creating copies via $!t$.
+
+To understand how terms of bang type become usable as duplicates requires consideration of the associated elimination rule, (!-E). This rule allows a term $u : {!A}$ to be destructured so that its ``inner" term becomes available in the \i{non-linear} context as re-usable assumption $x : A$. If $u : {!A}$ was determined using the introduction rule for bang types such that $u = {!v}$ for some $v$, then the let binding \b{let $!x : A$ be $u$ in $t$} binds a new name $x$ to $v$ and makes it available in the intuitionistic context for $t$.
+
+Alternatively, it's possible for a term $u$ to have type $!A$ without an application of the bang introduction rule. This occurs, for example, when writing a function to duplicate its input as a pair. Terms of linear type can't be duplicated, so the argument to this function must have type $!A$ for some type $A$. We must then use a bang let-binding, and (!-E) to bring a duplicable version of the binder variable into the intuitionistic context. The term we would like to type is therefore: $(\lambda x : {!A}. \; \t{let } {!y} : A \t{ be } x \t{ in } ({!y} \otimes {!y}))$. The typing derivation is:
+
+\begin{eqnarray*}
+\infer[\t{($\lolly$-I)}]{\emptyset; \emptyset \types (\lambda x : {!A}. \; \t{let } {!y} : A \t{ be } x \t{ in } ({!y} \otimes {!y})) : {!A} \lolly ({!A} \otimes {!A})}{
+  \infer[\t{(!-E)}]{\emptyset; x : {!A} \types \t{let } {!y} : A \t{ be } x \t{ in } ({!y} \otimes {!y}) : ({!A} \otimes {!A})}{
+    \infer[\t{(Lin-Var)}]{
+      \emptyset; x : {!A} \types x : {!A}
+    }{} &
+    \infer[\t{($\otimes$-I)}]{
+      y : A; \emptyset \types ({!y} \otimes {!y}) : ({!A} \otimes {!A})
+    }{
+      \infer[\t{(!-I)}]{y : A; \emptyset \types {!y} : {!A}}{
+        \infer[\t{(Int-Var)}]{y : A; \emptyset \types y : A}{}
+      } &
+      \infer[\t{(!-I)}]{y : A; \emptyset \types {!y} : {!A}}{
+        \infer[\t{(Int-Var)}]{y : A; \emptyset \types y : A}{}
+      }
+    }
+  }
+}
+\end{eqnarray*}
+
+Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : A \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$. Philip Wadler gives a similar typing derivation for a duplication function in his 1993 presentation of linear logic \cite{wadler93}, although his system differs from DILL in a few key ways.
+
+In Wadler's system, a single typing environment is used, containing both linear assumptions of the form $\langle x : A \rangle$ and intuitionistic ones of the form $[x : A]$. These are equivalent to assumptions in the respective linear and intuitionistic contexts of DILL. For rules that require the context to consist entirely of intuitionistic assumptions, Wadler uses the notation $[\Gamma]$, which is equivalent to a $\Gamma; \emptyset$ pair of contexts in DILL. When formalising linear logic with an interactive theorem prover such as Coq, the dual-context approach taken by DILL is preferable to Wadler's approach because of the clear and forced separation of the two worlds -- intuitionistic and linear. For example, Wadler's system would require a Coq data-type to differentiate the two types of assumptions, and an additional predicate to state if a context contains only intuitionistic assumptions. A further difference between the two systems is that Wadler's renders the structural rules that lend their name to \i{substructural} type systems, explicit.
+
+In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening} .
 
 \begin{eqnarray*}
 \infer[\text{Contraction}]{\Gamma, A \vdash B}{
@@ -253,11 +297,11 @@ When transformed into typing rules (as per Section \ref{sec:curry_howard}), Cont
 
 \begin{eqnarray*}
 \infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
-	\Gamma, y : A, z : A \vdash u :: B
+	\Gamma, y : A, z : A \types u :: B
 }
 \qquad
 \infer[\text{Weakening}]{\Gamma, x : A \vdash y :: B}{
-    \Gamma\vdash y :: B
+    \Gamma \types y :: B
 }
 \end{eqnarray*}
 
