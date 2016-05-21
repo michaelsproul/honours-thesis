@@ -153,7 +153,7 @@ As a proof-of-concept for our approach we have undertaken a proof of \i{type sou
 Recall that the Curry-Howard correspondence establishes an equivalence between logical systems and type systems for programming languages. By considering logical propositions as types, the proof of a proposition $P$ can be given by constructing a value of type $P$ in the equivalent programming language. The Coq proof assistant provides a dependently typed programming language with inductive data-types that allows complex propositions to be expressed and proved in this manner. Coq proofs make use of \i{tactics} which abstract over repetitive reasoning.
 
 % Background.
-\chapter{Background and Previous Work}
+\chapter{Background}
 \label{ch:background}
 
 \section{The Unsuitability of C}
@@ -273,19 +273,27 @@ Alternatively, it's possible for a term $u$ to have type $!A$ without an applica
 }
 \end{eqnarray*}
 
-Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : A \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$. Philip Wadler gives a similar typing derivation for a duplication function in his 1993 presentation of linear logic \cite{wadler93}, although his system differs from DILL in a few key ways.
+Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : A \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$.
 
-In Wadler's system, a single typing environment is used, containing both linear assumptions of the form $\langle x : A \rangle$ and intuitionistic ones of the form $[x : A]$. These are equivalent to assumptions in the respective linear and intuitionistic contexts of DILL. For rules that require the context to consist entirely of intuitionistic assumptions, Wadler uses the notation $[\Gamma]$, which is equivalent to a $\Gamma; \emptyset$ pair of contexts in DILL. When formalising linear logic with an interactive theorem prover such as Coq, the dual-context approach taken by DILL is preferable to Wadler's approach because of the clear and forced separation of the two worlds -- intuitionistic and linear. For example, Wadler's system would require a Coq data-type to differentiate the two types of assumptions, and an additional predicate to state if a context contains only intuitionistic assumptions. A further difference between the two systems is that Wadler's renders the structural rules that lend their name to \i{substructural} type systems, explicit.
+\subsection{Structural Rules}
 
-In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening} .
+Philip Wadler gives a similar typing derivation for a duplication function in his 1993 presentation of linear logic \cite{wadler93}, although his system differs from DILL in a few key ways.
+
+In Wadler's system, a single typing environment is used, containing both linear assumptions of the form $\langle x : A \rangle$ and intuitionistic ones of the form $[x : A]$. These are conceptually equivalent to assumptions in the respective linear and intuitionistic contexts of DILL. For rules that require the context to consist entirely of intuitionistic assumptions, Wadler uses the notation $[\Gamma]$, which is equivalent to a $\Gamma; \emptyset$ pair of contexts in DILL. When formalising linear logic with an interactive theorem prover such as Coq, the dual-context approach taken by DILL is preferable to Wadler's approach because of the clear and forced separation of the two worlds -- intuitionistic and linear. For example, Wadler's system would require a Coq data-type to differentiate the two types of assumptions, and an additional predicate to state if a context contains only intuitionistic assumptions. A further difference between the two systems is that Wadler's renders the structural rules that lend their name to \i{substructural} type systems explicit.
+
+To save writing the entire set of typing rules, which are very similar to the ones for DILL already presented, we cherry-pick a few of the structural rules to demonstrate our point, and rely on the approximate translation described above and the original paper \cite{wadler93} to provide the full details.
+
+TODO: Edit this section.
+
+In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening}.
 
 \begin{eqnarray*}
-\infer[\text{Contraction}]{\Gamma, A \vdash B}{
-	\Gamma, A, A \vdash B
+\infer[\t{(Contraction)}]{\Gamma, [x : A] \types u[x/y, x/z] : B}{
+  \Gamma, [y : A], [z : A] \types u : B
 }
 \qquad
-\infer[\text{Weakening}]{\Gamma, A \vdash B}{
-    \Gamma \vdash B
+\infer[\text{(Weakening)}]{\Gamma, [x : A] \types y : B}{
+  \Gamma \types y : B
 }
 \end{eqnarray*}
 
@@ -294,16 +302,6 @@ Contraction allows duplicate assumptions to be discarded, whilst Weakening allow
 \i{Non-linear} assumptions can still be used an unlimited number of times. Hence, variants of Contraction and Weakening that operate only on non-linear assumptions are present in linear logic, affine logic and similar substructural systems.
 
 When transformed into typing rules (as per Section \ref{sec:curry_howard}), Contraction and Weakening take the form:
-
-\begin{eqnarray*}
-\infer[\text{Contraction}]{\Gamma, x : A \vdash u[x/y, x/z] :: B}{
-	\Gamma, y : A, z : A \types u :: B
-}
-\qquad
-\infer[\text{Weakening}]{\Gamma, x : A \vdash y :: B}{
-    \Gamma \types y :: B
-}
-\end{eqnarray*}
 
 Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$. Further, substructural type theories include context-splitting operations that allow the linear variables of a typing context to be split between two new contexts which can be used to type-check subterms.
 
@@ -322,6 +320,21 @@ As in substructural logics, substructural type theories selectively permit Contr
 \end{eqnarray*}
 
 See \cite{wadler93} for full notational details.
+
+\section{Operational Semantics and Type Soundness}
+
+Up until this point, we have described only the syntax and \i{static semantics} of linearly-typed programming languages, with only vague notions of how terms behave \i{dynamically} at ``run-time". To now describe the dynamic behaviour of languages we turn to \i{structural operational semantics}, a mathematical formalism for the step-wise evaluation of terms, also known as small-step semantics.
+
+To define the small-step semantics of a language, we inductively define a relation on pairs of terms, denoted $t \to t'$. The relation needn't be strictly on pairs of terms, and many small-step semantics also thread through a global state or \i{store}, $\sigma$, so that the stepping relation ends up being: $(\sigma, t) \to (\sigma', t')$. In small-step semantics each step $t \to t'$ is intended to represent a single step of the computation, in contrast to big-step (\i{natural}) semantics where the values that terms evaluate to are stated directly, as in $t \Downarrow v$ (REF cow book).
+
+The $\beta$-rule of the $\lambda$-calculus can be stated for DILL as:
+\begin{eqnarray*}
+\infer[\beta]{((\lambda x : A. \; t) \; v) \to t[v/x]}{}
+\end{eqnarray*}
+
+Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Soundness is GREAT.
+
+In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Felleisen \cite{wright94}.
 
 \section{Uniqueness Typing}
 
@@ -353,12 +366,6 @@ Importantly, de Vries' work includes the only known mechanical verification of a
 % Uniqueness typing as an alternative (mention dereliction, non guarantees). DONE.
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
-
-\section{Type Soundness}
-
-Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Soundness is GREAT.
-
-In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Felleisen \cite{wright94}.
 
 \section{The Linear Language with Locations, $L^3$}
 
@@ -483,17 +490,6 @@ One aim of readable proofs is to convey key insights, but readability also aids 
 
 TODO: Keep expanding this section.
 
-\chapter{Proposal}
-\label{ch:proposal}
-
-The aim of this thesis is to formalise the semantics of the Linear Language with Locations (Core $L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper \cite{ahmed05} into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \c{dblib} library \cite{dblib13} for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in Section \ref{sec:de_bruijn}.
-
-With the operational semantics and typing rules defined, we will proceed with a syntactic proof of type soundness via progress and preservation. Experience with simpler languages from \i{Software Foundations} \cite{pierce15} suggests that the proof of progress will be less involved than the proof of preservation. The choice to aim for a syntactic proof is motivated by the semi-formal syntactic proof given in the $L^3$ paper, and the efficacy of syntactic soundness proofs for languages surveyed in the literature review. Considerations of how the proof will be undertaken are given in Section \ref{sec:proof_proposal}.
-
-Time permitting, the work will conclude with proofs of other properties of $L^3$. One interesting proof may be of the runtime irrelevance of capabilities. As in Pottier's  work on \SSPHS \cite{pottier13} this could be done by defining a version of the operational semantics in which capabilities do not appear, and proving that the two sets of semantics are equivalent.
-
-Section \ref{sec:research_questions} includes research questions that this thesis hopes to address, whilst Section \ref{sec:timeline} gives an approximate timeline for the completion of the work.
-
 \section{Variable naming and binding}
 \label{sec:var_naming}
 
@@ -579,54 +575,6 @@ Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for u
 The alternative to \c{dblib} would have been to use Arthur Chargu\'{e}raud's \i{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \i{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \i{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
 
 However, LN does depend on Chargu\'{e}raud's TLC library for \i{non-constructive} logic within Coq \cite{tlc15}. We elect not to use this library, in order to keep the set of axioms minimal and to aid compatibility with other proofs. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
-
-\section{Proof of Type Soundness for $L^3$}
-\label{sec:proof_proposal}
-
-To aid in the syntactic proof of type soundness for $L^3$ several sources will be drawn upon for inspiration. The paper proof of soundness for $L^3$ should provide some hints of lemmas to prove and techniques for proving them, like which variable to do induction on. The paper proof of soundness for core $L^3$ spans only 8 pages, so the work could always expand to verify the extended version of $L^3$ which requires a further 14 pages of paper proof.
-
-Other sources of inspiration will be the proofs of soundness for Mezzo and \SSPHS -- particularly for Coq-specific verification techniques. The Twelf proof of soundness for \rgnUL might also be useful for more general techniques.
-
-\section{Research Questions}
-\label{sec:research_questions}
-
-By conducting the above research, we hope to answer the following research questions:
-
-\begin{itemize}
-\item Does the $L^3$ type system admit straight-forward verification in the style of \rgnUL, Mezzo and other modern capability systems, or do the generalisations and simplifications or these systems make verification simpler?
-\item Is the \c{dblib} library for de Bruijn indices general enough to allow the verification of languages it wasn't designed for? Specifically, is it possible to define term and location substitution for $L^3$ using an unmodified version of \c{dblib}?
-\item How much effort is involved in the translation of syntactic soundness proofs from paper to the Coq proof assistant?
-\end{itemize}
-
-To quantify the effort involved in the proofs, we will make use of a simple script that records every minute spent inside the Coq IDE.
-
-\section{Timeline}
-\label{sec:timeline}
-
-I plan to complete most of the practical work over the summer so that the thesis write-up can be completed in Semester 1 2016. In case of delays, semester 1 can also act as an emergency buffer.
-
-\textbf{Over summer (3 months $\approx$ 12 weeks total):}
-
-\begin{itemize}
-\item $L^3$'s operational semantics and type system in Coq (2 weeks).
-\item Prove progress (4 weeks).
-\item Prove preservation, and related lemmas (6 weeks).
-\end{itemize}
-
-We expect that some definitions will need to be adjusted along the way.
-
-\textbf{Semester 1 2016 (12 weeks)}:
-
-\begin{itemize}
-\item Finalise proofs completed over the summer break (6 weeks).
-\item Write-up results and findings (6 weeks).
-\end{itemize}
-
-Time permitting, the previously discussed extra proofs could be undertaken either during summer, or after the completion of the main part of the thesis write-up.
-
-\section{Summary of Proposal}
-
-By drawing inspiration from the paper proof of soundness for $L^3$, and similar proofs from the literature, we will prove type soundness for Core $L^3$. We will use the syntactic soundness technique first defined by Wright and Felleisen \cite{wright94}. We will make use of the \c{dblib} library \cite{dblib13} for reasoning about de Bruijn indices. Time permitting, proofs of soundness for extended $L^3$, or of other properties of Core $L^3$ may be attempted.
 
 \chapter{Own Work}
 

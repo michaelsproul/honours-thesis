@@ -3,3 +3,23 @@ In this work we consider type systems for languages that could potentially act a
 If software verification is to propagate through modern software stacks, verification of components at different layers is a necessity. Proofs about programs written in high-level languages offer only superficial assurances if during compilation down to executable machine code the program is corrupted by an unverified transformation.
 
 Verification of entire computing systems including compilers, operating systems and file-systems is a huge undertaking however, so we restrict our attention here to the type systems of low-level languages.
+
+-- Discarded proposoal bits:
+
+\chapter{Proposal}
+\label{ch:proposal}
+
+The aim of this thesis is to formalise the semantics of the Linear Language with Locations (Core $L^3$) using the Coq proof assistant. The first step will be to translate the operational semantics and typing rules from the paper \cite{ahmed05} into inductive Coq definitions. As part of this, we will have to define two substitution functions -- one for the term substitution and one for location substitution. We will use the \c{dblib} library \cite{dblib13} for both substitution functions. The justification for this choice and a summary of the associated problems and alternatives is given in Section \ref{sec:de_bruijn}.
+
+With the operational semantics and typing rules defined, we will proceed with a syntactic proof of type soundness via progress and preservation. Experience with simpler languages from \i{Software Foundations} \cite{pierce15} suggests that the proof of progress will be less involved than the proof of preservation. The choice to aim for a syntactic proof is motivated by the semi-formal syntactic proof given in the $L^3$ paper, and the efficacy of syntactic soundness proofs for languages surveyed in the literature review. Considerations of how the proof will be undertaken are given in Section \ref{sec:proof_proposal}.
+
+Time permitting, the work will conclude with proofs of other properties of $L^3$. One interesting proof may be of the runtime irrelevance of capabilities. As in Pottier's  work on \SSPHS \cite{pottier13} this could be done by defining a version of the operational semantics in which capabilities do not appear, and proving that the two sets of semantics are equivalent.
+
+Section \ref{sec:research_questions} includes research questions that this thesis hopes to address, whilst Section \ref{sec:timeline} gives an approximate timeline for the completion of the work.
+
+\section{Proof of Type Soundness for $L^3$}
+\label{sec:proof_proposal}
+
+To aid in the syntactic proof of type soundness for $L^3$ several sources will be drawn upon for inspiration. The paper proof of soundness for $L^3$ should provide some hints of lemmas to prove and techniques for proving them, like which variable to do induction on. The paper proof of soundness for core $L^3$ spans only 8 pages, so the work could always expand to verify the extended version of $L^3$ which requires a further 14 pages of paper proof.
+
+Other sources of inspiration will be the proofs of soundness for Mezzo and \SSPHS -- particularly for Coq-specific verification techniques. The Twelf proof of soundness for \rgnUL might also be useful for more general techniques.
