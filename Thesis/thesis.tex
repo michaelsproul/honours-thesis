@@ -611,14 +611,18 @@ Some heuristics we can use to assess \b{readability} are:
 
 These heuristics are adapted from common software engineering practice, and should be familiar to anyone with a programming background. Short proofs of lemmas are like short functions, and preferring a small lemma to more code in the same lemma is like preferring a utility function to more code in the same function body. The meaningful naming of variables \i{at every step} links back to our altered definition of readability where we imagine that the reader is stepping through the proof examining the goals and hypotheses at each step.
 
-One aim of readable proofs is to convey key insights, but readability also aids \b{maintainability}. Proofs, particularly libraries of proofs, are not static entities and must be constructed so that they can be updated as easily as possible as features are added and new versions of related software are released. Between different versions of the theorem prover the behaviour of tactics can change in ways that are not backwards compatible. References to automatically named variables are considered fragile as a change in the automatic name generation can invalidate the reference and all subsequent proof steps.
+One aim of readable proofs is to convey key insights, but readability also aids \b{maintainability}. Proofs, particularly libraries of proofs, are not static entities and must be constructed so that they can be updated as easily as possible as features are added and new versions of related software are released. Between different versions of the theorem prover the behaviour of tactics can change in ways that are not backwards compatible. References to automatically named variables are considered fragile as a change in the automatic name generation can invalidate the reference and all subsequent proof steps. Some additional criteria to aid \b{maintainability} are:
 
 \begin{itemize}
-\item Markers to enforce different cases and sub-cases.
 \item No repetition of proof script.
+\item Markers to enforce different cases and sub-cases.
 \end{itemize}
 
-TODO: Keep expanding this section.
+Avoiding copied sections of proof script aids maintainability in an obvious way -- changing one section of code doesn't require changing all of its copies.
+
+Enforced case markers improve the clarity of error messages and the general debugging experience. By \i{enforced} we mean that the case markers only allow a new case to begin if the existing case has already been solved. Without case markers a tactic failure early in a proof script can cause tactics on subsequent lines to be applied to the wrong goals, leading to confusing error messages. With case markers, the cases that fail are isolated from their surroundings.
+
+An assessment of the work according to this evaluation framework is given in the Evaluation (REF) section. We turn our attention now to a detailed description of the work.
 
 \chapter{Own Work}
 
