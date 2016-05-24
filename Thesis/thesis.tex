@@ -503,12 +503,12 @@ Coq rejects this definition with the error: \c{Non strictly positive occurrence 
 
 There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
 
-\subsection{De Bruijn indices and the locally nameless approach}
+\subsection{De Bruijn Indices and the Locally Nameless Approach}
 \label{sec:de_bruijn}
 
-Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \i{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality that there are no integer literals in the object language that could be confused for de Bruijn indices.
+Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \i{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; \hat{0})$, where a natural number $i$ annotated with a hat as in $\hat{i}$ represents a de Bruijn index.
 
-For terms that contain free variables, a fixed naming context is used to map free variables to indices \cite{tapl}. For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \i{1} -- the lambda.
+For terms that contain free variables, a fixed naming context is used to map free variables to indices \cite{tapl}. For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto \hat{2}, y \mapsto \hat{1}, z \mapsto \hat{0}\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (\hat{0} \; \hat{2}) \; \hat{1})$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \i{1} -- the lambda.
 
 Capture-avoiding substitution with de Bruijn indices can be defined as a recursive function that makes use of a \i{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
 
