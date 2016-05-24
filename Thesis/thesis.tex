@@ -576,7 +576,23 @@ In summary, previous work on the formalisation of resource-aware type systems ha
 
 \section{Evaluation Framework}
 
+In this section we describe some criteria for assessing the quality of work completed as part of this thesis. Given our goal of creating a general Coq library for the verification of linearly-typed languages, what properties should our library ideally posess? We break the criteria into two subsections: \b{Conceptual Goals}, relating to the theoretical content of the library, and its generality and applicability to other languages; and \b{Implementation Goals} regarding the quality of the Coq library itself. Dividing the criteria in this way provides broad coverage of the quality of the work whilst allowing us to separate concerns.
+
 \subsection{Conceptual Goals}
+
+Our main conceptual goal is that the library be applicable and useful in the mechanical formalisation of numerous languages with substructural typing. We say \i{numerous}, rather than \i{all}, because new type systems with substructural influences are still being developed (cite Conor's Plenty o' Nuttin' paper). The library should be:
+
+\begin{enumerate}
+\item Applicable to the formalisation of $L^3$ and related systems.
+\item Usable without modifications to the core definitions.
+\item Usable with the addition of a minimal number of lemmas about the library's content.
+\end{enumerate}
+
+Point (1) is a restatement of our main overarching goal specialised to $L^3$, which we argue is representative of a class of similar languages.
+
+Point (2) expresses the ideal that the verifier of a new linearly-typed language should be able to use the library without making bespoke modifications to the core definitions and lemmas. Such modifications would indicate a lack of generality in the library's content. \i{Usable} here also means that the potential user of the library should not have to work around the library's inadequacies in convoluted ways.
+
+Point (3) relates to the coverage provided by the library's lemmas. Ideally, all of the interesting relationships between its parts should be chronicled as lemmas within the library. We allow some flexibility, to acknowledgement that the ideal is typically very time-consuming to achieve. We believe it is reasonable for users of the library to discover a small number of missing relationships between the library's components which they can then contribute \i{upstream} for general use.
 
 \subsection{Implementation Goals}
 
@@ -584,7 +600,7 @@ The construction of a large Coq proof, as in the development of any complex piec
 
 Firstly, our Coq proofs should be \b{easy to read and understand}. By this we mean that additional complexity or obfuscation that detracts from the \i{intent} of the proof should be kept to a minimum. Coq proofs differ from most other bits of code in that they are often difficult to read without knowing the goal and hypotheses at each step, so our criteria for readability must take this into account.
 
-Some heuristics we can use to assess readability are:
+Some heuristics we can use to assess \b{readability} are:
 
 \begin{itemize}
 \item Different levels of indentation for goals and sub-goals.
@@ -593,7 +609,7 @@ Some heuristics we can use to assess readability are:
 \item Short proofs of lemmas.
 \end{itemize}
 
-These heuristics are adapted from common software engineering practice (references?), and should be familiar to anyone with a programming background. Short proofs of lemmas are like short functions, and preferring a small lemma to more code in the same lemma is like preferring a utility function to more code in the same function body. The meaningful naming of variables \i{at every step} links back to our altered definition of readability where we imagine that the reader is stepping through the proof examining the goals and hypotheses at each step.
+These heuristics are adapted from common software engineering practice, and should be familiar to anyone with a programming background. Short proofs of lemmas are like short functions, and preferring a small lemma to more code in the same lemma is like preferring a utility function to more code in the same function body. The meaningful naming of variables \i{at every step} links back to our altered definition of readability where we imagine that the reader is stepping through the proof examining the goals and hypotheses at each step.
 
 One aim of readable proofs is to convey key insights, but readability also aids \b{maintainability}. Proofs, particularly libraries of proofs, are not static entities and must be constructed so that they can be updated as easily as possible as features are added and new versions of related software are released. Between different versions of the theorem prover the behaviour of tactics can change in ways that are not backwards compatible. References to automatically named variables are considered fragile as a change in the automatic name generation can invalidate the reference and all subsequent proof steps.
 
@@ -603,8 +619,6 @@ One aim of readable proofs is to convey key insights, but readability also aids 
 \end{itemize}
 
 TODO: Keep expanding this section.
-
-
 
 \chapter{Own Work}
 
