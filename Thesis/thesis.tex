@@ -1090,9 +1090,13 @@ To prove this lemma, DbLib was extended with a \i{lowering} operation that is co
 
 \chapter{Evaluation}
 
+In this section we assess the quality of the work according to the Evaluation Framework of section (REF). Primarily, we discuss how a formalisation of $L^3$ could make use of our library.
+
 \section{Generality and Applicability}
 
-How useful is what I've done for the verification of other systems? (Answer: pretty ok)
+According to the conceptual goals of our evaluation framework, we would like the library to be applicable to the formalisation of languages more complex than LLC. In concrete terms, this means that the context splitting operation provided by the library should be usable in the formalisation of such languages.
+
+\section{Towards a Coq Formalisation of $L^3$}
 
 \section{Quality of Coq Proofs}
 
@@ -1104,6 +1108,8 @@ In his book \i{Certified Programming with Dependent Types}, Adam Chlipala advoca
 
 \i{``The more uninteresting drudge work a proof domain involves, the more important it is to work to prove theorems with single tactics."}
 \i{``I like to say that if you find yourself caring about indentation in a proof script, it is a sign that the script is structured poorly."}
+
+\section{Summary of Evaluation}
 
 \chapter{Conclusion}
 
