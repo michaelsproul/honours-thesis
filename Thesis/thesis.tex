@@ -323,18 +323,46 @@ See \cite{wadler93} for full notational details.
 
 \section{Operational Semantics and Type Soundness}
 
-Up until this point, we have described only the syntax and \i{static semantics} of linearly-typed programming languages, with only vague notions of how terms behave \i{dynamically} at ``run-time". To now describe the dynamic behaviour of languages we turn to \i{structural operational semantics}, a mathematical formalism for the step-wise evaluation of terms, also known as small-step semantics.
+Up until this point, we have described only the syntax and static semantics (typing rules) of linearly-typed programming languages, with only vague notions of how terms behave \i{dynamically} at ``run-time". To now describe the dynamic behaviour of languages we turn to \i{structural operational semantics}, a mathematical formalism for the step-wise evaluation of terms, also known as small-step semantics.
 
-To define the small-step semantics of a language, we inductively define a relation on pairs of terms, denoted $t \to t'$. The relation needn't be strictly on pairs of terms, and many small-step semantics also thread through a global state or \i{store}, $\sigma$, so that the stepping relation ends up being: $(\sigma, t) \to (\sigma', t')$. In small-step semantics each step $t \to t'$ is intended to represent a single step of the computation, in contrast to big-step (\i{natural}) semantics where the values that terms evaluate to are stated directly, as in $t \Downarrow v$ (REF cow book).
+To define the small-step semantics of a language, we inductively define a relation on pairs of terms, denoted $t \steps t'$. The relation needn't be strictly on pairs of terms, and many small-step semantics also thread through a global state or \i{store}, $\sigma$, so that the stepping relation ends up being: $(\sigma, t) \steps (\sigma', t')$. In small-step semantics each step $t \steps t'$ is intended to represent a single step of the computation, in contrast to big-step \i{natural} semantics where the values that terms evaluate to are stated directly, as in $t \Downarrow v$ (REF cow book).
 
 The $\beta$-rule of the $\lambda$-calculus can be stated for DILL as:
 \begin{eqnarray*}
-\infer[\beta]{((\lambda x : A. \; t) \; v) \to t[v/x]}{}
+\infer[\beta]{(\lambda x : A. \; t) \; v \steps t[v/x]}{}
 \end{eqnarray*}
 
-Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Soundness is GREAT.
+Here we use the variable $v$ to indicate a \i{value} of the language. Values are terms that are fully evaluated according to the small-step semantics of the language \cite{tapl} -- formally, they are terms that are in normal form with respect to the stepping relation $(\steps)$. By specifying that $\beta$-reduction can only occur if the argument is a value we have fixed the reduction strategy to call-by-value. Other reduction strategies can be similarly encoded, but we consider only call-by-value, as discussed in (section FIXME).
 
-In this thesis, we aim to construct a mechanical proof of type soundness for $L^3$ using the Coq proof assistant. The proof will be carried out in the syntactic style of Wright and Felleisen \cite{wright94}.
+% FIXME: Maybe include something about rules with premises.
+% Semantic rules can also have premises, as in the case of the two rules for
+
+Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Stated formally, the soundness lemma is:
+\begin{eqnarray*}
+\infer[\t{(Type Soundness)}]
+{(\exists e''. \; e' \steps e'') \lor \t{$e'$ is a value}}
+{\emptyset \types e : \tau  &  e \steps^* e'}
+\end{eqnarray*}
+
+The notation $(\steps^*)$ represents zero or more applications of $(\steps)$. Our definition of stuckness states that a term $e'$ is not stuck if either it can step to some other term $e''$, or it is a value of the language.
+
+Soundness can be proved via two supporting lemmas called \i{progress} and \i{preservation}, using an approach introduced by Wright and Felleisen \cite{wright94}.
+
+The progress property holds if all well-typed terms are either values, or can take a step.
+\begin{eqnarray*}
+\infer[\t{(Progress)}]
+{(\exists e'. \; e \steps e') \lor \t{$e$ is a value}}
+{\emptyset \types e : \tau}
+\end{eqnarray*}
+
+The preservation, or \i{subject reduction}, property holds if well-typed terms retain their type during evaluation.
+\begin{eqnarray*}
+\infer[\t{(Preservation)}]
+{\emptyset \types e' : \tau}
+{\emptyset \types e : \tau  &  e \steps e'}
+\end{eqnarray*}
+
+Our proof-of-concept Coq formalisation of a linear lambda calculus makes use of progress and preservation lemmas to establish type soundness.
 
 \section{Uniqueness Typing}
 
