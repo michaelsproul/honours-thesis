@@ -364,6 +364,31 @@ The preservation, or \i{subject reduction}, property holds if well-typed terms r
 
 Our proof-of-concept Coq formalisation of a linear lambda calculus makes use of progress and preservation lemmas to establish type soundness.
 
+\section{The Linear Language with Locations, $L^3$}
+
+%the mechanical verification of a small language -- \i{The Linear Language with Locations}, $L^3$. Although formal semantics and semi-formal proofs of correctness exist for $L^3$, no computer-based proofs exist. We verify $L^3$ because it is typical of modern resource-aware calculi in its use of capabilities -- whilst remaining simple. $L^3$'s concepts of ownership make its mechanisation relevant to the complete verification of low-level systems like garbage collectors and operating systems, which are at the cutting edge of verification research.
+
+The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \i{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, pointers themselves become duplicable and can be stored in numerous locations freely.
+
+$L^3$ is a \i{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \i{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \c{Int} can be overwritten with a \c{Bool} and the type system can statically track this change.
+
+$L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
+
+\begin{eqnarray*}
+(\sigma, \text{new } v) \Rightarrow (\sigma \uplus \{l \mapsto v\},
+	\lquine l, \langle \capa, \ptr l \rangle \rquine)
+\\
+(\sigma, \text{let } \lquine \rho, x \rquine = \lquine l, v \rquine \text{in } e)
+	\Rightarrow
+	(\sigma, e[l/\rho][v/x])
+\end{eqnarray*}
+
+These two rules from the operational semantics show the behaviour of the \c{new} keyword for allocating memory, and the \c{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \c{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \i{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
+
+$L^3$'s rules for managing capabilities are closer to standard linear typing than de Vries' rules for modelling Clean's uniqueness typing. Typing assumptions are treated linearly, there are context-splitting operations and contraction and weakening are permitted for values of bang (!) type. This is in contrast to the use of kinds and attribute type constructors in de Vries' model.
+
+Conceptually, because the rules that introduce capabilities are baked into the type system, capabilities are guaranteed \i{not to have been shared} (uniqueness) and \i{not to be shared in the future} (linearity). The use of capabilities also yields all of the same properties yielded by substructural and uniqueness typing -- notably destructive updates and the potential to eliminate garbage collection. It is typical of many of the later systems which we cover in the next section.
+
 \section{Uniqueness Typing}
 
 Although linear and affine type theory capture the essence of uniquely referenced values, they are insufficient to describe the concept of \i{uniqueness} as it appears in languages like Clean. In his 2007 paper, de Vries \cite{deVries07} notes that terms of a unique type should be \i{guaranteed to never have been shared}, which is sufficient to guarantee a unique pointer at runtime. In contrast, terms of linear (or affine) type are \i{guaranteed not to be shared in the future}, which is insufficient to guarantee a unique pointer.
@@ -394,31 +419,6 @@ Importantly, de Vries' work includes the only known mechanical verification of a
 % Uniqueness typing as an alternative (mention dereliction, non guarantees). DONE.
 
 % de Vries formalisation of Clean's uniqueness typing using attributes.
-
-\section{The Linear Language with Locations, $L^3$}
-
-%the mechanical verification of a small language -- \i{The Linear Language with Locations}, $L^3$. Although formal semantics and semi-formal proofs of correctness exist for $L^3$, no computer-based proofs exist. We verify $L^3$ because it is typical of modern resource-aware calculi in its use of capabilities -- whilst remaining simple. $L^3$'s concepts of ownership make its mechanisation relevant to the complete verification of low-level systems like garbage collectors and operating systems, which are at the cutting edge of verification research.
-
-The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \i{capabilities} -- values that represent the permission to read or write an area of memory. By treating capabilities linearly, pointers themselves become duplicable and can be stored in numerous locations freely.
-
-$L^3$ is a \i{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \i{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \c{Int} can be overwritten with a \c{Bool} and the type system can statically track this change.
-
-$L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
-
-\begin{eqnarray*}
-(\sigma, \text{new } v) \Rightarrow (\sigma \uplus \{l \mapsto v\},
-	\lquine l, \langle \capa, \ptr l \rangle \rquine)
-\\
-(\sigma, \text{let } \lquine \rho, x \rquine = \lquine l, v \rquine \text{in } e)
-	\Rightarrow
-	(\sigma, e[l/\rho][v/x])
-\end{eqnarray*}
-
-These two rules from the operational semantics show the behaviour of the \c{new} keyword for allocating memory, and the \c{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \c{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \i{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
-
-$L^3$'s rules for managing capabilities are closer to standard linear typing than de Vries' rules for modelling Clean's uniqueness typing. Typing assumptions are treated linearly, there are context-splitting operations and contraction and weakening are permitted for values of bang (!) type. This is in contrast to the use of kinds and attribute type constructors in de Vries' model.
-
-Conceptually, because the rules that introduce capabilities are baked into the type system, capabilities are guaranteed \i{not to have been shared} (uniqueness) and \i{not to be shared in the future} (linearity). The use of capabilities also yields all of the same properties yielded by substructural and uniqueness typing -- notably destructive updates and the potential to eliminate garbage collection. It is typical of many of the later systems which we cover in the next section.
 
 \section{Systems of Capabilities}
 
@@ -457,6 +457,92 @@ Well-typed TAL programs typically guarantee memory safety given an axiomatisatio
 Another take on the typed assembly language concept, is Bedrock from Adam Chlipala's research group \cite{chlipala11}. Bedrock uses a domain-specific assembly language embedded within Coq to express low-level programs. Aided by user-provided annotations, Bedrock can prove properties about these assembly programs in an automated way using custom Coq tactics. The block annotations resemble the block pre-conditions of TALx86.
 
 More broadly it is worth noting the contribution of the CompCert \cite{leroy09} project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or \SSPHS as an intermediate language.
+
+\section{Variable Naming and Binding}
+\label{sec:var_naming}
+
+One problem that arises frequently in the formalisation of language semantics is that of \i{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $[v/x]e$) to describe the semantics of function application:
+
+\begin{eqnarray*}
+(\lambda x : \tau. \; e) \; v \Longrightarrow_\beta [v/x]e
+\end{eqnarray*}
+
+The problem of \i{variable capture}, which we wish to avoid, is demonstrated by the following example:
+
+\begin{eqnarray*}
+(\lambda x. \; \lambda y. \; x + y) \; y \; {\centernot\Longrightarrow}_\beta \; (\lambda y. \; y + y)
+\end{eqnarray*}
+
+Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This altering of the meaning of terms during substitution is something we would like to avoid.
+
+One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in variable capturing substitutions. This is the approach taken by \i{Software Foundations} \cite{pierce15} in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, the $L^3$ specification requires \i{``standard capture-avoiding substitution"} \cite{ahmed05}.
+
+% Extra: It doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture.
+
+In our Coq formalisation of $L^3$ we would therefore like to include capture-avoiding substitution as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meanings of programs themselves.
+
+\subsection{Higher-order Abstract Syntax}
+
+When using Higher-order Abstract Syntax (HOAS) to handle variable binding, the binders of the host language (in our case Coq) are used to represent binding constructs in the object language. Twelf encourages use of HOAS through its light-weight syntax (this example adapted from \cite{twelf08}):
+
+\begin{verbatim}
+exp : type.
+let : exp -> (exp -> exp) -> exp.
+\end{verbatim}
+
+The full definition for \c{exp} is omitted, but this example demonstrates that a let-binding in the \i{object language}, can be considered in the \i{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \c{let x = 1 + 2 in x + 3} would be encoded as \c{let (plus 1 2) ([x] plus x 3)}, where \c{plus : nat -> nat -> expr} and \c{([x] e)} is syntax for $(\lambda x. \; e)$.
+
+This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \i{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \c{let}'s higher-order function is a negative occurrence: \c{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
+
+\begin{verbatim}
+Inductive exp : Set :=
+  | exp_plus : nat -> nat -> exp
+  | exp_let : exp -> (exp -> exp) -> exp.
+\end{verbatim}
+
+Coq rejects this definition with the error: \c{Non strictly positive occurrence of "exp" in
+ "exp -> (exp -> exp) -> exp"}, as expected.
+
+There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
+
+\subsection{De Bruijn indices and the locally nameless approach}
+\label{sec:de_bruijn}
+
+Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \i{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality that there are no integer literals in the object language that could be confused for de Bruijn indices.
+
+For terms that contain free variables, a fixed naming context is used to map free variables to indices \cite{tapl}. For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \i{1} -- the lambda.
+
+Capture-avoiding substitution with de Bruijn indices can be defined as a recursive function that makes use of a \i{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
+
+\begin{eqnarray*}
+\uparrow^d_c k & = &
+  \begin{cases}
+  k \quad & \text{if} \quad k < c \\
+  k + d \quad & \text{if} \quad k \geq c
+  \end{cases}\\
+\uparrow^d_c (\lambda. \; t_1) & = & \lambda. \; \uparrow^d_{c + 1} t_1\\
+\uparrow^d_c (t_1 \; t_2) & = & (\uparrow^d_c t_1) \; (\uparrow^d_c t_2)
+\end{eqnarray*}
+
+With shifting defined, the definition of substitution is straight-forward -- we simply shift the free variables of the substituted term each time we move under a lambda.
+
+\begin{eqnarray*}
+[s/j]k & = &
+  \begin{cases}
+  s \quad & \text{if} \quad j = k \\
+  k \quad & \text{otherwise}
+  \end{cases}\\
+\left[s/j\right](\lambda. \; t_1) & = & \lambda. \; [(\uparrow^1_0 s)/(j + 1)] \; t_1\\
+\left[s/j\right](t_1 \; t_2) & = & ([s/j] \; t_1) \; ([s/j] \; t_2)
+\end{eqnarray*}
+
+These equations for shifting and substitution are due to \cite{tapl}.
+
+Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \c{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \c{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
+
+The alternative to \c{dblib} would have been to use Arthur Chargu\'{e}raud's \i{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \i{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \i{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
+
+However, LN does depend on Chargu\'{e}raud's TLC library for \i{non-constructive} logic within Coq \cite{tlc15}. We elect not to use this library, in order to keep the set of axioms minimal and to aid compatibility with other proofs. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
 
 \section{Summary of Mechanisation Techniques}
 
@@ -518,91 +604,7 @@ One aim of readable proofs is to convey key insights, but readability also aids 
 
 TODO: Keep expanding this section.
 
-\section{Variable naming and binding}
-\label{sec:var_naming}
 
-One problem that arises frequently in the formalisation of language semantics is that of \i{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $[v/x]e$) to describe the semantics of function application:
-
-\begin{eqnarray*}
-(\lambda x : \tau. \; e) \; v \Longrightarrow_\beta [v/x]e
-\end{eqnarray*}
-
-The problem of \i{variable capture}, which we wish to avoid, is demonstrated by the following example:
-
-\begin{eqnarray*}
-(\lambda x. \; \lambda y. \; x + y) \; y \; {\centernot\Longrightarrow}_\beta \; (\lambda y. \; y + y)
-\end{eqnarray*}
-
-Here the parameter $y$ is a free variable acting as a place-holder for a value in the environment. After substitution however, the $y$ replacing $x$ in the abstraction body $x + y$ becomes bound due to the name collision between the free $y$ and the binder $y$. This altering of the meaning of terms during substitution is something we would like to avoid.
-
-One way to avoid variable capture is to forbid the substitution of any terms containing free variables. In such a system, free variables like $y$ are never considered values and as such cannot be used in variable capturing substitutions. This is the approach taken by \i{Software Foundations} \cite{pierce15} in formalisations of the simply-typed lambda calculus and its variants. A further consequence of this approach is that globally-shared integers or strings for variable names are sufficient to guarantee soundness. Although it's tempting to embrace this approach for its simplifying properties, the $L^3$ specification requires \i{``standard capture-avoiding substitution"} \cite{ahmed05}.
-
-% Extra: It doesn't accurately capture the behaviour of common functional languages like Haskell and ML, which perform substitutions whilst avoiding variable capture.
-
-In our Coq formalisation of $L^3$ we would therefore like to include capture-avoiding substitution as part of the definitions of variable names and substitution operations. For this we consider three main approaches from the literature which all exploit the observation that the exact names of bound variables are insignificant at the level of language formalisation. In other words, although the names of variables may hold meaning for the authors of programs, they do not impact the meanings of programs themselves.
-
-\subsection{Higher-order Abstract Syntax}
-
-When using Higher-order Abstract Syntax (HOAS) to handle variable binding, the binders of the host language (in our case Coq) are used to represent binding constructs in the object language. Twelf encourages use of HOAS through its light-weight syntax (this example adapted from \cite{twelf08}):
-
-\begin{verbatim}
-exp : type.
-let : exp -> (exp -> exp) -> exp.
-\end{verbatim}
-
-The full definition for \c{exp} is omitted, but this example demonstrates that a let-binding in the \i{object language}, can be considered in the \i{meta-language} as a value representing the expression being bound, and a function that accepts that bound expression as input. For example, the object language expression \c{let x = 1 + 2 in x + 3} would be encoded as \c{let (plus 1 2) ([x] plus x 3)}, where \c{plus : nat -> nat -> expr} and \c{([x] e)} is syntax for $(\lambda x. \; e)$.
-
-This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \i{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \c{let}'s higher-order function is a negative occurrence: \c{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
-
-\begin{verbatim}
-Inductive exp : Set :=
-  | exp_plus : nat -> nat -> exp
-  | exp_let : exp -> (exp -> exp) -> exp.
-\end{verbatim}
-
-Coq rejects this definition with the error: \c{Non strictly positive occurrence of "exp" in
- "exp -> (exp -> exp) -> exp"}, as expected.
-
-There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
-
-\subsection{De Bruijn indices and the locally nameless approach}
-\label{sec:de_bruijn}
-
-Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \i{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; 0)$ -- assuming without loss of generality that there are no integer literals in the object language that could be confused for de Bruijn indices.
-
-For terms that contain free variables, a fixed naming context is used to map free variables to indices \cite{tapl}. For example, with the naming context $\Gamma = x, y, z$ which maps $\{x \mapsto 2, y \mapsto 1, z \mapsto 0\}$, the term $(\lambda x. \; (x \; y) \; z)$ would be encoded as $(\lambda. \; (0 \; 2) \; 1)$. We can imagine the context prepended to the term as an ordered list of binders, so that the use of $z$ ends up being separated from its binding occurrence by \i{1} -- the lambda.
-
-Capture-avoiding substitution with de Bruijn indices can be defined as a recursive function that makes use of a \i{shifting} operation. Shifting a term by $d$ conceptually renumbers free variables for the introduction of $d$ elements at the end of the naming context. To avoid renumbering bound variables, a cut-off parameter $c$ is threaded through the computation. We denote shifting a term $t$ by $d$ with cut-off $c$ as $\uparrow^d_c t$.
-
-\begin{eqnarray*}
-\uparrow^d_c k & = &
-	\begin{cases}
-	k \quad & \text{if} \quad k < c \\
-	k + d \quad & \text{if} \quad k \geq c
-	\end{cases}\\
-\uparrow^d_c (\lambda. \; t_1) & = & \lambda. \; \uparrow^d_{c + 1} t_1\\
-\uparrow^d_c (t_1 \; t_2) & = & (\uparrow^d_c t_1) \; (\uparrow^d_c t_2)
-\end{eqnarray*}
-
-With shifting defined, the definition of substitution is straight-forward -- we simply shift the free variables of the substituted term each time we move under a lambda.
-
-\begin{eqnarray*}
-[s/j]k & = &
-	\begin{cases}
-	s \quad & \text{if} \quad j = k \\
-	k \quad & \text{otherwise}
-	\end{cases}\\
-\left[s/j\right](\lambda. \; t_1) & = & \lambda. \; [(\uparrow^1_0 s)/(j + 1)] \; t_1\\
-\left[s/j\right](t_1 \; t_2) & = & ([s/j] \; t_1) \; ([s/j] \; t_2)
-\end{eqnarray*}
-
-These equations for shifting and substitution are due to \cite{tapl}.
-
-Unlike HOAS, the recursive functions for de Bruijn indices are well-suited for use with the Coq proof assistant. Of the Coq formalisations surveyed in our literature review, two of the largest and most similar to our planned formalisation use de Bruijn indices. The first, \SSPHS \cite{pottier13} defines a module with several lemmas about substitution, while the Mezzo formalisation \cite{mezzo14} makes use of a stand-alone library called \c{dblib} \cite{dblib13}. This library uses Coq's type-classes to provide useful substitution lemmas, given the definitions of a few basic operations on terms of the object language. This is an appealing prospect, and we hope that by using \c{dblib} for our formalisation we will be able to assess its suitability as a generic library for de Bruijn indices.
-
-The alternative to \c{dblib} would have been to use Arthur Chargu\'{e}raud's \i{Engineering Formal Metatheory} library \cite{aydemir08} for binding using a \i{locally nameless} (LN) representation. The locally nameless representation uses de Bruijn indices for bound variables and traditional names for free variables. In his formalisation of uniqueness typing Edsko de Vries notes that use of the LN library \i{``meant that little of our subject reduction proof needs to be concerned with alpha-equivalence or freshness"} \cite{deVries07}.
-
-However, LN does depend on Chargu\'{e}raud's TLC library for \i{non-constructive} logic within Coq \cite{tlc15}. We elect not to use this library, in order to keep the set of axioms minimal and to aid compatibility with other proofs. Further, the formalisations of \SSPHS and Mezzo make successful use of de Bruijn indices and they are considerably closer to $L^3$ than de Vries' uniqueness typing system.
 
 \chapter{Own Work}
 
