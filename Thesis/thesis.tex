@@ -87,26 +87,45 @@
 \thesissupervisor{Dr. Ben Lippmeier}
 
 %% My own LaTeX macros, definitions, etc.
-\let\oldemptyset\emptyset
-\let\emptyset\varnothing
-\newcommand{\case}{\text{ case }}
-\newcommand{\of}{\text{of }}
-\newcommand{\yields}{\multimap}
-\newcommand{\steps}{\Rightarrow}
-\newcommand{\lquine}{\left\ulcorner}
-\newcommand{\rquine}{\right\urcorner}
-\newcommand{\capa}{\text{cap}}
-\newcommand{\ptr}{\text{ptr }}
+
+% Names
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 \newcommand{\SSPHS}{\text{SSPHS }}
-\newcommand{\types}{\vdash}
 \newcommand{\Francois}{Fran\frenchc{c}ois }
+
+% Logic/set theory.
+\let\oldemptyset\emptyset
+\let\emptyset\varnothing
+\newcommand{\Forall}[1]{\forall #1 \ldotp \,}
+\newcommand{\Exists}[1]{\exists #1 \ldotp \,}
+
+% Linear lambda calculus.
+\newcommand{\lam}[1]{\lambda #1 \ldotp \,}
+\newcommand{\Lam}[1]{\Lambda #1 \ldotp \,}
+\newcommand{\app}[2]{(#1 \; #2)}
 \newcommand{\lolly}{\multimap}
+\newcommand{\types}{\vdash}
+\newcommand{\steps}{\Rightarrow}
+
+% Let bindings.
+\newcommand{\letbe}[3]{\text{let $#1$ be $#2$ in $#3$}}
 
 % Syntax or.
 \newcommand{\sor}{\; | \;}
 
-\newcommand{\letbe}[3]{\text{let $#1$ be $#2$ in $#3$}}
+% L^3 stuff.
+\newcommand{\Ptr}[1]{\text{Ptr $#1$}}
+\newcommand{\ptr}[1]{\text{ptr $#1$}}
+\newcommand{\Capa}[2]{\text{Cap $#1$ $#2$}}
+\newcommand{\capa}{\text{cap}}
+\newcommand{\lquine}{\left\ulcorner}
+\newcommand{\rquine}{\right\urcorner}
+\newcommand{\dupl}[1]{\text{dupl $#1$}}
+\newcommand{\drop}[1]{\text{drop $#1$}}
+\newcommand{\lnew}[1]{\text{new $#1$}}
+\newcommand{\lfree}[1]{\text{free $#1$}}
+\newcommand{\lswap}[3]{\text{swap $#1$ $#2$ $#3$}}
+\newcommand{\qpair}[2]{\lquine #1, #2 \rquine}
 
 % Text formatting.
 \let\frenchc\c
@@ -180,10 +199,10 @@ x,y & \in & \b{Vars} \\
 % \tau & \in & \b{PrimTypes} \\
 A, B & ::= & \mathds{I} \sor A \otimes B \sor A \lolly B \sor {!A} \\
 t, u & ::= & x \sor * \sor \letbe{*}{t}{u} \sor t \otimes u \sor \letbe{x \otimes y : A \otimes B}{t}{u} \sor \\
-  &     & \lambda x : A. \; t \sor (t \; u) \sor {!t} \sor \letbe{!x : A}{t}{u}
+  &     & \lam{x : A} t \sor \app{t}{u} \sor {!t} \sor \letbe{!x : A}{t}{u}
 \end{eqnarray*}
 
-The meta-variables $x$ and $y$ range over a countably infinite set of variables, \b{Vars}. Meta-variables $A$ and $B$ range over types, and $t$ and $u$ range over terms. The core constructs of the language are those of the lambda calculus: variables ($x$), abstractions ($\lambda x : A. t$) and applications $(u \, t)$. We introduce the other constructs through the typing rules of the language.
+The meta-variables $x$ and $y$ range over a countably infinite set of variables, \b{Vars}. Meta-variables $A$ and $B$ range over types, and $t$ and $u$ range over terms. The core constructs of the language are those of the lambda calculus: variables ($x$), abstractions ($\lam{x : A} t$) and applications $\app{t}{u}$. We introduce the other constructs through the typing rules of the language.
 
 We write the judgement $\Gamma; \Delta \types t : A$ to denote that a term $t$ has type $A$ relative to two typing environments $\Gamma$ and $\Delta$ which record the types of free variables in $t$. The two typing environments are the origin of the name \b{Dual} Intuitionistic Linear Logic, and are part of DILL's mechanism for differentiating non-linear and linear values.
 
@@ -364,6 +383,23 @@ The preservation, or \i{subject reduction}, property holds if well-typed terms r
 Our proof-of-concept Coq formalisation of a linear lambda calculus makes use of progress and preservation lemmas to establish type soundness.
 
 \section{The Linear Language with Locations, $L^3$}
+
+\begin{eqnarray*}
+x,y & \in & \b{Vars} \\
+l & \in & \b{LocConsts} \\
+\rho & \in & \b{LocVars} \\
+\eta & ::= & l \sor \rho \\
+A & ::= & \mathds{I} \sor A \otimes B \sor A \lolly B \sor !A \sor \Ptr{\eta} \sor \Capa{\eta}{A} \sor
+\Forall{\rho} A \sor \Exists{\rho} A \\
+t,u & ::= & * \sor \letbe{*}{t}{u} \sor \\
+  && t \otimes u \sor \letbe{x \otimes y}{t}{u} \sor \\
+  && x \sor \lam{x} t \sor \app{t}{u} \sor \\
+  && {!v} \sor \letbe{!x}{t}{u} \sor \dupl{t} \sor \drop{t} \sor \\
+  && \ptr{l} \sor \capa \sor \lnew{t} \sor \lfree{t} \sor \lswap{t_1}{t_2}{t_3} \\
+  && \Lam{\rho} t \sor t [\eta] \sor \qpair{\eta}{t} \sor \letbe{\qpair{\rho}{x}}{t}{u} \\
+v & ::= & * \sor v_1 \otimes v_2 \sor x \sor \lam{x} t \sor {!v} \sor \ptr{l} \sor \capa
+  \sor \Lam{\rho} t \sor \qpair{\eta}{v}
+\end{eqnarray*}
 
 %the mechanical verification of a small language -- \i{The Linear Language with Locations}, $L^3$. Although formal semantics and semi-formal proofs of correctness exist for $L^3$, no computer-based proofs exist. We verify $L^3$ because it is typical of modern resource-aware calculi in its use of capabilities -- whilst remaining simple. $L^3$'s concepts of ownership make its mechanisation relevant to the complete verification of low-level systems like garbage collectors and operating systems, which are at the cutting edge of verification research.
 
