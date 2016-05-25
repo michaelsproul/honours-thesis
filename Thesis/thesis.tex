@@ -415,7 +415,44 @@ v & ::= & * \sor v_1 \otimes v_2 \sor x \sor \lam{x} t \sor {!v} \sor \ptr{l} \s
 \begin{figure}[h]
 \caption{Typing Rules for The Linear Language with Locations}
 \label{l3_typing}
-\infer{A}{}
+\begin{displaymath}
+\arraycolsep=1.2pt\def\arraystretch{2.2}
+\begin{array}{cc}
+% Unit
+\infer{\Delta; \emptyset \types * : \mathbb{I}}{} &
+\infer{\Delta; \Gamma_1, \Gamma_2 \types \letbe{*}{t}{u} : A}{
+  \Delta; \Gamma_1 \types t : \mathbb{I}  &  \Delta; \Gamma_2 \types u : A
+} \\
+% Pairs
+\infer{\Delta; \Gamma_1, \Gamma_2 \types t \otimes u : A \otimes B}{
+  \Delta; \Gamma_1 \types t : A  &  \Delta; \Gamma_2 \types u : A
+}\\
+\infer
+{\Delta; \Gamma_1, \Gamma_2 \types \letbe{x_1 \otimes x_2}{t}{u} : C}
+{\Delta; \Gamma_1 \types t : A \otimes B  &
+ \Delta; \Gamma_2, x_1 : A, x_2 : A \types u : C}\\
+% Vars
+\infer[\t{(Var)}]{\Delta; x : A \types x : A}{FLV(A) \subseteq \Delta}\\
+% Functions
+\infer[\t{($\lolly$-I)}]{\Delta; \Gamma \types \lam{x} t : A \lolly B}{
+  \Delta; \Gamma, x : A \types t : B
+} &
+\infer[\t{($\lolly$-E)}]{\Delta; \Gamma_1, \Gamma_2 \types \app{t}{u} : B}{
+  \Delta; \Gamma_1 \types t : A \lolly B  &  \Delta; \Gamma_2 \types u : A
+} \\
+% Bang
+\infer[\t{(!-I)}]{\Delta; !\Gamma \types {!v} : {!A}}{\Delta; !\Gamma \types v : A} &
+\infer[\t{(!-E)}]{\Delta; \Gamma_1, \Gamma_2 \types \letbe{!x}{t}{u} : B}{
+  \Delta; \Gamma_1 \types t : A  &  \Delta; \Gamma_2, x : A \types u : B
+}\\
+\infer[\t{(Dupl)}]{\Delta; \Gamma \types \dupl{t} : {!A} \otimes {!A}}{
+  \Delta; \Gamma \types t : {!A}
+} &
+\infer[\t{(Drop)}]{\Delta; \Gamma \types \drop{t} : \mathbb{I}}{
+  \Delta; \Gamma \types t : {!A}
+}
+\end{array}
+\end{displaymath}
 \end{figure}
 
 Many of the terms and types have the same meaning as in DILL. Functions, variables, products and the unit value are all the same. $L^3$'s description also includes small-step operational semantics, for which the set of values denoted by meta-variable $v$ are normal forms.
