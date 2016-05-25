@@ -20,6 +20,7 @@
 \usepackage{csquotes}
 \usepackage{underscore}
 \usepackage{tabto}
+\usepackage{dsfont}
 
 % Nicely coloured links.
 \hypersetup{
@@ -102,6 +103,9 @@
 \newcommand{\Francois}{Fran\frenchc{c}ois }
 \newcommand{\lolly}{\multimap}
 
+% Syntax or.
+\newcommand{\sor}{\; | \;}
+
 \newcommand{\letbe}[3]{\text{let $#1$ be $#2$ in $#3$}}
 
 % Text formatting.
@@ -170,17 +174,18 @@ At their core, all of these systems enforce their constraints using typing rules
 
 \section{The Linear Lambda Calculus}
 
-For our presentation of the linear lambda calculus we follow the work of Plotkin and Barber (REF) on Dual Intuitionistic Linear Logic (DILL). First, the structure of terms:
+For our presentation of the linear lambda calculus we follow the work of Plotkin and Barber (REF) on Dual Intuitionistic Linear Logic (DILL). First, the syntax for variables, types and terms:
+\begin{eqnarray*}
+x,y & \in & \b{Vars} \\
+% \tau & \in & \b{PrimTypes} \\
+A, B & ::= & \mathds{I} \sor A \otimes B \sor A \lolly B \sor {!A} \\
+t, u & ::= & x \sor * \sor \letbe{*}{t}{u} \sor t \otimes u \sor \letbe{x \otimes y : A \otimes B}{t}{u} \sor \\
+  &     & \lambda x : A. \; t \sor (t \; u) \sor {!t} \sor \letbe{!x : A}{t}{u}
+\end{eqnarray*}
 
-TODO: DILL Syntax here.
+The meta-variables $x$ and $y$ range over a countably infinite set of variables, \b{Vars}. Meta-variables $A$ and $B$ range over types, and $t$ and $u$ range over terms. The core constructs of the language are those of the lambda calculus: variables ($x$), abstractions ($\lambda x : A. t$) and applications $(u \, t)$. We introduce the other constructs through the typing rules of the language.
 
-The meta-variables $t$, $t_i$ and $u$ range over terms, while the meta-variable $x$ ranges over a countably infinite set of variable names. The core constructs of the language are those of the lambda calculus: variables ($x$), abstractions ($\lambda x : A. t$) and applications $(u \, t)$.
-
-To best understand the other constructs, it makes sense to introduce the types and typing rules. We have the following types, denoted by meta-variable $\tau$:
-
-TODO: DILL types
-
-We write the judgement $\Gamma; \Delta \types t : \tau$ to denote that a term $t$ has type $\tau$ relative to two typing environments $\Gamma$ and $\Delta$ which record the types of free variables in $t$. The two typing environments are the origin of the name \b{Dual} Intuitionistic Linear Logic, and are part of DILL's mechanism for differentiating non-linear and linear values.
+We write the judgement $\Gamma; \Delta \types t : A$ to denote that a term $t$ has type $A$ relative to two typing environments $\Gamma$ and $\Delta$ which record the types of free variables in $t$. The two typing environments are the origin of the name \b{Dual} Intuitionistic Linear Logic, and are part of DILL's mechanism for differentiating non-linear and linear values.
 
 Typing environments can have many representations, and for the purposes of precise mechanical formalisation this will become very important (see section FIXME). In ``semi-formal" contexts, including Barber's presentation of DILL, the environments are defined to be sequences of variable-type pairs $x_0 : A_0, x_1 : A_1, \dots$ such that no variable appears more than once. Comma-separated environments like $(\Gamma, x : A)$ and $(\Delta_1, \Delta_2)$ are understood to be the concatenation of two environments with disjoint sets of variables.
 
@@ -207,10 +212,10 @@ To define which typing judgements are well-formed, we use inference rules in the
 \begin{array}{cc}
 \infer[\text{(Int-Var)}]{\Gamma, x : A; \emptyset \types x : A}{} &
 \infer[\text{(Lin-Var)}]{\Gamma; x : A \types x : A}{} \\
-\infer[\text{(Unit-I)}]{\Gamma; \emptyset \types * : I}{} &
+\infer[\text{(Unit-I)}]{\Gamma; \emptyset \types * : \mathds{I}}{} &
 \infer[\text{(Unit-E)}]
   {\Gamma; \Delta_1, \Delta_2 \types \letbe{*}{t}{u} : A}
-  {\Gamma; \Delta_1 \types t : I  &  \Gamma; \Delta_2 \types u : A} \\
+  {\Gamma; \Delta_1 \types t : \mathds{I}  &  \Gamma; \Delta_2 \types u : A} \\
 \infer[\text{($\otimes$-I)}]
   {\Gamma; \Delta_1, \Delta_2 \types t \otimes u : A \otimes B}
   {\Gamma; \Delta_1 \types t : A  &  \Gamma; \Delta_2 \types u : B} &
