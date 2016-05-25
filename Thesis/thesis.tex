@@ -271,53 +271,49 @@ Alternatively, it's possible for a term $u$ to have type $!A$ without an applica
 }
 \end{eqnarray*}
 
-Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : A \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$.
+Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : {!A} \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$.
 
 \subsection{Structural Rules}
 
 Philip Wadler gives a similar typing derivation for a duplication function in his 1993 presentation of linear logic \cite{wadler93}, although his system differs from DILL in a few key ways.
 
-In Wadler's system, a single typing environment is used, containing both linear assumptions of the form $\langle x : A \rangle$ and intuitionistic ones of the form $[x : A]$. These are conceptually equivalent to assumptions in the respective linear and intuitionistic contexts of DILL. For rules that require the context to consist entirely of intuitionistic assumptions, Wadler uses the notation $[\Gamma]$, which is equivalent to a $\Gamma; \emptyset$ pair of contexts in DILL. When formalising linear logic with an interactive theorem prover such as Coq, the dual-context approach taken by DILL is preferable to Wadler's approach because of the clear and forced separation of the two worlds -- intuitionistic and linear. For example, Wadler's system would require a Coq data-type to differentiate the two types of assumptions, and an additional predicate to state if a context contains only intuitionistic assumptions. A further difference between the two systems is that Wadler's renders the structural rules that lend their name to \i{substructural} type systems explicit.
+In Wadler's system, a single typing environment is used, containing both linear assumptions of the form $\langle x : A \rangle$ and intuitionistic ones of the form $[x : A]$. These are conceptually equivalent to assumptions in the respective linear and intuitionistic contexts of DILL. For rules that require the context to consist entirely of intuitionistic assumptions, Wadler uses the notation $[\Gamma]$, which is approximately equivalent to a $\Gamma; \emptyset$ pair of contexts in DILL. When formalising linear logic with an interactive theorem prover such as Coq, the dual-context approach taken by DILL is preferable to Wadler's approach because of the clear and forced separation of the two worlds -- intuitionistic and linear. For example, Wadler's system would require a Coq data-type to differentiate the two types of assumptions, and an additional predicate to state if a context contains only intuitionistic assumptions. A further difference between the two systems is that Wadler's renders the structural rules that lend their name to \i{substructural} type systems explicit.
 
 To save writing the entire set of typing rules, which are very similar to the ones for DILL already presented, we cherry-pick a few of the structural rules to demonstrate our point, and rely on the approximate translation described above and the original paper \cite{wadler93} to provide the full details.
 
-TODO: Edit this section.
+Unlike DILL, both kinds of variables in Wadler's LLC require their typing contexts to be empty except for the variable of interest:
 
-In classical and intuitionistic logic there are structural deduction rules equivalent to the following, called \i{Contraction} and \i{Weakening}.
+\begin{eqnarray*}
+\infer[\t{(Int-Var')}]{[x : A] \types x : A}{} \qquad
+\infer[\t{(Lin-Var')}]{\langle x : A \rangle \types x : A}{}
+\end{eqnarray*}
+
+Duplication and discarding of intuitionistic variables is then enabled by two \i{structural} rules, Contraction and Weakening:
 
 \begin{eqnarray*}
 \infer[\t{(Contraction)}]{\Gamma, [x : A] \types u[x/y, x/z] : B}{
   \Gamma, [y : A], [z : A] \types u : B
 }
 \qquad
-\infer[\text{(Weakening)}]{\Gamma, [x : A] \types y : B}{
-  \Gamma \types y : B
+\infer[\text{(Weakening)}]{\Gamma, [x : A] \types t : B}{
+  \Gamma \types t : B
 }
 \end{eqnarray*}
 
-Contraction allows duplicate assumptions to be discarded, whilst Weakening allows a non-vital extra assumption to be introduced from nowhere. Linear logic \cite{girard87} selectively restricts the use of both rules, such that every \i{linear} assumption is used \i{exactly once}. Affine logic on the other hand restricts only the use of Contraction, resulting in each linear assumption being used \i{at most once}. Both are \i{substructural} in that they restrict the use of structural rules.
+Contraction makes use of substitutions ($u[x/y, x/z]$) to form terms with two occurrences of the intuitionistic variable $x$. Weakening allows a non-vital variable and type to be introduced from nowhere, or, when reasoning backwards, it allows an unused variable to be discarded in order to type a sub-term.
 
-\i{Non-linear} assumptions can still be used an unlimited number of times. Hence, variants of Contraction and Weakening that operate only on non-linear assumptions are present in linear logic, affine logic and similar substructural systems.
+In DILL the contraction and weakening rules for intuitionistic variables are implicit in how the intuitionistic context is managed -- there can be additional intuitionistic assumptions present when typing variables (weakening), and intuitionistic assumptions can be duplicated freely (contraction). In contrast, in Wadler's system all duplication and discarding happens via (Contraction) and (Weakening). With the exception of the structural rules, Wadler's typing contexts behave entirely linearly, and are \b{split} in the same way linear contexts in DILL are split.
 
-When transformed into typing rules (as per Section \ref{sec:curry_howard}), Contraction and Weakening take the form:
+If the use of structural rules is restricted, we get a substructural type system. Without Contraction, \i{variables can only appear once in a term}. Without Weakening, \i{all variables in the context must be used in the term}. Banning both contraction and weakening results in a \b{linear} type system where variables must be used exactly once. The systems we've seen so far, DILL and Wadler's LLC, are both linear in that contraction and weakening are banned for the non-intuitionistic terms of the language. Under the Curry-Howard correspondence, linear type systems correspond to linear logic, which was first introduced by Girard \cite{girard87}.
 
-Note that the use of substitutions in the rule for Contraction is required so that no variable appears more than once in a typing context $\Gamma$. Further, substructural type theories include context-splitting operations that allow the linear variables of a typing context to be split between two new contexts which can be used to type-check subterms.
+If contraction is restricted but weakening is allowed, the result is an \b{affine} type system, corresponding to an affine logic (REF). Variables in affine logic can be thrown away but not duplicated, so every variable is used \i{at most once}.
 
-As in linear and affine logic, linear type theory restricts the use of both Contraction and Weakening, whilst affine type theory restricts just the use of Contraction. Our previous observations about the number of times an assumption is used, now translate into observations about the number of times variables are used.
+% With both (Contraction) and (Weakening), intuitionistic variables can be used just as freely as in DILL or the STLC.
+% The typing derivation for a duplication function in Wadler's LLC requires the use of (Contraction) to type both sides of the pair.
 
-Without Contraction, \i{variables can only appear once in a term}. The dual substitution of $x$ for $y$ and $x$ for $z$ allows a term containing one $y$ and one $z$ to become a term containing two occurrences of $x$. None of the other rules of intuitionistic type theory allow this \cite{wadler93}.
+\subsection{Summary of the Linear Lambda Calculus}
 
-Similarly, without Weakening, \i{all variables in the context must be used in the term}. This follows from the fact that Weakening introduces an unused variable to the context and no other rule of intuitionistic type theory allows this \cite{wadler93}.
-
-From these two observations we can conclude that linear type theory requires all variables to be used \i{exactly once} in terms, whilst affine type theory requires all variables to be used \i{at most once} in terms.
-
-As in substructural logics, substructural type theories selectively permit Contraction and Weakening for select non-linear values. This is quite practical in the context of programming language implementation as it allows trivially copyable values like integers to be easily duplicated. The mechanism employed by Wadler \cite{wadler93} involves differentiating between linear and non-linear assumptions, and adding type and value-level bang (!) operators to make types and values non-linear. The function for duplication of non-linear values (of type $!A$) is expressed as follows in Wadler's system:
-
-\begin{eqnarray*}
-\varnothing \vdash \lambda \langle x' \rangle . \case x' \of !x \rightarrow \langle !x, !x\rangle :\text{ } !A \yields (!A \otimes !A)
-\end{eqnarray*}
-
-See \cite{wadler93} for full notational details.
+In this section we've seen how typing rules can be used to enforce constraints on the use of variables, by examining Dual Intuitionistic Linear Logic. We have seen that intuitionistic terms can be embedded in substructural languages via (!) types and the careful management of typing contexts. The importance of \b{context splitting} to divide linear assumptions between sub-terms has also been highlighted. In the next sections we examine more complex calculi that build on the linear lambda calculus to model useful programming language constructs like mutation and destructive updates.
 
 \section{Operational Semantics and Type Soundness}
 
@@ -574,7 +570,7 @@ In summary, previous work on the formalisation of resource-aware type systems ha
 
 \section{Evaluation Framework}
 
-In this section we describe some criteria for assessing the quality of work completed as part of this thesis. Given our goal of creating a general Coq library for the verification of linearly-typed languages, what properties should our library ideally posess? We break the criteria into two subsections: \b{Conceptual Goals}, relating to the theoretical content of the library, and its generality and applicability to other languages; and \b{Implementation Goals} regarding the quality of the Coq library itself. Dividing the criteria in this way provides broad coverage of the quality of the work whilst allowing us to separate concerns.
+In this section we describe some criteria for assessing the quality of work completed as part of this thesis. Given our goal of creating a general Coq library for the verification of linearly-typed languages, what properties should our library ideally possess? We break the criteria into two subsections: \b{Conceptual Goals}, relating to the theoretical content of the library, and its generality and applicability to other languages; and \b{Implementation Goals} regarding the quality of the Coq library itself. Dividing the criteria in this way provides broad coverage of the quality of the work whilst allowing us to separate concerns.
 
 \subsection{Conceptual Goals}
 
