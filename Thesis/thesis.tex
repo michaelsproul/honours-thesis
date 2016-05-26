@@ -35,6 +35,9 @@
 %\floatstyle{boxed}
 \restylefloat{figure}
 
+% Minted font size.
+\newminted{coq}{fontsize=\small}
+
 % Abstract env.
 \newenvironment{abstract}
  {
@@ -1200,7 +1203,7 @@ To prove this lemma, DbLib was extended with a \i{lowering} operation that is co
 
 \chapter{Evaluation}
 
-In this section we assess the quality of the work according to the Evaluation Framework of section (REF). We discuss the success of the library according to its conceptual goals, primarily by outling how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
+In this section we assess the quality of the work according to the Evaluation Framework of section (REF). We discuss the success of the library according to its conceptual goals, primarily by outlining how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
 
 \section{Generality and Applicability}
 
@@ -1214,7 +1217,7 @@ As identified in the Implementation Goals (REF) section of our evaluation criter
 
 \subsection{Case Analysis and Indentation}
 
-To separate different cases when performing induction and destructuring, the proofs make use of Benjamin Pierce's \c{Case} markers from Software Foundations (REF). Combined with indendation, these markers fulfil our desire to create readable proofs that are also resistant to corruption upon refactoring. The \c{Case} tactic ensures that the proof remains structured by failing if an existing case at the same level remains unproven, as can happen if an earlier tactic fails. The following example taken from the proof of \c{insert_none_def} demonstrates our usage of the markers and our indentation scheme:
+To separate different cases when performing induction and destructuring, the proofs make use of Benjamin Pierce's \c{Case} markers from Software Foundations (REF). Combined with indentation, these markers fulfil our desire to create readable proofs that are also resistant to corruption upon refactoring. The \c{Case} tactic ensures that the proof remains structured by failing if an existing case at the same level remains unproven, as can happen if an earlier tactic fails. The following example taken from the proof of \c{insert_none_def} demonstrates our usage of the markers and our indentation scheme:
 
 \begin{minted}{coq}
 induction x as [|x']; intros.
@@ -1228,11 +1231,66 @@ Case "x = 0".
 
 If, for example, the tactic \c{rewrite raw_insert_zero...} fails to prove the goal for the case where \c{E = []}, then the \c{SCase "E = e :: E'"} tactic will fail and prevent the proof from proceeding, clearly signalling that the error lies in the previous case. The string arguments are uninterpreted but provide useful documentation.
 
-The style of proof shown above was followed meticulously throughout the entire development, aiding both readability and maintainability. Excessive nesting of cases was also successfully avoided, with the deepest level of nesting being 3 sub-cases deep (an \c{SSCase}), occuring only once in the proof-of-concept formalisation.
+The style of proof shown above was followed meticulously throughout the entire development, aiding both readability and maintainability. Excessive nesting of cases was also successfully avoided, with the deepest level of nesting being 3 sub-cases deep (an \c{SSCase}), occurring only once in the proof-of-concept formalisation.
 
 An alternative to using Pierce's \c{Case} markers would have been to use Coq's \i{bullets}, which are available as part of Coq's core since version 8.4 (REF). They function identically to the case markers except that documentation strings can't be embedded as case descriptions.
 
 \subsection{Avoiding Auto-Generated Variable Names}
+
+Avoiding references to automatically generated names is an important part of creating a readable and maintainable proof. Generated names are subject to change between Coq versions, which renders all pieces of proof script reliant on them in need of upgrading. Furthermore, updating the proof can be difficult if the exact values that the names were referring to have been forgotten, effectively requiring old goals to be solved anew.
+
+Although there are several straight-forward techniques that can be used to avoid generated names, in practice we didn't manage to avoid them entirely, notably when using dependent induction.
+
+\subsubsection{Introduction Patterns}
+
+When performing induction it is often necessary to leave some hypotheses as premises of the inductive hypothesis. In order to avoid generating names for these hypotheses we followed a pattern whereby the \c{intros} tactic would be used to name every hypothesis, \c{generalize dependent} would be used to re-quantify the necessary variables, and then induction performed. This leads to hypotheses being re-introduced with the names used by \c{intros}, rather than generated ones. For example:
+
+\begin{minted}{coq}
+Lemma empty_lookup : forall A x (E : env A), is_empty E ->
+  lookup x E = None.
+Proof.
+  intros A x E Empty.
+  generalize dependent E.
+  induction x as [|x'].
+  Case "x = 0".
+    intros. inversion Empty; auto.
+  (* Proof continues... *)
+\end{minted}
+
+Here the fact \c{is_empty E} is named \c{Empty} by \c{intros}, abstracted over, and then automatically re-introduced with the name \c{Empty}. This relies partly on Coq's name generator to remember the name from the first application of \c{intros}, but this is less fragile than relying on entirely automatic naming.
+
+\subsubsection{Named Constructor Arguments}
+
+A cosmetic variation of the above pattern for introductions could use named function arguments instead of an explicit \c{forall}. This is the approach taken for all inductive constructors, with the aim of generating unique names during inversion. For example, we can declare the \c{is_empty} predicate in two semantically equivalent ways:
+
+\begin{coqcode}
+(* With implicit argument names *)
+Inductive is_empty {A} : env A -> Prop :=
+  | is_empty_nil : is_empty nil
+  | is_empty_cons : forall E, is_empty E -> is_empty (None :: E).
+
+(* With explicit argument names (preferred) *)
+Inductive is_empty {A} : env A -> Prop :=
+  | is_empty_nil : is_empty nil
+  | is_empty_cons E (EmptyTail : is_empty E) : is_empty (None :: E).
+\end{coqcode}
+
+With the second variant, when inverting a fact of the form \c{is_empty E} the fact about the environment's tail will be named \c{EmptyTail} if that name isn't already taken. In practice this was found to be quite effective, as most proofs required only a single inversion per data-type. In cases where more control over naming is needed, names can be provided to the tactic, as discussed in the next section.
+
+\subsubsection{Named Destructuring}
+
+Named destructuring allows names to be provided to tactics like \c{induction}, \c{destruct} and \c{inversion} which would otherwise generate names automatically. For simple cases like induction on natural numbers and lists, we found it to be highly effective, e.g. \c{induction n as [|n']}. However, destructuring large chains of existentials, conjunctions and disjunctions in this manner quickly becomes unwieldy.
+
+For example, our proof of soundness for the linear lambda calculus contains a line: \c{destruct AppPreSplit as [E1' [E2' [? [? [? [? ?]]]]]]}. This is to the detriment of both readability and maintainability, in particular because changes to the lemma that forms \c{AppPreSplit} would require digging into several layers of brackets to ensure the names are correct and that the chain of conjunctions is fully decomposed. This is an area where the library falls short of the evaluation criteria. Further work could seek to eliminate maintenance burdens such as these, possibly using Arthur Charguéraud's improved tactics library, \c{LibTactics} (REF).
+
+\subsubsection{Dependent Induction}
+
+Dependent induction is used at one point in the proof of soundness for the LLC, as discussed in section (REF). Unlike the regular induction tactic, Coq's dependent induction tactic doesn't provide a way to explicitly name the variables introduced by the inversion -- there is no \c{dependent induction x as [..]}. In our proof, we fall back on using the auto-generated names, which is less than ideal. We experienced the fragility of this approach when refactoring, which demonstrates the utility of our other work to avoid generated names.
+
+\subsubsection{Overview of Efforts to Avoid Generated Names}
+
+% TODO.
+% Auto-generated names suck.
 
 \subsection{Automation and Repetition}
 
