@@ -1213,7 +1213,18 @@ Dual Intuitionistic Linear Logic fits the criteria for linear context splitting,
 
 Implicit in the criteria for applicability is the idea that the language uses a traditional typing environment where variables either possess a type or are entirely absent. This is not true of Conor McBride's recent work on combining linear and dependent typing (REF), which annotates variables in the context by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original. This is incompatible with context splitting as we've defined it because assumptions involving variables unavailable at run-time are replaced by information-free \c{None} values. Further work could develop a software library for typing contexts in Conor's style, which would be general enough to handle all of the languages handled by our library.
 
+% Add a note about Edsko's thing.
+
 \section{Towards a Coq Formalisation of $L^3$}
+
+\i{The Linear Language with Locations}, $L^3$, is a good candidate for assessing the applicability of our approach to languages beyond the linear lambda calculus. As argued in the Background chapter, its use of linear capabilities and shared pointers is typical of other modern calculi supporting destructive updates.
+
+\Lthree is amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit Contraction and Weakening, which means the \c{context_split} predicate can be employed unaltered. A scaffold for how the proof could proceed is:
+
+\begin{itemize}
+\item Augment the typing rules with a location environment, $\Delta$, implemented as another DbLib environment with nullary type information, i.e. \c{env () = list (option ())}. This representation would allow checking if the de Bruijn index $\rho$ for a location variable is in scope by checking if the location environment contains \c{Some ()} at index $\rho$. Further, the \c{insert} function and other utilities provided by DbLib could be used to manipulate the location environment, as is required by the (Let-LPack) rule for example.
+\item Implement capture-avoiding location substitution by defining another instance of the \c{Traverse} type-class for terms. Coq's named instances would prevent a conflict with the instance for term substitution. Location, err...
+\end{itemize}
 
 \section{Quality of Coq Proofs}
 
