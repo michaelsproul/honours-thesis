@@ -1200,7 +1200,7 @@ To prove this lemma, DbLib was extended with a \i{lowering} operation that is co
 
 \chapter{Evaluation}
 
-In this section we assess the quality of the work according to the Evaluation Framework of section (REF). Primarily, we discuss how a formalisation of $L^3$ could make use of our library.
+In this section we assess the quality of the work according to the Evaluation Framework of section (REF). We discuss the success of the library according to its conceptual goals, primarily by outling how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
 
 \section{Generality and Applicability}
 
@@ -1210,7 +1210,32 @@ According to the conceptual goals of our evaluation framework, we would like the
 
 \section{Quality of Coq Proofs}
 
-Robustness, as measured by evaluation criteria.
+As identified in the Implementation Goals (REF) section of our evaluation criteria, we would like the library to be both \b{readable} and \b{maintainable}.
+
+\subsection{Case Analysis and Indentation}
+
+To separate different cases when performing induction and destructuring, the proofs make use of Benjamin Pierce's \c{Case} markers from Software Foundations (REF). Combined with indendation, these markers fulfil our desire to create readable proofs that are also resistant to corruption upon refactoring. The \c{Case} tactic ensures that the proof remains structured by failing if an existing case at the same level remains unproven, as can happen if an earlier tactic fails. The following example taken from the proof of \c{insert_none_def} demonstrates our usage of the markers and our indentation scheme:
+
+\begin{minted}{coq}
+induction x as [|x']; intros.
+Case "x = 0".
+  destruct E as [|e E'].
+  SCase "E = []".
+    rewrite raw_insert_zero...
+  SCase "E = e :: E'".
+    solve by inversion.
+\end{minted}
+
+If, for example, the tactic \c{rewrite raw_insert_zero...} fails to prove the goal for the case where \c{E = []}, then the \c{SCase "E = e :: E'"} tactic will fail and prevent the proof from proceeding, clearly signalling that the error lies in the previous case. The string arguments are uninterpreted but provide useful documentation.
+
+The style of proof shown above was followed meticulously throughout the entire development, aiding both readability and maintainability. Excessive nesting of cases was also successfully avoided, with the deepest level of nesting being 3 sub-cases deep (an \c{SSCase}), occuring only once in the proof-of-concept formalisation.
+
+An alternative to using Pierce's \c{Case} markers would have been to use Coq's \i{bullets}, which are available as part of Coq's core since version 8.4 (REF). They function identically to the case markers except that documentation strings can't be embedded as case descriptions.
+
+\subsection{Avoiding Auto-Generated Variable Names}
+
+\subsection{Automation and Repetition}
+
 
 \subsection{Automation and Tactic Scripts}
 
