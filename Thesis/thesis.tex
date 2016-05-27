@@ -250,7 +250,7 @@ To define which typing judgements are well-formed, we use inference rules in the
   {\Gamma; \Delta, x : A \types t : B} &
 \infer[\text{($\lolly$-E)}]
   {\Gamma; \Delta_1, \Delta_2 \types (u \; t) : B}
-  {\Gamma; \Delta_1 \types u : A \lolly B  &  \Gamma; \Delta_2 \types A} \\
+  {\Gamma; \Delta_1 \types u : A \lolly B  &  \Gamma; \Delta_2 \types t : A} \\
 \infer[\text{(!-I)}]
   {\Gamma; \emptyset \types {!t} : {!A}}
   {\Gamma; \emptyset \types t : A} &
@@ -1161,7 +1161,7 @@ Proof is by induction on the stepping of $e$ to $e'$, \c{step e e'}. In the thre
 
 \subsection{Substitution}
 
-The substitution lemma states that the result of a substitution is well-typed if the terms involved are well-typed. With substructural typing, we must also consider the supply of free variables to both terms using context spliting, so the lemma takes the form:
+The substitution lemma states that the result of a substitution is well-typed if the terms involved are well-typed. With substructural typing, we must also consider the supply of free variables to both terms using context splitting, so the lemma takes the form:
 
 \begin{eqnarray*}
 \infer[\text{Substitution}]{
@@ -1207,13 +1207,20 @@ In this section we assess the quality of the work according to the Evaluation Fr
 
 \section{Generality and Applicability}
 
-According to the conceptual goals of our evaluation framework, we would like the library to be applicable to the formalisation of languages more complex than the linear lambda calculus. In concrete terms, this means that the context splitting operation provided by the library should be usable in the formalisation of some class of languages with substructural typing. We argue that this class of languages is all those that make use of a typing context that is \b{always split in a linear way}. By this we mean that splitting a context $E = E_1 \circ E_2$ results in every assumption from $E$ appearing in $E_1$ or $E_2$ but not both.
+% Further, we require that splitting a linear context $E = E_1 \circ E_2$ results in every assumption from $E$ appearing in $E_1$ or $E_2$ but not both.
 
-Dual Intuitionistic Linear Logic fits the criteria for linear context splitting, as the second typing environment $\Delta$ is always split linearly. DILL would be straight-forward to formalise in its entirety by extending the proof-of-concept with an intuitionistic context, product types and bang types. The similarity of the ($\otimes$-I) rule to the ($\lolly$-E) rule would enable re-use of lemmas related to context splitting. Similarly, the lemmas provided by the library about \c{insert} and context splitting would aid in reasoning about ($\otimes$-E) and (!-E), which both include augmented contexts in their premises.
+According to the conceptual goals of our evaluation framework, we would like the library to be applicable to the formalisation of languages more complex than the linear lambda calculus. In concrete terms, this means that the context splitting operation provided by the library should be useful in constructing syntactic proofs of soundness for some class of languages with substructural typing. We argue that this class of languages includes those based on DILL -- which could act as a foundation for further formalisations.
 
-Implicit in the criteria for applicability is the idea that the language uses a traditional typing environment where variables either possess a type or are entirely absent. This is not true of Conor McBride's recent work on combining linear and dependent typing (REF), which annotates variables in the context by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original. This is incompatible with context splitting as we've defined it because assumptions involving variables unavailable at run-time are replaced by information-free \c{None} values. Further work could develop a software library for typing contexts in Conor's style, which would be general enough to handle all of the languages handled by our library.
+Extending the proof-of-concept LLC proof to a complete formalisation of DILL would require the addition of an intuitionistic context, product types and bang types. The paper for DILL (REF) includes proofs of substitution lemmas similar to the one used in the proof of preservation for our LLC, which suggests that it would admit a complete proof of soundness in a syntactic style. This is in contrast to several earlier systems based on linear logic, which Philip Wadler showed \i{do not} have substitution lemmas (REF No substitute for linear logic). Wadler's result is our primary motivation for using DILL as a foundation, motivated further by Pottier's success with DILL-based syntactic soundness proofs in SSHPS (REF).
 
-% Add a note about Edsko's thing.
+The proofs of progress and preservation for DILL could re-use much of the proof effort for the LLC. For example, the ($\otimes$-I) rule is similar to the LLC's existing ($\lolly$-E) rule, implying that inductive cases related to ($\otimes$-I) could be handled using the same library lemmas used for ($\lolly$-E). Further, the lemmas provided by the library about \c{insert} and context splitting would aid in reasoning about ($\otimes$-E) and (!-E), which both include augmented contexts in their premises.
+
+Our approach may also be applicable to a modified version of Edsko de Vries' uniqueness type system (REF, REF). Edsko's soundness proof is syntactic and makes use of an inductive context splitting relation that is identical to ours except that it allows non-unique (intuitionistic) types to be split to both sides. To make his system compatible with purely linear context splitting a stand-alone contraction rule could be added, in the style of Wadler's linear lambda calculus of 1993 (REF). The contraction rule would provide the ability to duplicate non-unique values, that would previously have been provided by context splitting.
+
+% TODO: Move this to background section/further work/conclusions.
+% Implicit in the criteria for applicability is the idea that the language uses a traditional typing environment where variables either possess a type or are entirely absent. This is not true of Conor McBride's recent work on combining linear and dependent typing (REF), which annotates variables in the context by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original. This is incompatible with context splitting as we've defined it because assumptions involving variables unavailable at run-time are replaced by information-free \c{None} values. Further work could develop a software library for typing contexts in Conor's style, which would be general enough to handle all of the languages handled by our library.
+
+% TODO: Add a note about Edsko's thing.
 
 \section{Towards a Coq Formalisation of $L^3$}
 
@@ -1222,6 +1229,7 @@ Implicit in the criteria for applicability is the idea that the language uses a 
 \Lthree is amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit Contraction and Weakening, which means the \c{context_split} predicate can be employed unaltered. A scaffold for how the proof could proceed is:
 
 \begin{itemize}
+\item Modify the typing rules to use dual intuitionistic and linear contexts.
 \item Augment the typing rules with a location environment, $\Delta$, implemented as another DbLib environment with nullary type information, i.e. \c{env () = list (option ())}. This representation would allow checking if the de Bruijn index $\rho$ for a location variable is in scope by checking if the location environment contains \c{Some ()} at index $\rho$. Further, the \c{insert} function and other utilities provided by DbLib could be used to manipulate the location environment, as is required by the (Let-LPack) rule for example.
 \item Implement capture-avoiding location substitution by defining another instance of the \c{Traverse} type-class for terms. Coq's named instances would prevent a conflict with the instance for term substitution. Location, err...
 \end{itemize}
