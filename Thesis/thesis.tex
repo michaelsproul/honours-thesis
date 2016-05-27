@@ -1215,24 +1215,30 @@ Extending the proof-of-concept LLC proof to a complete formalisation of DILL wou
 
 The proofs of progress and preservation for DILL could re-use much of the proof effort for the LLC. For example, the ($\otimes$-I) rule is similar to the LLC's existing ($\lolly$-E) rule, implying that inductive cases related to ($\otimes$-I) could be handled using the same library lemmas used for ($\lolly$-E). Further, the lemmas provided by the library about \c{insert} and context splitting would aid in reasoning about ($\otimes$-E) and (!-E), which both include augmented contexts in their premises.
 
-Our approach may also be applicable to a modified version of Edsko de Vries' uniqueness type system (REF, REF). Edsko's soundness proof is syntactic and makes use of an inductive context splitting relation that is identical to ours except that it allows non-unique (intuitionistic) types to be split to both sides. To make his system compatible with purely linear context splitting a stand-alone contraction rule could be added, in the style of Wadler's linear lambda calculus of 1993 (REF). The contraction rule would provide the ability to duplicate non-unique values, that would previously have been provided by context splitting.
+Our approach may also be applicable to a modified version of Edsko de Vries' uniqueness type system (REF, REF). Edsko's soundness proof is syntactic and makes use of an inductive context splitting relation that is identical to ours except that it allows non-unique (intuitionistic) types to be split to both sides. To make his system compatible with purely linear context splitting a stand-alone contraction rule could be added, in the style of Wadler's linear lambda calculus of 1993 (REF). The contraction rule would provide the ability to duplicate non-unique values, which would previously have been provided by context splitting.
 
 % TODO: Move this to background section/further work/conclusions.
 % Implicit in the criteria for applicability is the idea that the language uses a traditional typing environment where variables either possess a type or are entirely absent. This is not true of Conor McBride's recent work on combining linear and dependent typing (REF), which annotates variables in the context by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original. This is incompatible with context splitting as we've defined it because assumptions involving variables unavailable at run-time are replaced by information-free \c{None} values. Further work could develop a software library for typing contexts in Conor's style, which would be general enough to handle all of the languages handled by our library.
-
-% TODO: Add a note about Edsko's thing.
 
 \section{Towards a Coq Formalisation of $L^3$}
 
 \i{The Linear Language with Locations}, $L^3$, is a good candidate for assessing the applicability of our approach to languages beyond the linear lambda calculus. As argued in the Background chapter, its use of linear capabilities and shared pointers is typical of other modern calculi supporting destructive updates.
 
-\Lthree is amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit Contraction and Weakening, which means the \c{context_split} predicate can be employed unaltered. A scaffold for how the proof could proceed is:
+\Lthree seems like it may be amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit contraction and weakening, which means the \c{context_split} predicate could be employed unaltered. However, as noted in the $L^3$ paper (REF), the operational semantics and typing rules are not set-up for a syntactic proof of soundness. As an example, consider the preservation lemma for the memory allocation primitive $\lnew{v}$. Under the operational semantics the term steps unconditionally: $(\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})$, hence we should have:
+\begin{eqnarray*}
+\infer{\Delta; \Gamma \types \qpair{l}{\capa \otimes !(\ptr{l})} : \Exists{\rho} A}{
+  \Delta; \Gamma \types \lnew{v} : \Exists{\rho} A  & (\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})
+}
+\end{eqnarray*}
 
-\begin{itemize}
-\item Modify the typing rules to use dual intuitionistic and linear contexts.
-\item Augment the typing rules with a location environment, $\Delta$, implemented as another DbLib environment with nullary type information, i.e. \c{env () = list (option ())}. This representation would allow checking if the de Bruijn index $\rho$ for a location variable is in scope by checking if the location environment contains \c{Some ()} at index $\rho$. Further, the \c{insert} function and other utilities provided by DbLib could be used to manipulate the location environment, as is required by the (Let-LPack) rule for example.
-\item Implement capture-avoiding location substitution by defining another instance of the \c{Traverse} type-class for terms. Coq's named instances would prevent a conflict with the instance for term substitution. Location, err...
-\end{itemize}
+The premises are both true, by the rules (New) and (new), but the conclusion is unprovable. It might seem that we could apply the (LPack) rule, but this would require $l \in \Delta$, which is nonsensical because $l$ is a location constant, not a location variable. Further, we can't type the pair $\capa \otimes !(\ptr{l})$ because there are no typing rules for lone capabilities or pointers. To do a syntactic proof of soundness would therefore require altering $L^3$'s typing rules. The authors of the $L^3$ paper suggest using \i{store typing}, as in Alias Types (REF), whereby constraints on the runtime store $\sigma$ are expressed in the typing rules. In this case, reasoning about context splitting would likely only comprise a small fraction of the proof effort. Pottier's proof for \SSPHS and the proof for \rgnUL are around 20,000 lines of Coq and Twelf code respectively, implying that the complexity of reasoning about these language features increases proof complexity significantly. For comparison, our linear lambda calculus formalisation is around 1,300 lines of Coq code including the library for context splitting.
+
+% TODO: Could list things that *would* work, things that wouldn't here.
+%\begin{itemize}
+%\item Modify the typing rules to use dual intuitionistic and linear contexts.
+%\item Augment the typing rules with a location environment, $\Delta$, implemented as another DbLib environment with nullary type information, i.e. \c{env () = list (option ())}. This representation would allow checking if the de Bruijn index $\rho$ for a location variable is in scope by checking if the location environment contains \c{Some ()} at index $\rho$. Further, the \c{insert} function and other utilities provided by DbLib could be used to manipulate the location environment, as is required by the (Let-LPack) rule for example.
+%\item Implement capture-avoiding location substitution by defining another instance of the \c{Traverse} type-class for terms. Coq's named instances would prevent a conflict with the instance for term substitution. Location, err...
+%\end{itemize}
 
 \section{Quality of Coq Proofs}
 
@@ -1324,6 +1330,17 @@ In his book \i{Certified Programming with Dependent Types}, Adam Chlipala advoca
 
 \i{``The more uninteresting drudge work a proof domain involves, the more important it is to work to prove theorems with single tactics."}
 \i{``I like to say that if you find yourself caring about indentation in a proof script, it is a sign that the script is structured poorly."}
+
+%\section{Time Efficiency}
+
+%The library and proof-of-concept were both very time consuming to create. We attribute this both to inexperience with Coq's best practices and the fact that DbLib's environment type is ill-suited for proofs about context splitting. The first point, of inexperience, can only be mitigated by practice and study, which have both been provided by this project. The second deserves a more thorough discussion.
+
+%In our previous discussion about representing typing contexts (see REF), we saw the myriad.
+
+% Inexperience, not the best abstraction, DbLib's environment ill-suited to proofs about linear languages due to odd insert behaviour, etc.
+
+% Very time consuming to create. Partly due to the DbLib list env not being well-suited to linearity.
+% Definitions are not trivial to write proofs about,
 
 \section{Summary of Evaluation}
 
