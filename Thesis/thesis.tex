@@ -312,7 +312,7 @@ Alternatively, it's possible for a term $u$ to have type $!A$ without an applica
 
 Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : {!A} \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$.
 
-In the Simply-Typed Lambda Calculus, an equivalent duplication function would have type $A \to (A \otimes A)$. In fact, it is impossible to embed all intuitionistic (STLC) terms and types in linear logic using reasoning similar to the above \cite{barber96}. Intuitionistic types $A$ can be translated to duplicable bang types ${!A}$, and functions $A \to B$ can similarly be translated to ${!A} \lolly B$.
+In the Simply-Typed Lambda Calculus, an equivalent duplication function would have type $A \to (A \otimes A)$. In fact, it is possible to embed all intuitionistic (STLC) terms and types in linear logic using reasoning similar to the above \cite{barber96}. Intuitionistic types $A$ can be translated to duplicable bang types ${!A}$, and functions $A \to B$ can similarly be translated to ${!A} \lolly B$.
 
 \subsection{Structural Rules}
 
