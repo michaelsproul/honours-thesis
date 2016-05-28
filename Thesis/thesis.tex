@@ -320,7 +320,7 @@ Philip Wadler gives a similar typing derivation for a duplication function in hi
 
 In Wadler's system, a single typing environment is used, containing both linear assumptions of the form $\langle x : A \rangle$ and intuitionistic ones of the form $[x : A]$. These are conceptually equivalent to assumptions in the respective linear and intuitionistic contexts of DILL. For rules that require the context to consist entirely of intuitionistic assumptions, Wadler uses the notation $[\Gamma]$, which is approximately equivalent to a $\Gamma; \emptyset$ pair of contexts in DILL. When formalising linear logic with an interactive theorem prover such as Coq, the dual-context approach taken by DILL is preferable to Wadler's approach because of the clear and forced separation of the two worlds -- intuitionistic and linear. For example, Wadler's system would require a Coq data-type to differentiate the two types of assumptions, and an additional predicate to state if a context contains only intuitionistic assumptions. A further difference between the two systems is that Wadler's renders the structural rules that lend their name to \i{substructural} type systems explicit.
 
-To save writing the entire set of typing rules, which are very similar to the ones for DILL already presented, we cherry-pick a few of the structural rules to demonstrate our point, and rely on the approximate translation described above and the original paper \cite{wadler93} to provide the full details.
+To save writing the entire set of typing rules, which are very similar to the ones for DILL already presented and the upcoming rules for $L^3$, we cherry-pick a few of the structural rules to demonstrate our point, and rely on the approximate translation described above and the original paper \cite{wadler93} to provide the full details.
 
 Unlike DILL, both kinds of variables in Wadler's LLC require their typing contexts to be empty except for the variable of interest:
 
@@ -347,29 +347,26 @@ In DILL the contraction and weakening rules for intuitionistic variables are imp
 
 If the use of structural rules is restricted, we get a substructural type system. Without Contraction, \i{variables can only appear once in a term}. Without Weakening, \i{all variables in the context must be used in the term}. Banning both contraction and weakening results in a \b{linear} type system where variables must be used exactly once. The systems we've seen so far, DILL and Wadler's LLC, are both linear in that contraction and weakening are banned for the non-intuitionistic terms of the language. Under the Curry-Howard correspondence, linear type systems correspond to linear logic, which was first introduced by Girard \cite{girard87}.
 
-If contraction is restricted but weakening is allowed, the result is an \b{affine} type system, corresponding to an affine logic (REF). Variables in affine logic can be thrown away but not duplicated, so every variable is used \i{at most once}.
-
-% With both (Contraction) and (Weakening), intuitionistic variables can be used just as freely as in DILL or the STLC.
-% The typing derivation for a duplication function in Wadler's LLC requires the use of (Contraction) to type both sides of the pair.
+If contraction is restricted but weakening is allowed, the result is an \b{affine} type system, corresponding to an affine logic (Grishin, 1974, Russian; recently \cite{tov11}). Variables in affine type systems can be thrown away but not duplicated, so every variable is used \i{at most once}.
 
 \subsection{Summary of the Linear Lambda Calculus}
 
-In this section we've seen how typing rules can be used to enforce constraints on the use of variables, by examining Dual Intuitionistic Linear Logic. We have seen that intuitionistic terms can be embedded in substructural languages via (!) types and the careful management of typing contexts. The importance of \b{context splitting} to divide linear assumptions between sub-terms has also been highlighted. In the next sections we examine more complex calculi that build on the linear lambda calculus to model useful programming language constructs like mutation and destructive updates.
+In this section we've seen how typing rules can be used to enforce constraints on the use of variables, by examining Dual Intuitionistic Linear Logic. We have seen that intuitionistic terms can be embedded in substructural languages via bang types and the careful management of typing contexts. The importance of \b{context splitting} to divide linear assumptions between sub-terms has also been highlighted. In the next sections we examine more complex calculi that build on the linear lambda calculus to model useful programming language constructs like mutation and destructive updates.
 
 \section{Operational Semantics and Type Soundness}
 
-Up until this point, we have described only the syntax and static semantics (typing rules) of linearly-typed programming languages, with only vague notions of how terms behave \i{dynamically} at ``run-time". To now describe the dynamic behaviour of languages we turn to \i{structural operational semantics}, a mathematical formalism for the step-wise evaluation of terms, also known as small-step semantics.
+Up until this point, we have described only the syntax and static semantics (typing rules) of linearly-typed programming languages, with only vague notions of how terms behave dynamically at run-time. To now describe the dynamic behaviour of languages we turn to \i{structural operational semantics}, a mathematical formalism for the step-wise evaluation of terms, also known as small-step semantics.
 
-To define the small-step semantics of a language, we inductively define a relation on pairs of terms, denoted $t \steps t'$. The relation needn't be strictly on pairs of terms, and many small-step semantics also thread through a global state or \i{store}, $\sigma$, so that the stepping relation ends up being: $(\sigma, t) \steps (\sigma', t')$. In small-step semantics each step $t \steps t'$ is intended to represent a single step of the computation, in contrast to big-step \i{natural} semantics where the values that terms evaluate to are stated directly, as in $t \Downarrow v$ (REF cow book).
+To define the small-step semantics of a language, we inductively define a relation on pairs of terms, denoted $t \steps t'$. The relation needn't be strictly on pairs of terms, and many small-step semantics also thread through a global state or \i{store}, $\sigma$, so that the stepping relation ends up being: $(\sigma, t) \steps (\sigma', t')$. In small-step semantics each step $t \steps t'$ is intended to represent a single step of the computation, in contrast to big-step \i{natural} semantics where the values that terms evaluate to are stated directly, as in $t \Downarrow v$ \cite{gunterSemantics}.
 
 The $\beta$-rule of the $\lambda$-calculus can be stated for DILL as:
 \begin{eqnarray*}
 \infer[\beta]{(\lambda x : A. \; t) \; v \steps t[v/x]}{}
 \end{eqnarray*}
 
-Here we use the variable $v$ to indicate a \i{value} of the language. Values are terms that are fully evaluated according to the small-step semantics of the language \cite{tapl} -- formally, they are terms that are in normal form with respect to the stepping relation $(\steps)$. By specifying that $\beta$-reduction can only occur if the argument is a value we have fixed the reduction strategy to call-by-value. Other reduction strategies can be similarly encoded, but we consider only call-by-value, as discussed in (section FIXME).
+Here we use the variable $v$ to indicate a \i{value} of the language. Values are terms that are fully evaluated according to the small-step semantics of the language \cite{tapl} -- formally, they are terms that are in normal form with respect to the stepping relation $(\steps)$. By specifying that $\beta$-reduction can only occur if the argument is a value we have fixed the reduction strategy to call-by-value. Other reduction strategies can be similarly encoded, but we consider only call-by-value here, as that's most popular in the literature surveyed.
 
-% FIXME: Maybe include something about rules with premises.
+% FIXME: Maybe include something about rules with premises. Reference full set of semantics for LLC on page...
 % Semantic rules can also have premises, as in the case of the two rules for
 
 Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Stated formally, the soundness lemma is:
