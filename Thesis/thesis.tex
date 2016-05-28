@@ -101,7 +101,6 @@
 \newcommand{\rgnUL}{$\lambda^\text{rgnUL}$\text{ }}
 \newcommand{\SSPHS}{\text{SSPHS }}
 \newcommand{\Francois}{Fran\frenchc{c}ois }
-\newcommand{\Lthree}{\text{$L^3$ }}
 
 % Logic/set theory.
 \let\oldemptyset\emptyset
@@ -127,7 +126,7 @@
 \newcommand{\Ptr}[1]{\textbf{Ptr $#1$}}
 \newcommand{\ptr}[1]{\textbf{ptr $#1$}}
 \newcommand{\Capa}[2]{\textbf{Cap $#1$ $#2$}}
-\newcommand{\capa}{\textbf{cap}}
+\newcommand{\capa}[1]{\textbf{cap $#1$}}
 \newcommand{\lquine}{\left\ulcorner}
 \newcommand{\rquine}{\right\urcorner}
 \newcommand{\dupl}[1]{\textbf{dupl $#1$}}
@@ -136,6 +135,7 @@
 \newcommand{\lfree}[1]{\textbf{free $#1$}}
 \newcommand{\lswap}[3]{\textbf{swap $#1$ $#2$ $#3$}}
 \newcommand{\qpair}[2]{\lquine #1, #2 \rquine}
+\newcommand{\semrule}[1]{\text{(#1)}}
 
 % Text formatting.
 \let\frenchc\c
@@ -370,6 +370,7 @@ Here we use the variable $v$ to indicate a \i{value} of the language. Values are
 % Semantic rules can also have premises, as in the case of the two rules for
 
 Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Stated formally, the soundness lemma is:
+
 \begin{eqnarray*}
 \infer[\t{(Type Soundness)}]
 {(\exists e''. \; e' \steps e'') \lor \t{$e'$ is a value}}
@@ -394,15 +395,15 @@ The preservation, or \i{subject reduction}, property holds if well-typed terms r
 {\emptyset \types e : \tau  &  e \steps e'}
 \end{eqnarray*}
 
-Our proof-of-concept Coq formalisation of a linear lambda calculus makes use of progress and preservation lemmas to establish type soundness.
+Our proof-of-concept Coq formalisation of a linear lambda calculus makes use of progress and preservation lemmas to establish type soundness. There are other formalisms and techniques that can be used to demonstrate soundness and similar properties, but we restrict our attention here to syntactic proofs by progress and preservation.
 
 \section{The Linear Language with Locations, $L^3$}
 
-We now turn our attention to \i{The Linear Language with Locations}, $L^3$ \cite{ahmed05}, which extends the linear lambda calculus with \b{strong destructive updates} and explicit memory management. In a language with references or pointers, a destructive update is a re-assignment of a value pointed to by a pointer. A \i{strong} destructive update is one that may also change the \i{type} of the value pointed to by the pointer. Destructive updates are a common feature of imperative languages, and their addition to the linear lambda calculus brings us a step closer to a sound and usable programming language for low-level programming. $L^3$ itself is not such a language, but could serve as a foundation for a language with more features (e.g. polymorphism). Its designers created it as a foundational calculus for strong updates, which can be used to model CPU registers.
+We now turn our attention to \i{The Linear Language with Locations}, $L^3$ \cite{ahmed05}, which extends the linear lambda calculus with strong destructive updates and explicit memory management. In a language with references or pointers, a destructive update is a re-assignment of a value pointed to by a pointer. A \i{strong} destructive update is one that may also change the \i{type} of the value pointed to by the pointer. Destructive updates are a common feature of imperative languages, and their addition to the linear lambda calculus brings us a step closer to a sound and usable programming language for low-level programming. $L^3$ itself is not such a language, but could serve as a foundation for a language with more features (e.g. polymorphism). Its designers created it as a foundational calculus for strong updates, which can be used to model CPU registers.
 
 % due to registers almost always containing values of different types throughout a program's execution.
 
-As for Dual Intuitionistic Linear Logic, we begin with a description of the syntax of the language, see Figure \ref{l3_syntax}.
+As for Dual Intuitionistic Linear Logic, we begin with a description of the syntax of the language, in Figure \ref{l3_syntax}.
 
 \begin{figure}[h]
 \caption{Syntax for The Linear Language with Locations}
@@ -418,9 +419,9 @@ t,u & ::= & * \sor \letbe{*}{t}{u} \sor \\
   && t \otimes u \sor \letbe{x \otimes y}{t}{u} \sor \\
   && x \sor \lam{x} t \sor \app{t}{u} \sor \\
   && {!v} \sor \letbe{!x}{t}{u} \sor \dupl{t} \sor \drop{t} \sor \\
-  && \ptr{l} \sor \capa \sor \lnew{t} \sor \lfree{t} \sor \lswap{t_1}{t_2}{t_3} \\
+  && \ptr{l} \sor \capa{l} \sor \lnew{t} \sor \lfree{t} \sor \lswap{t_1}{t_2}{t_3} \\
   && \Lam{\rho} t \sor t [\eta] \sor \qpair{\eta}{t} \sor \letbe{\qpair{\rho}{x}}{t}{u} \\
-v & ::= & * \sor v_1 \otimes v_2 \sor x \sor \lam{x} t \sor {!v} \sor \ptr{l} \sor \capa
+v & ::= & * \sor v_1 \otimes v_2 \sor x \sor \lam{x} t \sor {!v} \sor \ptr{l} \sor \capa{l}
   \sor \Lam{\rho} t \sor \qpair{\eta}{v}
 \end{eqnarray*}
 \end{figure}
@@ -472,46 +473,54 @@ Many of the terms and types have the same meaning as in DILL. Functions, variabl
 
 % Bang types are handled in a slightly different way, with two new primitives added: $\dupl{t}$ and $\drop{t}$.
 
-The main addition is the set of primitives for allocating and managing memory: $\lnew{t}$, $\lfree{t}$, $\lswap{t_1}{t_2}{t_3}$. Each piece of memory allocated is at a constant location $l$, drawn from a set of location constants \b{LocConsts} which can be considered memory addresses. The precise locations are hidden from the programmer by existential types $\Exists{\rho} t$, for location variables $\rho \in \b{LocVars}$.
+The main addition is the set of primitives for allocating and managing memory: $\lnew{t}$, $\lfree{t}$ and $\lswap{t_1}{t_2}{t_3}$. Each piece of memory allocated is at a constant location $l$, drawn from a set of location constants \b{LocConsts} which can be considered memory addresses. The precise locations are hidden from the programmer by existential types $\Exists{\rho} A$, for location variables $\rho \in \b{LocVars}$.
 
-$L^3$ is typical of other modern calculi in that it separates resources like pointers from \i{capabilities} to use those resources. A pointer value $\ptr{l} : \Ptr{l}$ is unusable without a capability to read from and write to it: $\capa : \Capa{l}{A}$. Capabilities are linear values, whilst pointers are duplicable. To see how this is enforced, and the destructive updates that it enables, we now considering the typing rules for \Lthree, as in Figure \ref{l3_typing}.
+$L^3$ is typical of other modern calculi in that it separates resources like pointers from \i{capabilities} to use those resources. A pointer value $\ptr{l} : \Ptr{l}$ is unusable without a capability to read from and write to it: $\capa{l} : \Capa{l}{A}$. Capabilities are linear values, whilst pointers are duplicable. To see how this is enforced, and the destructive updates that it enables, we now considering the typing rules for $L^3$, as in Figure \ref{l3_typing}.
 
-\Lthree's typing judgements include two contexts, one for locations and another for types: $\Delta; \Gamma \types t : A$. All variables and their types are stored in one typing context, which makes \Lthree more similar to Wadler's LLC than DILL -- despite the syntactic similarity. The location context $\Delta$ is a sequence of locations that are currently in scope, like variables in a typing context without the type information: $\Delta ::= \emptyset \sor \Delta, \rho$.
+$L^3$'s typing judgements include two contexts, one for locations and another for types: $\Delta; \Gamma \types t : A$. All variables and their types are stored in one typing context, which makes $L^3$ more similar to Wadler's LLC than DILL -- despite the syntactic similarity. The location context $\Delta$ is a sequence of location variables that are currently in scope, like variables in a typing context without the type information: $\Delta ::= \emptyset \sor \Delta, \rho$.
 
-As in DILL, \b{context splitting} is used extensively to ensure that each variable appears exactly once in a term. The typing rules for unit types, product types ($\otimes$) and functions ($\lolly$) are almost identical to the rules for their counterparts in Wadler's LLC, and DILL, modulo some context shuffling.
+As in DILL, \b{context splitting} is used extensively to ensure that each variable appears exactly once in a term. The typing rules for unit types, product types ($\otimes$) and functions ($\lolly$) are almost identical to the rules for their counterparts in Wadler's LLC, and DILL, modulo the different number of contexts.
 
-The rule for variables, (Var), is similar to Wadler's, except that the \i{free location variables} of the variable's type, $FLV(A)$, must be present in the location context. Another interesting difference is that \Lthree has only one rule for variables, rather than two like DILL and Wadler's LLC. The reason for this is that \Lthree doesn't differentiate between linear and intuitionistic assumptions. Wadler motivates the two types of assumptions by giving an example of how the proof reduction rule equivalent to $\beta$-reduction becomes unsound if contraction and weakening are allowed for assumptions of the form $\langle x : {!A} \rangle$ (or just $x : {!A}$ in \Lthree syntax). This doesn't pose a problem to \Lthree because there are no explicit contraction and weakening rules -- the same functionality is instead provided by $\dupl{t}$ and $\drop{t}$ primitives.
+The rule for variables, (Var), is similar to Wadler's, except that the \i{free location variables} of the variable's type, $FLV(A)$, must be present in the location context. Another interesting difference is that $L^3$ has only one rule for variables, rather than two like DILL and Wadler's LLC. The reason for this is that $L^3$ doesn't differentiate between linear and intuitionistic assumptions. Wadler motivates the two types of assumptions by giving an example of how the proof reduction rule equivalent to $\beta$-reduction becomes unsound if contraction and weakening are allowed for assumptions of the form $\langle x : {!A} \rangle$ (or just $x : {!A}$ in $L^3$ syntax). This doesn't pose a problem to $L^3$ because there are no explicit contraction and weakening rules -- the same functionality is instead provided by $\dupl{t}$ and $\drop{t}$ primitives. Therefore a variable is considered intuitionistic (and duplicable) if it has type ${!A}$ for some $A$.
 
-These primitives form part of \Lthree's handling of intuitionistic values using the bang (!) type. The introduction rule for bang types is almost the same as in DILL, except that an intuitionistic context $!\Gamma$ is now just one where all assumptions are of the form $x : {!A}$, and only values $v$ are permitted. The elimination rule is also similar, except that the context that the newly bound variable is introduced into is linear, which means the variable can only be used once after the rule is applied. The duplication primitive mitigates this restriction by explicitly transforming a value of type $!A$ into a pair of values with the same type, ${!A} \otimes {!A}$. The components of the duplicate pair can be given names and introduced into the typing context by the elimination rule for products.
+The \b{drop} and \b{dupl} primitives form part of $L^3$'s handling of intuitionistic values using the bang (!) type. The introduction rule for bang types is almost the same as in DILL, except that only values $v$ are permitted, and an intuitionistic context $!\Gamma$ is now just one where all assumptions are of the form $x : {!A}$. The elimination rule is also similar, except that the context that the newly bound variable is introduced into is linear, which means the variable can only be used once after the rule is applied. The duplication primitive mitigates this restriction by explicitly transforming a value of type $!A$ into a pair of values with the same type, ${!A} \otimes {!A}$. The components of the duplicate pair can be given names and introduced into the typing context by the elimination rule for products, ($\otimes$-E). This duplicating of intuitionistic values is equivalent to a contraction typing rule.
 
-As well as duplicating values, which is equivalent to contraction, intuitionistic terms $t$ can also be discarded using $\drop{t}$, equivalent to weakening.
+Further, there is an equivalent to a weakening rule for intuitionistic terms, in the form of the \b{drop} primitive, which allows a term to be discarded. Given a term $t$ with type ${!A}$, dropping it results in a term $\drop{t}$ with type unit $\mathds{I}$.
 
+The remaining typing rules relate to $L^3$'s primitives for memory allocation. By the (New) rule, we see that a term $t$ can be assigned a reference and accompanying capability by the $\lnew{t}$ term. The type of $\lnew{t}$ is an existential type $\Exists{\rho} (\Capa{\rho}{A} \otimes {!(\Ptr{\rho})})$, which hides the precise location from the programmer. As can be seen from the (Let-LPack) rule this existential package can be unpacked by a $\letbe{\qpair{\rho}{x}}{t}{u}$ term, causing the location $\rho$ to become available in the location context and a variable for the pointer and capability to become available in the typing context.
+
+Note that the capabilities produced by the \b{new} construct have linear type $\Capa{\rho}{A}$, while the pointers themselves are non-linear and duplicable $!(\Ptr{l})$. Further, the type of the pointer doesn't mention the type of the value it points to. These two properties enable strong destructive updates, as the unique capability can be passed to the \b{swap} construct, which replaces the value at the location and returns a pair containing a capability with the new value's type and the old value. The (Swap) rule demonstrates this.
+
+Finally, the \b{free} primitive, which is responsible for de-allocating a piece of memory allocated with \b{new}. A term $\lfree{t}$ is well-typed if the term $t$ is a capability-and-pointer package as produced by \b{new}. The value of $\lfree{t}$ after de-allocation is an existential package containing the value that was stored at the location, with type $\Exists{\rho} A$.
+
+The run-time interpretations of the above operations are provided by a small-step operational semantics that makes use of a store $\sigma$ mapping locations $l$ to closed values $v$.
+% TODO: Fill in the remaining semantic rules.
 \begin{eqnarray*}
-(\sigma, \text{new } v) \Rightarrow (\sigma \uplus \{l \mapsto v\},
-  \lquine l, \langle \capa, \ptr l \rangle \rquine)
+\semrule{new} & (\sigma, \lnew{v}) \Rightarrow (\sigma \uplus \{l \mapsto v\},
+  \qpair{l}{\capa{l} \otimes \ptr l})
 \\
-(\sigma, \text{let } \lquine \rho, x \rquine = \lquine l, v \rquine \text{in } e)
+\semrule{let-lpack} & (\sigma, \letbe{\qpair{\rho}{x}}{\qpair{l}{v}}{t})
   \Rightarrow
-  (\sigma, e[l/\rho][v/x])
+  (\sigma, t[l/\rho][v/x])
 \end{eqnarray*}
 
-\pagebreak
+For their proof of soundness, the $L^3$ authors don't use a syntactic proof. Instead, they provide a \i{semantic interpretation} of the types and prove that well-typed expressions correspond to true logical statements about the interpretations of the types. A consequence of this approach is that the typing rules don't contain rules for intermediate values like $\capa{l}$, which makes a syntactic proof more complicated, as discussed in \cref{towards-l3}.
+
+\newpage
 
 %the mechanical verification of a small language -- \i{The Linear Language with Locations}, $L^3$. Although formal semantics and semi-formal proofs of correctness exist for $L^3$, no computer-based proofs exist. We verify $L^3$ because it is typical of modern resource-aware calculi in its use of capabilities -- whilst remaining simple. $L^3$'s concepts of ownership make its mechanisation relevant to the complete verification of low-level systems like garbage collectors and operating systems, which are at the cutting edge of verification research.
 
-The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \i{capabilities} -- 
+%The Linear Language with Locations $L^3$ \cite{ahmed05}, makes use of concepts from linear typing to manage \i{capabilities} -- 
 
-$L^3$ is a \i{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \i{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \c{Int} can be overwritten with a \c{Bool} and the type system can statically track this change.
+%$L^3$ is a \i{low-level} language by design and features primitive operations for allocating and deallocating memory. By virtue of linear capabilities, \i{strong updates} are supported, whereby the type of a value in a memory location may change upon writing. Strong updates enable staged value initialisation, and simulation of register type-changes throughout program execution. For example, a pointer initially pointing to an \c{Int} can be overwritten with a \c{Bool} and the type system can statically track this change.
 
-$L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
+%$L^3$'s definition includes a description of syntax, operational semantics and typing rules. Notably, the operational semantics include a store type which maps locations to values. Similarly, the typing rules include a location context that tracks which locations are in scope.
 
+%These two rules from the operational semantics show the behaviour of the \c{new} keyword for allocating memory, and the \c{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \c{new}. The $\lquine l, \langle \capa{l}, \ptr l \rangle \rquine$ notation represents a value of \i{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
 
+%$L^3$'s rules for managing capabilities are closer to standard linear typing than de Vries' rules for modelling Clean's uniqueness typing. Typing assumptions are treated linearly, there are context-splitting operations and contraction and weakening are permitted for values of bang (!) type. This is in contrast to the use of kinds and attribute type constructors in de Vries' model.
 
-These two rules from the operational semantics show the behaviour of the \c{new} keyword for allocating memory, and the \c{let} construct for unpacking pointers and capabilities. Note how the store $\sigma$ is extended with a mapping from a new location $l$ to the value $v$ in the case of the rule for \c{new}. The $\lquine l, \langle \capa, \ptr l \rangle \rquine$ notation represents a value of \i{existential type} that witnesses the existence of a pair containing a capability for, and pointer to, some location $l$ which is hidden from the programmer.
-
-$L^3$'s rules for managing capabilities are closer to standard linear typing than de Vries' rules for modelling Clean's uniqueness typing. Typing assumptions are treated linearly, there are context-splitting operations and contraction and weakening are permitted for values of bang (!) type. This is in contrast to the use of kinds and attribute type constructors in de Vries' model.
-
-Conceptually, because the rules that introduce capabilities are baked into the type system, capabilities are guaranteed \i{not to have been shared} (uniqueness) and \i{not to be shared in the future} (linearity). The use of capabilities also yields all of the same properties yielded by substructural and uniqueness typing -- notably destructive updates and the potential to eliminate garbage collection. It is typical of many of the later systems which we cover in the next section.
+%Conceptually, because the rules that introduce capabilities are baked into the type system, capabilities are guaranteed \i{not to have been shared} (uniqueness) and \i{not to be shared in the future} (linearity). The use of capabilities also yields all of the same properties yielded by substructural and uniqueness typing -- notably destructive updates and the potential to eliminate garbage collection. It is typical of many of the later systems which we cover in the next section.
 
 \section{Uniqueness Typing}
 
@@ -1232,10 +1241,11 @@ Our approach may also be applicable to a modified version of Edsko de Vries' uni
 % Implicit in the criteria for applicability is the idea that the language uses a traditional typing environment where variables either possess a type or are entirely absent. This is not true of Conor McBride's recent work on combining linear and dependent typing (REF), which annotates variables in the context by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original. This is incompatible with context splitting as we've defined it because assumptions involving variables unavailable at run-time are replaced by information-free \c{None} values. Further work could develop a software library for typing contexts in Conor's style, which would be general enough to handle all of the languages handled by our library.
 
 \section{Towards a Coq Formalisation of $L^3$}
+\label{towards-l3}
 
 \i{The Linear Language with Locations}, $L^3$, is a good candidate for assessing the applicability of our approach to languages beyond the linear lambda calculus. As argued in the Background chapter, its use of linear capabilities and shared pointers is typical of other modern calculi supporting destructive updates.
 
-\Lthree seems like it may be amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit contraction and weakening, which means the \c{context_split} predicate could be employed unaltered. However, as noted in the $L^3$ paper (REF), the operational semantics and typing rules are not set-up for a syntactic proof of soundness. As an example, consider the preservation lemma for the memory allocation primitive $\lnew{v}$. Under the operational semantics the term steps unconditionally: $(\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})$, hence we should have:
+$L^3$ seems like it may be amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit contraction and weakening, which means the \c{context_split} predicate could be employed unaltered. However, as noted in the $L^3$ paper (REF), the operational semantics and typing rules are not set-up for a syntactic proof of soundness. As an example, consider the preservation lemma for the memory allocation primitive $\lnew{v}$. Under the operational semantics the term steps unconditionally: $(\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})$, hence we should have:
 \begin{eqnarray*}
 \infer{\Delta; \Gamma \types \qpair{l}{\capa \otimes !(\ptr{l})} : \Exists{\rho} A}{
   \Delta; \Gamma \types \lnew{v} : \Exists{\rho} A  & (\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})
