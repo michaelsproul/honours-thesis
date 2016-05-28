@@ -1323,13 +1323,26 @@ Dependent induction is used at one point in the proof of soundness for the LLC, 
 
 \subsection{Automation and Repetition}
 
+We found that repeated sections of proof script could be de-duplicated in one of two ways: either by writing a lemma to encapsulate the common truth, or by using Coq's tactic language (Ltac) to repeat the same steps of reasoning. Of these, we found writing a lemma to be preferable as we found Ltac code more difficult to debug. In this section we discuss the efficacy of the automation employed by our proofs, and suggest possible improvements.
 
-\subsection{Automation and Tactic Scripts}
-
-In his book \i{Certified Programming with Dependent Types}, Adam Chlipala advocates:
+In his book \i{Certified Programming with Dependent Types} (REF), Adam Chlipala advocates:
 
 \i{``The more uninteresting drudge work a proof domain involves, the more important it is to work to prove theorems with single tactics."}
 \i{``I like to say that if you find yourself caring about indentation in a proof script, it is a sign that the script is structured poorly."}
+
+This is contrary to many of the steps taken by our proof to remain readable, including the use of case markers and indentation discussed above. This is primarily because constructing a proof in Chlipala's style is easiest when following his approach from the outset. Our proof began in a primarily manual style, with modest uses of the \c{auto} tactic with explicit hint lemmas. Mid-way through the development a hint database was created with an accompanying specialised version of \c{auto} called \c{boom}.
+
+Adapting the proof to use \c{boom} did remove repetition in some places, but was quite time-consuming for the savings achieved. The auto tactic works by repeatedly calling the \c{apply} tactic with lemmas from the hint databases and the current set of hypotheses. Unfortunately, many manual proofs are not structured as a straight-forward series of lemma applications, which means significant effort is often required to adapt proofs for use with auto. In our proofs, rewrites and inversion were the most significant barriers to automation with auto because they don't map cleanly onto stand-alone lemmas. To simulate a rewrite with a lemma requires restating the goal before and after the rewrite, which leads to a lemma for each goal and rewrite-rule pair. Similarly, the outcome of an inversion is usually a set of equalities about the components of the term being inverted, which can be used in a myriad of ways.
+
+That said, the number of rewrites in our proof-of-concept is exacerbated by our choice to keep DbLib's definitions \i{opaque}. By default, DbLib exports the functions for lookups and inserts as opaque to the Coq simplifier. This means that an explicit rewrite is required every time a lookup or insert needs simplification -- the \c{simpl} tactic has no effect. DbLib makes the definitions opaque by default to prevent \i{``fragile simplifications"}, and it is possible to selectively make definitions transparent again. If starting the proof again from scratch or reworking the proof to be more automated, we believe it would be best to make the definitions transparent for the whole project, with opt-in opacity where it is required to deal with odd simplification behaviour. This would remove rewrites and make \c{auto} applicable in more places.
+
+As well as \c{auto}, Coq also includes an \c{autorewrite} tactic for repeatedly rewriting using a collection of rewrite rules. Use of this tactic could be investigated as an alternative to making definitions transparent, although it wouldn't solve the problem of automatically simplifying hypotheses, which we get for free with transparent definitions and the simplify-everywhere tactic, \c{simpl in *}.
+
+Although automating proofs extensively reduces proof-effort and therefore makes larger developments feasible (REF Chlipala), it is not without downsides. We found debugging Ltac code quite difficult and labour-intensive. For example, Ltac's semicolon operator which makes it possible to ``pipe" the results of tactics into each other, simultaneously makes debugging the middle of a pipeline difficult. The debugging mode for Ltac (\c{Set Ltac Debug}) doesn't show intermediate results in semicolon pipelines and also isn't available in CoqIDE (or Vim). This leaves one with no option but to break the pipeline apart into individual tactic applications. If a tactic is failing in only a few branches this also requires the temporary use of the \c{admit} tactic to navigate to the failing cases. Once the error is found and fixed, one then has to glue the tactics back together. This debugging experience is unarguably less than ideal, and is an inevitable consequence of automating heavily using current tools. Our proof walks the line between difficult-to-debug Ltac code and repetitive manual proof, erring slightly on the side of manual proof. Further work could develop improved debugging facilities for Coq tactics, possibly using a graphical interface to convey the branching into different cases.
+
+% Auto-rewrite, pattern-matching Ltac, etc.
+
+% Debugging semi-colons.
 
 %\section{Time Efficiency}
 
