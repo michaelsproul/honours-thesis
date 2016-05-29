@@ -137,6 +137,10 @@
 \newcommand{\qpair}[2]{\lquine #1, #2 \rquine}
 \newcommand{\semrule}[1]{\text{(#1)}}
 
+% Pure LLC stuff.
+\newcommand{\TyPrim}[1]{\b{TyPrim } #1}
+\newcommand{\TPrim}[1]{\b{TPrim } #1}
+
 % Text formatting.
 \let\frenchc\c
 \let\c\texttt
@@ -700,6 +704,7 @@ Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphi
 In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer discussion of these to future work.
 
 \section{Evaluation Framework}
+\label{sec:eval-framework}
 
 In this section we describe some criteria for assessing the quality of work completed as part of this thesis. Given our goal of creating a general Coq library for the verification of linearly-typed languages, what properties should our library ideally possess? We break the criteria into two subsections: \b{Conceptual Goals}, relating to the theoretical content of the library, and its generality and applicability to other languages; and \b{Implementation Goals} regarding the quality of the Coq library itself. Dividing the criteria in this way provides broad coverage of the quality of the work whilst allowing us to separate concerns.
 
@@ -767,8 +772,6 @@ In the context of Coq, this is can concretely be phrased:
 
 %TODO: Maybe a note about DbLib here.
 
-%TODO: If I do stuff about $L^3$ I might have to nest some stuff under a specific LLC section.
-
 \section{Outline of Own Work}
 
 As part of this thesis, the following work has been completed:
@@ -780,46 +783,62 @@ As part of this thesis, the following work has been completed:
 
 The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in proof of \textbf{preservation} and \textbf{progress} which together establish soundness.
 
+We begin by defining the language for which we have established type soundness, and continue with an in-depth discussion of how it was formalised in Coq. The definitions and lemmas provided by the library are motivated by the proof and are discussed as they arise.
+
+\section{Language Definition}
+
+The language formalised is a wholly linear subset of DILL, extended with uninterpreted primitive types. For brevity, call this language PLLC, for the Purely Linear Lambda Calculus. PLLC provides just enough features to reason about linearity in interesting ways, while not being too labour-intensive to formalise. Its syntax is:
+\begin{eqnarray*}
+x & \in & \b{Vars} \\
+s & \in & \b{Strings} \\
+A,B & ::= & \mathds{I} \sor A \lolly B \sor \TyPrim{s} \\
+t,u & ::= & * \sor x \sor (\lam{x : A} t) \sor \app{t}{u} \sor \TPrim{s} \\
+v & ::= & * \sor x \sor (\lam{x : A} t) \sor \TPrim{s}
+\end{eqnarray*}
+
+The primitive types provide some types other than the unit type for the function constructor to act on. Their inclusion has minimal impact on the proof of soundness and they can be removed without altering the outcome. All of the other terms have the same meaning as in DILL. The typing rules for PLLC are shown in Figure \ref{pllc-typing-rules}.
+
+\begin{figure}[h]
+\caption{Typing Rules for PLLC}
+\label{pllc-typing-rules}
+\begin{displaymath}
+\arraycolsep=1.4pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infer[\text{(Lin-Var)}]{x : A \types x : A}{} &
+\infer[\text{(Unit)}]{\emptyset \types * : \mathds{I}}{} \\
+\infer[\text{($\lolly$-I)}]
+  {\Delta \types \lam{x : A} t : A \lolly B}
+  {\Delta, x : A \types t : B} &
+\infer[\text{($\lolly$-E)}]
+  {\Delta_1, \Delta_2 \types \app{u}{t} : B}
+  {\Delta_1 \types u : A \lolly B  & \Delta_2 \types t : A} \\
+\infer[\t{(Prim)}]{\emptyset \types \TPrim{s_1} : \TyPrim{s_2}}{} \\
+\end{array}
+\end{displaymath}
+\end{figure}
+
+With the exception of the rule for primitives, PLLC's typing rules are a subset of DILL's, with the intuitionistic contexts $\Gamma$ removed. Hence, in PLLC, every variable is linear and every function consumes its input. The rule for primitives allows any primitive term to be assigned any primitive type, the intention being that primitive types are handled by an external mechanism, as in a compiler.
+
+% Important points:
+% Bare minimum language required to reason about linearity.
+% Typing rules based on DILL.
+% Operational semantics based on a standard call by value lambda calculus (cite SF).
+
+\begin{figure}[h]
+\caption{Operational Semantics for PLLC}
+\begin{displaymath}
+\arraycolsep=1.4pt\def\arraystretch{2.2}
+\begin{array}{cc}
+\infer[(\beta)]{\app{(\lam{x : A} t)}{v} \steps t[v / x]}{} \\
+\infer[\t{(StepApp1)}]{\app{u}{t} \steps \app{u'}{t}}{u \steps u'} \\
+\infer[\t{(StepApp2)}]{\app{v}{t} \steps \app{v}{t'}}{t \steps t'} \\
+\end{array}
+\end{displaymath}
+\end{figure}
+
 We say that a lemma or definition is \i{universal} if it is applicable to the verification of other linearly typed languages (using the DbLib library). Conversely, we say that a lemma is \i{language-specific} if it is not universal, and is concerned with some specific part of the concrete language being verified.
 
 As is somewhat standard in syntax-driven Coq proofs about programming languages \cite{pierce15}, we use inductive definitions for the terms, types and typing judgements of the language. These definitions are language-specific, and all subsequent lemmas that reference them are also necessarily language-specific.
-
-\section{Syntax and Types}
-
-To define the syntax of the linear lambda calculus (LLC) we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \c{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The syntax for types is:
-
-\begin{coqcode}
-Inductive ty : Set :=
-    | TyUnit
-    | TyFun : ty -> ty -> ty
-    | TyBool.
-\end{coqcode}
-
-Now, with LLC's types defined, we can define the syntax of terms:
-
-% FIXME: Remove bools?
-\begin{coqcode}
-Inductive term : Set :=
-    | TUnit | TTrue | TFalse
-    | TVar : nat -> term
-    | TAbs : ty -> term -> term
-    | TApp : term -> term -> term.
-\end{coqcode}
-
-Variables are represented by the \c{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \c{term}. Later when defining the typing judgement we will see that a variable \c{TVar i} is well-typed only if the typing context contains a type at index $i$.
-
-In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \i{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \c{value t} with the following definition:
-
-\begin{coqcode}
-Inductive value : term -> Prop :=
-    | VUnit : value TUnit
-    | VVar : forall x, value (TVar x)
-    | VAbs : forall t e, value (TAbs t e)
-    | VTrue : value TTrue
-    | VFalse : value TFalse
-\end{coqcode}
-
-Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
 
 \section{Integrating with DbLib}
 
@@ -1212,7 +1231,7 @@ To prove this lemma, DbLib was extended with a \i{lowering} operation that is co
 
 \chapter{Evaluation}
 
-In this section we assess the quality of the work according to the Evaluation Framework of section (REF). We discuss the success of the library according to its conceptual goals, primarily by outlining how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
+In this section we assess the quality of the work according to the Evaluation Framework of Section \cref{sec:eval-framework}. We discuss the success of the library according to its conceptual goals, primarily by outlining how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
 
 \section{Generality and Applicability}
 \label{sec:generality}
@@ -1378,6 +1397,43 @@ Although automating proofs extensively reduces proof-effort and therefore makes 
 \bibliography{pubs}
 
 \chapter{Appendix}
+
+\section{Representing PLLC Syntax in Coq}
+
+To define the terms of PPLC we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \c{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The inductive definition for types is:
+
+\begin{coqcode}
+Inductive ty : Set :=
+  | TyUnit
+  | TyFun : ty -> ty -> ty
+  | TyBool.
+\end{coqcode}
+
+Now, with LLC's types defined, we can define the syntax of terms:
+
+% FIXME: Update all this syntax.
+\begin{coqcode}
+Inductive term : Set :=
+    | TUnit | TTrue | TFalse
+    | TVar : nat -> term
+    | TAbs : ty -> term -> term
+    | TApp : term -> term -> term.
+\end{coqcode}
+
+Variables are represented by the \c{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \c{term}. Later when defining the typing judgement we will see that a variable \c{TVar i} is well-typed only if the typing context contains a type at index $i$.
+
+In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \i{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \c{value t} with the following definition:
+
+\begin{coqcode}
+Inductive value : term -> Prop :=
+    | VUnit : value TUnit
+    | VVar : forall x, value (TVar x)
+    | VAbs : forall t e, value (TAbs t e)
+    | VTrue : value TTrue
+    | VFalse : value TFalse
+\end{coqcode}
+
+Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
 
 DbLib version (git commit hash): blah
 
