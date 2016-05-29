@@ -526,18 +526,14 @@ For their proof of soundness, the $L^3$ authors don't use a syntactic proof. Ins
 
 Although linear and affine type theory capture the essence of uniquely referenced values, they are insufficient to describe the concept of \i{uniqueness} as it appears in languages like Clean. In his 2007 paper, de Vries \cite{deVries07} notes that terms of a unique type should be \i{guaranteed to never have been shared}, which is sufficient to guarantee a unique pointer at runtime. In contrast, terms of linear (or affine) type are \i{guaranteed not to be shared in the future}, which is insufficient to guarantee a unique pointer.
 
-The distinctness of linearity and uniqueness is further highlighted by the \i{dereliction} rule present in some versions of linear type theory, and the rule that we'll refer to as \i{uniqueness removal} present in Clean's type system. Let $\alpha^\odot$ and $\alpha^\otimes$ stand for linear and non-linear versions of a base type $\alpha$. Similarly, let $\alpha^\bullet$ and $\alpha^\times$ stand for unique and shared versions of a base type $\alpha$. We have:
-
+The distinctness of linearity and uniqueness is highlighted by the contrast between \i{dereliction} and the rule that we'll refer to as \i{uniqueness removal} present in Clean's type system. In a linearly typed language, dereliction refers to the ability to convert intuitionistic values into linear ones, for example by constructing a function with type $({!A} \lolly A)$. In DILL, the following dereliction function is well-typed:
 \begin{eqnarray*}
-(\lambda x. \; x) \; : & \alpha^\otimes \rightarrow \alpha^\odot & \text{(linear dereliction)}\\
-(\lambda x. \; x) \; : & \alpha^\bullet \rightarrow \alpha^\times & \text{(uniqueness removal)}
+\emptyset; \emptyset \types (\lam{x : {!A}} \letbe{!y : A}{x}{y}) : {!A} \lolly A
 \end{eqnarray*}
 
-The dereliction rule allows a non-linear value to be transformed into a linear one. As noted by de Vries \cite{deVriesPhD08}, an analogous rule for unique types that converts shared values to unique ones cannot possibly be sound. The ``unique" value resulting from such a rule would not necessarily be unique because other shared references may still exist.
+Now, imagine that we treat linear terms as unique, and intuitionistic ones as non-unique. As noted by Edsko de Vries \cite{deVriesPhD08}, the dereliction function above is \b{not sound} under this proposed equivalence. The ``unique" value resulting from dereliction is not necessarily unique because other shared references (intuitionistic values of type ${!A}$) may still exist.
 
-Conversely, uniqueness removal only makes sense in the context of uniqueness types. A unique value may sacrifice its uniqueness to become shared, but a linear value which models the existence of a single resource should not be transformed into an unlimited supply of that resource.
-
-Note that dereliction need not form a part of type systems based on linear logic, and that it is absent from Wadler's presentations \cite{wadler90, wadler93} and all systems considered in the next sections. Further note that if uniqueness is to be exploited to make garbage collection unnecessary -- as in the case of Rust -- then the uniqueness removal rule is undesirable as it prevents values from having a unique owner.
+Further, the uniqueness removal rule in Clean allows unique values to be transformed into non-unique ones. In a linear context, this is analogous to writing a function with type $A \lolly {!A}$, which violates the guarantee that linear variables are only used once, and is impossible in DILL. A unique value may sacrifice its uniqueness to become shared, but a linear value which models the existence of a single resource should not be transformed into an unlimited supply of that resource. Further note that if uniqueness is to be exploited to make garbage collection unnecessary -- as in the case of Rust -- then the uniqueness removal rule is undesirable as it prevents values from having a unique owner.
 
 Due to the non-equivalence of linearity and uniqueness, de Vries constructed a distinct set of semantics and typing rules to model Clean's type system \cite{deVries07}.
 
@@ -545,13 +541,9 @@ One key component of his approach is the use of the \i{kind} (type of types) sys
 
 The other main technique employed by de Vries' model is the use of arbitrary boolean expressions as uniqueness attributes, with $\bullet$ as true and $\times$ as false. Clean's type system allows uniqueness polymorphism, which results in constraint relationships between uniqueness variables, which are represented in de Vries' system as simple boolean expressions that can be handled by a standard unification algorithm.
 
-Importantly, de Vries' work includes the only known mechanical verification of a type system similar to Clean's. The formalisation uses the Coq proof assistant, and the \i{locally nameless} approach to variable naming that is discussed in Section \ref{sec:de_bruijn}.
+Despite uniqueness being distinct from linearity, Edsko's formalism also makes use of a context splitting operation to enforce constraints on the usage of variables. It differs slightly from the standard approach in that non-unique variables can be split onto both sides. A discussion about expressing de Vries' context splitting in terms of the standard approach is given in \cref{sec:generality}.
 
-% Linear + affine logic and control over contraction and weakening. DONE.
-
-% Uniqueness typing as an alternative (mention dereliction, non guarantees). DONE.
-
-% de Vries formalisation of Clean's uniqueness typing using attributes.
+Finally, de Vries' work includes the only known mechanical proof of type soundness for a type system similar to Clean's. The proof is syntactic, and is encoded in Coq. It makes use of the \i{locally nameless} approach to variable naming that is discussed in \cref{sec:de-bruijn}.
 
 \section{Systems of Capabilities}
 
@@ -569,7 +561,7 @@ The concept of hidden state is distinct from, yet related to, the existential ty
 
 All of $L^3$'s features, including strong updates, are covered by Pottier's system. It also subsumes \rgnUL, with support for polymorphism and regions. Unlike previous systems it also guarantees the runtime-irrelevance of capabilities, which are proved to be erasable.
 
-Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his \c{dblib} library, discussed in Section \ref{sec:de_bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
+Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his \c{dblib} library, discussed in Section \ref{sec:de-bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
 
 \subsection{Mezzo}
 
@@ -639,7 +631,7 @@ Coq rejects this definition with the error: \c{Non strictly positive occurrence 
 There are ways to simulate HOAS-like systems in Coq by either limiting the expressiveness and defining filters on the inductive types obtained \cite{despeyroux95} or by mixing de Bruijn indices and HOAS \cite{capretta07}. As HOAS is entirely absent from the Coq formalisations surveyed we choose to look past it in favour of plain de Bruijn indices.
 
 \subsection{De Bruijn Indices and the Locally Nameless Approach}
-\label{sec:de_bruijn}
+\label{sec:de-bruijn}
 
 Building on the idea that the exact names of bound variables are irrelevant, de Bruijn indices represent variables as \i{distances from their binding occurrence} \cite{deBruijn72}. For example, the identity function $(\lambda x. \; x)$ is encoded as $(\lambda . \; \hat{0})$, where a natural number $i$ annotated with a hat as in $\hat{i}$ represents a de Bruijn index.
 
@@ -1226,6 +1218,7 @@ To prove this lemma, DbLib was extended with a \i{lowering} operation that is co
 In this section we assess the quality of the work according to the Evaluation Framework of section (REF). We discuss the success of the library according to its conceptual goals, primarily by outlining how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
 
 \section{Generality and Applicability}
+\label{sec:generality}
 
 % Further, we require that splitting a linear context $E = E_1 \circ E_2$ results in every assumption from $E$ appearing in $E_1$ or $E_2$ but not both.
 
