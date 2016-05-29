@@ -751,8 +751,6 @@ An assessment of the work according to this evaluation framework is given in the
 
 \chapter{Own Work}
 
-TODO: Some sort of intro paragraph.
-
 \section{Research Questions}
 
 The primary research question that this thesis attempts to answer relates to the efficient development of verified proofs about low-level substructural languages. Specifically,
@@ -773,6 +771,8 @@ In the context of Coq, this is can concretely be phrased:
 
 \section{Outline of Own Work}
 
+As part of this thesis, the following work has been completed:
+
 \begin{itemize}
 \item Development of general definitions and lemmas about context splitting and other actions on typing environments.
 \item Proof of type soundness for a linear lambda calculus.
@@ -782,9 +782,7 @@ The proof of type soundness for the linear lambda calculus consists of a collect
 
 We say that a lemma or definition is \i{universal} if it is applicable to the verification of other linearly typed languages (using the DbLib library). Conversely, we say that a lemma is \i{language-specific} if it is not universal, and is concerned with some specific part of the concrete language being verified.
 
-As is somewhat standard in Coq proofs about programming languages [REF], we use inductive definitions for the terms, types and typing judgements of the language. These definitions are language-specific, and all subsequent lemmas that reference them are also necessarily language-specific.
-
-%These definitions are language-specific, as attempting to make them universal results in numerous other problems.
+As is somewhat standard in syntax-driven Coq proofs about programming languages \cite{pierce15}, we use inductive definitions for the terms, types and typing judgements of the language. These definitions are language-specific, and all subsequent lemmas that reference them are also necessarily language-specific.
 
 \section{Syntax and Types}
 
