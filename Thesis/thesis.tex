@@ -788,37 +788,36 @@ As is somewhat standard in syntax-driven Coq proofs about programming languages 
 
 To define the syntax of the linear lambda calculus (LLC) we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \c{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The syntax for types is:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Inductive ty : Set :=
     | TyUnit
     | TyFun : ty -> ty -> ty
     | TyBool.
-\end{minted}
+\end{coqcode}
 
 Now, with LLC's types defined, we can define the syntax of terms:
 
-\begin{minted}{coq}
+% FIXME: Remove bools?
+\begin{coqcode}
 Inductive term : Set :=
     | TUnit | TTrue | TFalse
     | TVar : nat -> term
     | TAbs : ty -> term -> term
     | TApp : term -> term -> term.
-\end{minted}
-
-FIXME: Should I drop bools? They're not particularly useful.
+\end{coqcode}
 
 Variables are represented by the \c{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \c{term}. Later when defining the typing judgement we will see that a variable \c{TVar i} is well-typed only if the typing context contains a type at index $i$.
 
 In order to state the progress and preservation lemmas, Coq also needs an idea of which terms are considered \i{values}, i.e. those terms in a form that can not be simplified further. For this, we use an inductive predicate \c{value t} with the following definition:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Inductive value : term -> Prop :=
     | VUnit : value TUnit
     | VVar : forall x, value (TVar x)
     | VAbs : forall t e, value (TAbs t e)
     | VTrue : value TTrue
     | VFalse : value TFalse
-\end{minted}
+\end{coqcode}
 
 Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
 
@@ -836,11 +835,11 @@ Class Var (V : Type) := {
 
 Our instance is straight-forward:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Instance Var_term : Var term := {
   var := TVar
 }.
-\end{minted}
+\end{coqcode}
 
 % FIXME: Could cut this stuff about Var.
 
@@ -852,7 +851,7 @@ To convey how variables are bound and scoped, we must implement DbLib's \c{Trave
 
 The only binders in our linear lambda calculus are lambda abstractions, so our implementation of traverse only has to increment \c{l} when recursing below a \c{TAbs} constructor. This is the same as for the simply typed lambda calculus.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Fixpoint traverse_term (f : nat -> nat -> term) l t :=
   match t with
   | TUnit => TUnit
@@ -865,7 +864,7 @@ Fixpoint traverse_term (f : nat -> nat -> term) l t :=
   | TApp e1 e2 =>
       TApp (traverse_term f l e1) (traverse_term f l e2)
   end.
-\end{minted}
+\end{coqcode}
 
 To ensure that the client's implementation of traverse behaves sensibly and can be manipulated accordingly, DbLib requires the implementation of five further type-classes that establish semantic properties of traverse. Also provided are five tactics for proving these properties automatically, which were found to be sufficient for our simple use-case.
 
@@ -890,17 +889,17 @@ For these reasons, our formalisation makes use of a list of optional types, as p
 
 We define the following predicate for environments which is compatible with any environment from DbLib. We say that an environment is \i{empty} if it contains no typing information. Hence, the empty list environment (\c{nil}) is empty, as is any number of \c{None} values.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Inductive is_empty {A} : env A -> Prop :=
   | is_empty_nil : is_empty nil
   | is_empty_cons E (EmptyTail : is_empty E) : is_empty (None :: E).
-\end{minted}
+\end{coqcode}
 
 The necessity of a predicate for emptiness arises from several uses of \i{inductive loading} in proofs of lemmas related to substitution and type preservation. Using \c{nil} environments proved to be too limiting, and there are several cases in the proof where an induction generates an empty environment like \c{raw_insert x None nil}, and has to apply an inductive hypothesis about empty contexts to it.
 
 In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a full list of the lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma empty_repeat : forall A (E : env A),
   is_empty E ->
   E = repeat (length E) None.
@@ -911,7 +910,7 @@ Lemma empty_repeat_none : forall A n,
 (* Proof by easy induction on n *)
 
 FIXME: More here.
-\end{minted}
+\end{coqcode}
 
 \subsection{Context Splitting}
 
@@ -932,7 +931,7 @@ In the linear lambda calculus, the typing rule for application requires that the
 
 As mentioned in the section above on emptiness, we require that context splitting preserve the length of the environment being split. In Coq, we define an inductive predicate over contexts so that \c{context_split E E1 E1} $\equiv E = E_1 \circ E_2$.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Inductive split_single {A} : option A -> option A -> option A -> Prop :=
   | split_none : split_single None None None
   | split_left (v : A) : split_single (Some v) (Some v) None
@@ -944,13 +943,13 @@ Inductive context_split {A} : env A -> env A -> env A -> Prop :=
       (SplitElem : split_single v v1 v2)
       (SplitPre : context_split E E1 E2) :
       context_split (v :: E) (v1 :: E1) (v2 :: E2).
-\end{minted}
+\end{coqcode}
 
 \subsubsection{Single Element Splits}
 
 One may wonder if the presence of an accompanying \c{split_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements inline:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Inductive context_split : env A -> env A -> env A -> Prop :=
   | split_nil : context_split nil nil nil
   | split_left E E1 E2 v
@@ -959,13 +958,13 @@ Inductive context_split : env A -> env A -> env A -> Prop :=
   | split_right E E1 E2 v
   	  (SplitPre : context_split E E1 E2) :
   	  context_split (v :: E) (None :: E1) (v :: E2).
-\end{minted}
+\end{coqcode}
 
 Although for the purposes of forward reasoning both definitions are equally convenient, when performing inversion on terms of type \c{context_split E E1 E2} it is often useful to be able to abstract over the splitting of individual elements, particularly as this means there are less cases which have to be handled.
 
 For example, in the proof of \c{insert_none_split_backwards}, using context splitting on single elements saves duplicating or creating automation for the main part of the proof. The statement of the lemma is:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma insert_none_split_backwards : forall A (E : env A) E1 E2 x,
   context_split (raw_insert x None E) E1 E2 ->
   exists E1' E2',
@@ -974,18 +973,18 @@ Lemma insert_none_split_backwards : forall A (E : env A) E1 E2 x,
     E2 = raw_insert x None E2' /\
     length E2' = length E /\
     context_split E E1' E2'.
-\end{minted}
+\end{coqcode}
 
 Intuitively, this lemma states that if we have inserted \c{None} into the typing context at the position for variable \c{x}, then the two environments resulting from the split of this environment must also contain \c{None} at position \c{x}. The proof is by case analysis on whether or not the variable inserted is past the end of the environment (\c{x >= length E}). In the case where it \i{is not} past the end, and \c{x} is greater than 0, we reach a goal of the form:
 
-\begin{minted}{coq}
+\begin{coqcode}
 exists X1 X2 : env A,
   e1 :: E1' = raw_insert (S x') None X1 /\
   length X1 = S (length E') /\
   e2 :: E2' = raw_insert (S x') None X2 /\
   length X2 = S (length E') /\
   context_split (e :: E') X1 X2
-\end{minted}
+\end{coqcode}
 
 Here, we have \c{E = e :: E'}, \c{E1 = e1 :: E1'}, \c{E2 = e2 :: E2'}, \c{x = S x'} relative to the statement of the lemma.
 
@@ -1003,25 +1002,25 @@ We prove several basic properties of context splitting, such as commutativity, a
 
 If we can split $E = E_1 \circ E_2$, then we can also split $E = E_2 \circ E_1$. In Coq, proof is by a straight-forward induction on the structure of the \c{context_split}, and depends on a similar commutative property of \c{split_single}.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma split_commute : forall A (E : env A) E1 E2,
   context_split E E1 E2 -> context_split E E2 E1.
 Proof with boom.
   intros A E E1 E2 Split.
   induction Split...
 Qed.
-\end{minted}
+\end{coqcode}
 
 \textbf{Associativity} If $E = E_0 \circ (E_1 \circ E_2)$ then $E = (E_0 \circ E_1) \circ E_2$.
 
 In Coq we need an existential to express the existence of a context that splits into $E_0$ and $E_1$.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma split_assoc : forall A (E E0 E1 E2 E12 : env A),
   context_split E E0 E12 ->
   context_split E12 E1 E2 ->
   (exists E01, context_split E E01 E2 /\ context_split E01 E0 E1).
-\end{minted}
+\end{coqcode}
 
 The justification for calling this operation associativity is the view of $(\circ)$ as a \i{partial} binary operator for combining contexts. From this view, context splitting is a partial commutative monoid, with \c{repeat n None} as the identity element. Further work could try to exploit structure like this to improve proof automation.
 
@@ -1045,7 +1044,7 @@ DbLib's \c{insert} function behaves in two different ways depending on the relat
 
 To handle the case where \c{x >= length E} and padding \c{None} values are inserted, we note that the values past the end of the old environment will all be \c{None}. Equipped with a simple definition of a \c{repeat} function on lists, and some lemmas about list append, this case is proved.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma insert_none_def : forall A x (E : env A),
   x >= length E ->
   raw_insert x None E = E ++ repeat (S (x - length E)) None.
@@ -1056,7 +1055,7 @@ Lemma split_app : forall A (E : env A) E1 E2 n,
       E1 = E1' ++ repeat n None /\
       E2 = E2' ++ repeat n None /\
       context_split E E1' E2'.
-\end{minted}
+\end{coqcode}
 
 The other case where the new \c{None} value is inserted in between existing elements is handled by an induction on \c{x}, which is made simpler by knowing the bound on \c{x}, i.e. \c{x < length E}. For example, it absolves the prover from having to deal with the case where the environment is empty, which proved to be a nuisance in early versions of the proof. Particularly as \c{length (tl E1) = length (tl E2)} does not imply that \c{length E1 = length E2} as one may expect outside a total programming language.
 
@@ -1071,7 +1070,7 @@ TODO: More here about the other couple of insertion/split lemmas.
 
 Typing rules determine which terms are considered well-formed. We define an inductive predicate \c{has_type : (env ty) -> term -> ty -> Prop} so that \c{has_type E e t} is inhabited if the environment $E$ determines $e : t$. In standard mathematical notation this is $E \types e : t$, which we mirror using the Coq notation \c{E |- e ~: t}.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Reserved Notation "E '|-' e '~:' t" (at level 40).
 
 Inductive has_type : (env ty) -> term -> ty -> Prop :=
@@ -1097,7 +1096,7 @@ Inductive has_type : (env ty) -> term -> ty -> Prop :=
       E  |- TApp e1 e2 ~: t2
 
 where "E '|-' e '~:' t" := (has_type E e t).
-\end{minted}
+\end{coqcode}
 
 Here we see the definitions for emptiness and context splitting coming into play. In linear lambda calculus variables must be used exactly once, so a single variable \c{x} is well-typed only under an environment containing a type for \c{x} and nothing else, as captured by the \c{HasTyVar} rule. Similarly, primitive values must be typed under environments containing no free variables.
 
@@ -1109,7 +1108,7 @@ Function applications make use of the \c{context_split} operation to ensure that
 
 For the semantics of our language we use a call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Inductive step : term -> term -> Prop :=
   | StepAppAbs e e' v t
       (BetaPreVal : value v)
@@ -1122,7 +1121,7 @@ Inductive step : term -> term -> Prop :=
       (App2Val : value v1)
       (App2Step : step e2 e2') :
       step (TApp v1 e2) (TApp v1 e2').
-\end{minted}
+\end{coqcode}
 
 The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. It states that function application is equivalent to the substitution of the argument value for the bound variable in the body of the function. For substitution, note the use of DbLib's \c{subst} function. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \rightarrow e[v/0]$.
 
@@ -1134,24 +1133,24 @@ The two rules for stepping an application $(e_1 \; e_2)$ ensure that $e_1$ is fu
 
 With typing rules and small step semantics established we can state the progress lemma which contributes to the proof of type soundness.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Theorem progress : forall E e t,
   is_empty E ->
   E |- e ~: t ->
   (exists e', step e e') \/ value e.
-\end{minted}
+\end{coqcode}
 
 This theorem states that any closed term $e$ that is well-typed can either be stepped using the small step semantic relation, or is already a value and cannot be evaluated further.
 
 Proof is by induction on the typing derivation \c{E |- e ~: t}. Unlike the proof of preservation presented in the next section, the proof of progress requires very few supporting lemmas about context splitting or substitution. Most of the cases in the induction require reasoning about the interaction between typing and term structure, which can be handled by simple inversions. For example, one of the supporting lemmas states that any value assigned a function type under an empty environment, must necessarily be a $\lambda$-abstraction:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma fun_value_is_abs : forall E e t1 t2,
   is_empty E ->
   E |- e ~: TyFun t1 t2 ->
   value e ->
   (exists e', e = TAbs t1 e').
-\end{minted}
+\end{coqcode}
 
 Given that most of the verification effort was expended reasoning about context splitting, substitution and other lemmas required for preservation, the effort required to prove progress represents a relatively small fraction of the total effort. The fact that progress and preservation each form ``half" of the soudness proof does not imply that the difficulty of proving soundness is split evenly between them.
 
@@ -1159,13 +1158,13 @@ Given that most of the verification effort was expended reasoning about context 
 
 The preservation lemma states that a if well-typed closed term $e$ can take a step to another term $e'$, then $e'$ is also well-typed. In other words, the type of a term is \i{preserved} as it is evaluated in accordance with the small-step semantics.
 
-\begin{minted}{coq}
+\begin{coqcode}
 Theorem preservation : forall E e e' t,
   is_empty E ->
   E |- e ~: t ->
   step e e' ->
   E |- e' ~: t.
-\end{minted}
+\end{coqcode}
 
 Proof is by induction on the stepping of $e$ to $e'$, \c{step e e'}. In the three cases that result from the three stepping rules, the two for applications are proved directly from the inductive hypothesis. The remaining case for $\beta$-reduction involves interaction between substitution, typing and context splitting, and is proved via a supporting \i{substitution} lemma.
 
@@ -1185,13 +1184,13 @@ Substitution lemmas similar to this are common in proofs of similar complexity, 
 
 In Coq the lemma is:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma substitution: forall E2 e2 t1 t2 x,
   insert x t1 E2 |- e2 ~: t2 ->
   forall E E1 e1, E1 |- e1 ~: t1 ->
   context_split E E1 E2 ->
   E |- (subst e1 x e2) ~: t2.
-\end{minted}
+\end{coqcode}
 
 Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 ~: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g. $E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate subgoals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic (REF) which makes use of Conor's humorously named ``John Major" heterogenous equality (\c{JMeq}). Heterogenous equality requires the addition of an extra axiom, the consideration of which is discussed in the Evaluation chapter.
 
@@ -1201,11 +1200,11 @@ The $\lambda$-abstraction case requires a proof that the term being substituted 
 
 The application case requires that one side of the application be well-typed without referring to the substitution variable $x$. This motivates the following lemma, \c{typing_insert_none_subst}:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma typing_insert_none_subst : forall E e x junk t,
   raw_insert x None E |- e ~: t ->
   E |- subst junk x e ~: t.
-\end{minted}
+\end{coqcode}
 
 This in turn motivates the rest of the lemmas about inserting none into a typing context, including the difficult to prove \c{insert_none_split_backwards} -- discussed above.
 
@@ -1260,7 +1259,7 @@ As identified in the Implementation Goals (REF) section of our evaluation criter
 
 To separate different cases when performing induction and destructuring, the proofs make use of Benjamin Pierce's \c{Case} markers from Software Foundations (REF). Combined with indentation, these markers fulfil our desire to create readable proofs that are also resistant to corruption upon refactoring. The \c{Case} tactic ensures that the proof remains structured by failing if an existing case at the same level remains unproven, as can happen if an earlier tactic fails. The following example taken from the proof of \c{insert_none_def} demonstrates our usage of the markers and our indentation scheme:
 
-\begin{minted}{coq}
+\begin{coqcode}
 induction x as [|x']; intros.
 Case "x = 0".
   destruct E as [|e E'].
@@ -1268,7 +1267,7 @@ Case "x = 0".
     rewrite raw_insert_zero...
   SCase "E = e :: E'".
     solve by inversion.
-\end{minted}
+\end{coqcode}
 
 If, for example, the tactic \c{rewrite raw_insert_zero...} fails to prove the goal for the case where \c{E = []}, then the \c{SCase "E = e :: E'"} tactic will fail and prevent the proof from proceeding, clearly signalling that the error lies in the previous case. The string arguments are uninterpreted but provide useful documentation.
 
@@ -1286,7 +1285,7 @@ Although there are several straight-forward techniques that can be used to avoid
 
 When performing induction it is often necessary to leave some hypotheses as premises of the inductive hypothesis. In order to avoid generating names for these hypotheses we followed a pattern whereby the \c{intros} tactic would be used to name every hypothesis, \c{generalize dependent} would be used to re-quantify the necessary variables, and then induction performed. This leads to hypotheses being re-introduced with the names used by \c{intros}, rather than generated ones. For example:
 
-\begin{minted}{coq}
+\begin{coqcode}
 Lemma empty_lookup : forall A x (E : env A), is_empty E ->
   lookup x E = None.
 Proof.
@@ -1296,7 +1295,7 @@ Proof.
   Case "x = 0".
     intros. inversion Empty; auto.
   (* Proof continues... *)
-\end{minted}
+\end{coqcode}
 
 Here the fact \c{is_empty E} is named \c{Empty} by \c{intros}, abstracted over, and then automatically re-introduced with the name \c{Empty}. This relies partly on Coq's name generator to remember the name from the first application of \c{intros}, but this is less fragile than relying on entirely automatic naming.
 
