@@ -371,9 +371,6 @@ The $\beta$-rule of the $\lambda$-calculus can be stated for DILL as:
 
 Here we use the variable $v$ to indicate a \i{value} of the language. Values are terms that are fully evaluated according to the small-step semantics of the language \cite{tapl} -- formally, they are terms that are in normal form with respect to the stepping relation $(\steps)$. By specifying that $\beta$-reduction can only occur if the argument is a value we have fixed the reduction strategy to call-by-value. Other reduction strategies can be similarly encoded, but we consider only call-by-value here, as that's most popular in the literature surveyed.
 
-% FIXME: Maybe include something about rules with premises. Reference full set of semantics for LLC on page...
-% Semantic rules can also have premises, as in the case of the two rules for
-
 Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Stated formally, the soundness lemma is:
 
 \begin{eqnarray*}
@@ -843,7 +840,7 @@ As is somewhat standard in syntax-driven Coq proofs about programming languages 
 \begin{itemize}
 \item How do we represent the names of variables? As discussed in \cref{sec:var-naming}, we elect to use \Francois Pottier's DbLib library for de Bruijn indices.
 \item How is substitution implemented? DbLib provides a substitution function given a few basic properties of a language. The implementation of this is discussed in the next section, \cref{sec:dblib-int}.
-\item How are typing contexts represented? How is context splitting implemented? These questions are the topic of the upcoming sections: \cref{sec:repr-ty-contexts}. % FIXME.
+\item How are typing contexts represented? How is context splitting implemented? These questions are the topic of the upcoming sections: \cref{sec:repr-ty-contexts}, \cref{sec:emptiness}, \cref{sec:context-splitting}.
 \end{itemize}
 
 Discussion of the exact representation of terms, typing judgements and operational semantics is given in the Appendix, sections \cref{app:pllc-syntax}, \cref{app:pllc-typing-rules}, \cref{app:pllc-op-sems}.
@@ -916,6 +913,7 @@ As noted in the Background chapter, control over the actions permitted on typing
 For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations. The next two sections describe these two aspects of our formalisation, and this thesis's contribution to a general framework for substructural languages.
 
 \section{Emptiness}
+\label{sec:emptiness}
 
 We define the following predicate for environments which is compatible with any environment from DbLib. We say that an environment is \i{empty} if it contains no typing information. Hence, the empty list environment (\c{nil}) is empty, as is any number of \c{None} values.
 
@@ -942,6 +940,7 @@ Lemma empty_lookup : forall A x (E : env A),
 \end{coqcode}
 
 \section{Context Splitting}
+\label{sec:context-splitting}
 
 % You've met context splitting before.
 % High-level description.
