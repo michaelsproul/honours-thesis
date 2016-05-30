@@ -624,11 +624,11 @@ The full definition for \c{exp} is omitted, but this example demonstrates that a
 
 This sort of encoding becomes problematic in Coq due to the difficulty of encoding types involving \i{negative occurrences} inductively. A type appears as a negative occurrence if it would appear below an odd number of negations in a translation to classical logic \cite{tapl}. In our example, the argument to \c{let}'s higher-order function is a negative occurrence: \c{exp -> (\underline{exp} -> exp) -> exp}. An (invalid) inductive Coq definition for the above Twelf example would be:
 
-\begin{verbatim}
+\begin{coqcode}
 Inductive exp : Set :=
   | exp_plus : nat -> nat -> exp
   | exp_let : exp -> (exp -> exp) -> exp.
-\end{verbatim}
+\end{coqcode}
 
 Coq rejects this definition with the error: \c{Non strictly positive occurrence of "exp" in
  "exp -> (exp -> exp) -> exp"}, as expected.
@@ -854,15 +854,15 @@ The proofs of progress and preservation are \i{language-specific} in that they o
 \section{Integrating with DbLib}
 \label{sec:dblib-int}
 
-DbLib provides functions for substitution and lifting that abstract over the manipulation of de Bruijn indices. Client libraries wanting to make use of DbLib need only implement a few fundamental operations via Coq's \i{type-classes} (ref Coq and Haskell type classes). For the linear lambda calculus we can use essentially the same definitions as for the simply typed lambda calculus, which are provided as an example with the library.
+DbLib provides functions for substitution and lifting that abstract over the manipulation of de Bruijn indices. Client libraries wanting to make use of DbLib need only implement a few fundamental operations via Coq's \i{type-classes} \cite{coqTypeClasses}. For the linear lambda calculus we can use essentially the same definitions as for the simply typed lambda calculus, which are provided as an example with DbLib.
 
 First, we must inform DbLib which of our term constructors is for variables. DbLib allows the types of \i{values} (\c{V}) and \i{terms} (\c{T}) to differ, but we don't make use of this capability, instead using \c{term}s everywhere and the \c{value} predicate. The type-class has the following definition in DbLib:
 
-\begin{verbatim}
+\begin{coqcode}
 Class Var (V : Type) := {
   var: nat -> V
 }.
-\end{verbatim}
+\end{coqcode}
 
 Our instance is straight-forward:
 
@@ -872,15 +872,13 @@ Instance Var_term : Var term := {
 }.
 \end{coqcode}
 
-% FIXME: Could cut this stuff about Var.
-
 To convey how variables are bound and scoped, we must implement DbLib's \c{Traverse} type-class, which has a single function called \c{traverse}. From the DbLib documentation:
 
 \begin{displayquote}
 \c{traverse} can be thought of as a semantic substitution function. The idea is, \c{traverse f l t} traverses the term \c{t}, incrementing the index \c{l} whenever a binder is entered, and, at every variable \c{x}, it invokes \c{f l x}. This produces a value, which is grafted instead of \c{x}.
 \end{displayquote}
 
-The only binders in our linear lambda calculus are lambda abstractions, so our implementation of traverse only has to increment \c{l} when recursing below a \c{TAbs} constructor. This is the same as for the simply typed lambda calculus.
+The only binders in our linear lambda calculus are lambda abstractions, so our implementation of traverse only has to increment \c{l} when recursing below a \c{TAbs} constructor. This is the same as for the simply typed lambda calculus. If more substitution functions were required, as would be the case in a language with polymorphism and type substitutions, distinct named instances of \c{Traverse} could be created for each use.
 
 \begin{coqcode}
 Fixpoint traverse_term (f : nat -> nat -> term) l t :=
@@ -897,9 +895,9 @@ Fixpoint traverse_term (f : nat -> nat -> term) l t :=
   end.
 \end{coqcode}
 
-To ensure that the client's implementation of traverse behaves sensibly and can be manipulated accordingly, DbLib requires the implementation of five further type-classes that establish semantic properties of traverse. Also provided are five tactics for proving these properties automatically, which were found to be sufficient for our simple use-case.
+To ensure that the client's implementation of traverse behaves sensibly and can be manipulated accordingly, DbLib requires the implementation of five further type-classes that establish semantic properties of traverse. Also provided are five tactics for proving these properties automatically, which we found to be sufficient for our simple use-case.
 
-Given these type-class definitions, DbLib provides a substitution function that we can make use of in the operational semantics for our language.
+Given these type-class definitions, DbLib provides a substitution function that we can make use of in the operational semantics for our language. The type of the substitution function is \c{V -> nat -> T -> T}, which is specialised to \c{term -> nat -> term -> term}. The Coq implementation of the $(\beta)$ rule makes use of it, as shown in \cref{app:pllc-op-sems}.
 
 \section{Representing Typing Contexts}
 \label{sec:repr-ty-contexts}
