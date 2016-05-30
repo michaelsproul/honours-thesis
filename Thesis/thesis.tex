@@ -902,13 +902,13 @@ Given these type-class definitions, DbLib provides a substitution function that 
 \section{Representing Typing Contexts}
 \label{sec:repr-ty-contexts}
 
-Before defining an inductive predicate for our typing relation, a representation for typing environments must be selected. In semi-formal proofs, typing judgements are written $H \vdash e : \tau$, and the environment $H$ is assumed to permit various operations such as looking up the type of a variable $x$ (denoted $H[x]$) and (re)assigning a type to a variable $x$, (denoted $H[x \to \tau]$).
+Before defining an inductive predicate for our typing relation, a representation for typing environments must be selected. In semi-formal proofs, typing judgements are written $H \vdash e : \tau$, and the environment $H$ is assumed to permit various operations such as looking up the type of a variable $x$ (denoted $H[x]$) and (re)assigning a type to a variable $x$, (denoted $H[x \mapsto \tau]$).
 
-As noted in the background section, control over the actions permitted on typing contexts is at the core of substructural typing. Together with our choice to use de Bruijn indices for variable naming, this narrows down our choice of representation. We have the following options to consider:
+As noted in the Background chapter, control over the actions permitted on typing contexts is at the core of substructural typing. Together with our choice to use de Bruijn indices for variable naming, this narrows down our choice of representation. We have the following options to consider:
 
 \begin{itemize}
-\item \textbf{Functions}: Some Coq formalisations of languages with structural typing \cite{pierce15} make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ H = fun y => if x = y then Some $\tau$ else H y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $f$.
-\item \textbf{Lists of Types}: We could consider using a list of types so that the type for variable $\hat{i}$ is at index $i$. This is preferable to using a function because we can inspect and destructure a list, and can also perform induction. However, splitting an environment becomes problematic because we need to keep the type for variable $\hat{i}$ at index $i$, even if some or all of the types at indexes less than $i$ should no longer be available because they were assigned to the other side of the split. Essentially, if we are to use a list, we need a filler value to occupy the evacuated positions. This leads to our next option...
+\item \textbf{Functions}: Some Coq formalisations of languages with structural typing \cite{pierce15} make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ H := fun y => if x = y then Some $\tau$ else H y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that it is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $H$.
+\item \textbf{Lists of Types}: We could consider using a list of types so that the type for variable $\hat{i}$ is at index $i$. This is preferable to using a function because we can inspect and destructure a list, and can also perform induction. However, splitting an environment becomes problematic because we need to keep the type for variable $\hat{i}$ at index $i$, even if some or all of the types at indexes less than $i$ should no longer be available because they were assigned to the other side of the split. Essentially, if we are to use a list, we need a filler value to occupy the evacuated positions. This leads to our next option:
 \item \textbf{Lists of Optional Types}: What if we rather than using a list of types, we use a list of \c{option type}, so that types which are no longer available are represented by \c{None} entries? This fulfils all of our requirements: we can look-up types, alter them, add new entries and split an environment so that variables and their types are divided between the two new environments.
 \end{itemize}
 
@@ -926,19 +926,18 @@ Inductive is_empty {A} : env A -> Prop :=
 
 The necessity of a predicate for emptiness arises from several uses of \i{inductive loading} in proofs of lemmas related to substitution and type preservation. Using \c{nil} environments proved to be too limiting, and there are several cases in the proof where an induction generates an empty environment like \c{raw_insert x None nil}, and has to apply an inductive hypothesis about empty contexts to it.
 
-In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a full list of the lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
+In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Here is a partial list of some lemmas relating to \c{is_empty} and constructs other than context splitting. Lemmas about emptiness and context splitting are discussed in the next section.
 
 \begin{coqcode}
 Lemma empty_repeat : forall A (E : env A),
   is_empty E ->
   E = repeat (length E) None.
-(* Proof by easy induction on is_empty E *)
+(* Proof by induction on is_empty E *)
 
-Lemma empty_repeat_none : forall A n,
-  is_empty (repeat n None : env A).
-(* Proof by easy induction on n *)
-
-FIXME: More here.
+Lemma empty_lookup : forall A x (E : env A),
+  is_empty E ->
+  lookup x E = None.
+(* Proof by induction on x *)
 \end{coqcode}
 
 \section{Context Splitting}
