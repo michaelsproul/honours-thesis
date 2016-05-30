@@ -555,7 +555,8 @@ Several systems extend and generalise the capability-based approach employed in 
 
 The same authors are also responsible for the Cyclone project \cite{grossman05}, which extends the C programming language with regions and uniqueness typing in order to achieve safe memory management without garbage collection or manual intervention. The \rgnUL calculus models Cyclone's core features, and there exists a translation from Cyclone to \rgnUL via an intermediate language $F^\text{RGN}$ which makes use of a generalised ST monad \cite{fluet06, fluet04}. No mechanised proofs of correctness for this work exist, although an earlier semi-formal proof of type soundness for Cyclone \cite{jim01} is structured in a way that looks amenable to mechanised verification. On their webpage \cite{cycloneWeb}, the creators of Cyclone note that work on the project has stopped, with many of the ideas living on in Rust. Future formalisations of Rust can hopefully make use of this work.
 
-\subsection{Pottier's type-and-capability system with hidden state}
+\subsection{Pottier's Type-and-Capability System with Hidden State}
+\label{sec:ssphs}
 
 A mechanical formalisation for a system even more similar to $L^3$ than \rgnUL is given in a 2013 article by \Francois Pottier \cite{pottier13}. Pottier's system, \SSPHS, uses affine capabilities in the style of $L^3$, but adds polymorphism and support for \i{hidden state}. Hidden state allows an object to completely conceal mutable internal state from its clients. Pottier gives a memory manager as an example where such a feature is useful -- clients care only about the memory allocated or de-allocated, and not about internal data-structures modified in the process. Hidden state is realised via a typing rule called the \i{anti-frame rule}, which makes terms with hidden state subtypes of the type sans hidden state.
 
@@ -563,7 +564,9 @@ The concept of hidden state is distinct from, yet related to, the existential ty
 
 All of $L^3$'s features, including strong updates, are covered by Pottier's system. It also subsumes \rgnUL, with support for polymorphism and regions. Unlike previous systems it also guarantees the runtime-irrelevance of capabilities, which are proved to be erasable.
 
-Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his DbLib library, discussed in Section \ref{sec:de-bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
+For context splitting, \SSPHS makes use of a \i{multiplicity environment} which records the number of available copies of each variable. Each variable is marked as having 0, 1 or $\infty$ copies available, encoding unavailable linear variables, available linear variables and intuitionistic variables respectively. Pottier exploits the fact that multiplicity environments form a \i{separation algebra}, and unifies their treatment with the treatment of general resources (including regions). In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original.
+
+Pottier's formalisation is done within the Coq proof assistant and makes use of de Bruijn indices for variable binding (a pre-cursor to his DbLib library, discussed in \cref{sec:de-bruijn}). The formalisation consists of 20,000 lines of Coq source and follows the syntactic approach to proving type soundness via progress and preservation. Pottier notes that the formalisation took around 6 months to complete.
 
 \subsection{Mezzo}
 
@@ -575,7 +578,12 @@ The prototypical compiler for Mezzo uses untyped OCaml as its target language an
 
 Mezzo's Coq formalisation consists of 14,000 lines of code and makes use of a 2000 line library called DbLib for handling de Bruijn indices. Like the proof for \SSPHS, it uses progress and preservation to prove type soundness.
 
-\section{Typed assembly languages and trustworthy compilers}
+\section{Linear Dependent Types}
+\label{sec:linear-dep}
+
+Conor McBride's recent work on combining linear and dependent typing \cite{mcbride16} is strikingly similar to Pottier's \SSPHS in its treatment of typing contexts. In Conor's system, variables in the context are annotated by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. As in Pottier's work, an infinity $\infty$ annotation is used for intuitionistic variables, and context splitting is the resource-preserving division of a context into two pieces.
+
+\section{Typed Assembly Languages and Trustworthy Compilers}
 
 Strong updates can be used to model the storage of type-distinct values in a single register through-out program execution. As such, low-level calculi like $L^3$ and \rgnUL are conceptually linked to \i{typed assembly languages} (TALs), which extend regular assembly languages with type annotations.
 
@@ -695,7 +703,7 @@ Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphi
 
 \section{Summary of Previous Work}
 
-In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. The notable exception to the verification trend is the $L^3$ language, which remains unverified but has had all of its salient features mechanically verified as part of other projects. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer discussion of these to future work.
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer in-depth discussion of these to future work.
 
 \section{Evaluation Framework}
 \label{sec:eval-framework}
@@ -704,7 +712,7 @@ In this section we describe some criteria for assessing the quality of work comp
 
 \subsection{Conceptual Goals}
 
-Our main conceptual goal is that the library be applicable and useful in the mechanical formalisation of numerous languages with substructural typing. We say \i{numerous}, rather than \i{all}, because new type systems with substructural influences are still being developed (cite Conor's Plenty o' Nuttin' paper). The library should be:
+Our main conceptual goal is that the library be applicable and useful in the mechanical formalisation of numerous languages with substructural typing. We say \i{numerous}, rather than \i{all}, because new type systems with substructural influences are still being developed \cite{mcbride16}. The library should be:
 
 \begin{enumerate}
 \item Applicable to the formalisation of $L^3$ and related systems.
@@ -1045,7 +1053,7 @@ Lemma split_assoc : forall A (E E0 E1 E2 E12 : env A),
   (exists E01, context_split E E01 E2 /\ context_split E01 E0 E1).
 \end{coqcode}
 
-The justification for calling this operation associativity is the view of $(\circ)$ as a \i{partial} binary operator for combining contexts. From this view, context splitting is a partial commutative monoid, with \c{repeat n None} as the identity element. Further work could try to exploit structure like this to improve proof automation.
+The justification for calling this operation associativity is the view of $(\circ)$ as a \i{partial} binary operator for combining contexts. From this view, context splitting is a partial commutative monoid, with \c{repeat n None} as the identity element. Another name for this structure is a \i{separation algebra} (assuming that $(\circ)$ is also cancellative, which it is). Further discussion of this is given later when evaluating our approach, in \cref{sec:sep-logic}.
 
 \textbf{4-way Splits}
 
@@ -1188,9 +1196,6 @@ The proofs of progress and preservation for DILL could re-use much of the proof 
 
 Our approach may also be applicable to a modified version of Edsko de Vries' uniqueness type system \cite{deVries07, deVriesPhD08}. Edsko's soundness proof is syntactic and makes use of an inductive context splitting relation that is identical to ours except that it allows non-unique (intuitionistic) types to be split to both sides. To make his system compatible with purely linear context splitting a stand-alone contraction rule could be added, in the style of Wadler's linear lambda calculus of 1993 \cite{wadler93}. The contraction rule would provide the ability to duplicate non-unique values, which would previously have been provided by context splitting.
 
-% TODO: Move this to background section/further work/conclusions.
-Implicit in the criteria for applicability is the idea that the language uses a traditional typing environment where variables either possess a type or are entirely absent. This is not true of Conor McBride's recent work on combining linear and dependent typing \cite{mcbride16}, which annotates variables in the context by the number of occurrences available at run-time. Linear variables are annotated with a $\b{1}$ if available, or a $\b{0}$ if they have already been used in a neighbouring part of the term. This allows types to depend upon linear values, by referring to the $\b{0}$ available copies if necessary -- a process Conor calls \i{contemplation}. In this system, context splitting is the division of a context such that the sum of the resources of the resulting sub-contexts equals the resources of the original. This is incompatible with context splitting as we've defined it because assumptions involving variables unavailable at run-time are replaced by information-free \c{None} values. Further work could develop a software library for typing contexts in Conor's style, which would be general enough to handle all of the languages handled by our library.
-
 \section{Towards a Coq Formalisation of $L^3$}
 \label{towards-l3}
 
@@ -1203,14 +1208,12 @@ $L^3$ seems like it may be amenable to mechanical verification with our library 
 }
 \end{eqnarray*}
 
-The premises are both true, by the rules (New) and (new), but the conclusion is unprovable. It might seem that we could apply the (LPack) rule, but this would require $l \in \Delta$, which is nonsensical because $l$ is a location constant, not a location variable. Further, we can't type the pair $\capa \otimes !(\ptr{l})$ because there are no typing rules for lone capabilities or pointers. To do a syntactic proof of soundness would therefore require altering $L^3$'s typing rules. The authors of the $L^3$ paper suggest using \i{store typing}, as in Alias Types \cite{smith00}, whereby constraints on the runtime store $\sigma$ are expressed in the typing rules. In this case, reasoning about context splitting would likely only comprise a small fraction of the proof effort. Pottier's proof for \SSPHS and the proof for \rgnUL are around 20,000 lines of Coq and Twelf code respectively, implying that the complexity of reasoning about these language features increases proof complexity significantly. For comparison, our linear lambda calculus formalisation is around 1,300 lines of Coq code including the library for context splitting.
+The premises are both true, by the rules (New) and (new), but the conclusion is unprovable. It might seem that we could apply the (LPack) rule, but this would require $l \in \Delta$, which is nonsensical because $l$ is a location constant, not a location variable. Further, we can't type the pair $\capa \otimes !(\ptr{l})$ because there are no typing rules for lone capabilities or pointers. To do a syntactic proof of soundness would therefore require altering $L^3$'s typing rules. The authors of the $L^3$ paper suggest using \i{store typing}, as in Alias Types \cite{smith00}, whereby constraints on the runtime store $\sigma$ are expressed in the typing rules. In this case, reasoning about context splitting would likely only comprise a small fraction of the proof effort. Pottier's proof for \SSPHS and the proof for \rgnUL are around 20,000 lines of Coq and Twelf code respectively, implying that the complexity of reasoning about these language features (destructive strong updates) increases proof complexity significantly. For comparison, our linear lambda calculus formalisation is around 1,300 lines of Coq code including the library for context splitting.
 
-% TODO: Could list things that *would* work, things that wouldn't here.
-%\begin{itemize}
-%\item Modify the typing rules to use dual intuitionistic and linear contexts.
-%\item Augment the typing rules with a location environment, $\Delta$, implemented as another DbLib environment with nullary type information, i.e. \c{env () = list (option ())}. This representation would allow checking if the de Bruijn index $\rho$ for a location variable is in scope by checking if the location environment contains \c{Some ()} at index $\rho$. Further, the \c{insert} function and other utilities provided by DbLib could be used to manipulate the location environment, as is required by the (Let-LPack) rule for example.
-%\item Implement capture-avoiding location substitution by defining another instance of the \c{Traverse} type-class for terms. Coq's named instances would prevent a conflict with the instance for term substitution. Location, err...
-%\end{itemize}
+\section{Further Work: Separation Logic}
+\label{sec:sep-logic}
+
+Conor McBride's work on linear dependent types (\cref{sec:linear-dep}), and \Francois Pottier's on \SSPHS (\cref{sec:ssphs}) both make use of typing contexts that record the number of available occurrences of each variable, and use concepts from separation logic to handle context splitting. This approach is strictly more general than our context splitting library, and a library based on these ideas would likely form a better foundation for general reasoning about typing contexts in linear languages. In this sense, our library is lacking in generality. Further, ideas from separation logic are cited as foundational in much of the literature surveyed, and could be exploited for multiple purposes, as Pottier did with \SSPHS \cite{pottier13}. Indeed, work on creating generalised libraries for separation algebras has already been completed, in Coq \cite{dockins09} and Isabelle/HOL \cite{klein12}.
 
 \section{Quality of Coq Proofs}
 
@@ -1288,11 +1291,6 @@ For example, our proof of soundness for the linear lambda calculus contains a li
 \subsubsection{Dependent Induction}
 
 Dependent induction is used at one point in the proof of soundness for PLLC, as discussed in \cref{sec:subst}. Unlike the regular induction tactic, Coq's dependent induction tactic doesn't provide a way to explicitly name the variables introduced by the inversion -- there is no \c{dependent induction x as [..]}. In our proof, we fall back on using the auto-generated names, which is less than ideal. We experienced the fragility of this approach when refactoring, which demonstrates the utility of our other work to avoid generated names.
-
-\subsubsection{Overview of Efforts to Avoid Generated Names}
-
-% TODO.
-% Auto-generated names suck.
 
 \subsection{Automation and Repetition}
 
