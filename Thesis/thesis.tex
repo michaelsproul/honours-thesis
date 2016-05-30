@@ -358,6 +358,7 @@ If contraction is restricted but weakening is allowed, the result is an \b{affin
 In this section we've seen how typing rules can be used to enforce constraints on the use of variables, by examining Dual Intuitionistic Linear Logic. We have seen that intuitionistic terms can be embedded in substructural languages via bang types and the careful management of typing contexts. The importance of \b{context splitting} to divide linear assumptions between sub-terms has also been highlighted. In the next sections we examine more complex calculi that build on the linear lambda calculus to model useful programming language constructs like mutation and destructive updates.
 
 \section{Operational Semantics and Type Soundness}
+\label{sec:op-sems-soundness}
 
 Up until this point, we have described only the syntax and static semantics (typing rules) of linearly-typed programming languages, with only vague notions of how terms behave dynamically at run-time. To now describe the dynamic behaviour of languages we turn to \i{structural operational semantics}, a mathematical formalism for the step-wise evaluation of terms, also known as small-step semantics.
 
@@ -588,7 +589,7 @@ Another take on the typed assembly language concept, is Bedrock from Adam Chlipa
 More broadly it is worth noting the contribution of the CompCert \cite{leroy09} project to program verification. Through a series of semantics-preserving translations through intermediate languages, CompCert compiles a variant of C to multiple assembly languages. CompCert is programmed and verified in Coq. Verification of programs written in a low-level linearly-typed language could use parts of CompCert, perhaps with a language like $L^3$ or \SSPHS as an intermediate language.
 
 \section{Variable Naming and Binding}
-\label{sec:var_naming}
+\label{sec:var-naming}
 
 One problem that arises frequently in the formalisation of language semantics is that of \i{capture-avoiding substitution}. Substitution operations, whereby a value is substituted for a variable in a term, form the core computational component of the operational semantics in many languages. In the simply-typed (and untyped) lambda calculus, the $\beta$-rule uses substitution (denoted $[v/x]e$) to describe the semantics of function application:
 
@@ -781,11 +782,11 @@ As part of this thesis, the following work has been completed:
 \item Proof of type soundness for a linear lambda calculus.
 \end{itemize}
 
-The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in proof of \textbf{preservation} and \textbf{progress} which together establish soundness.
+The proof of type soundness for the linear lambda calculus consists of a collection of lemmas and definitions, culminating in proof of \b{progress} and \b{preservation} which together establish soundness.
 
 We begin by defining the language for which we have established type soundness, and continue with an in-depth discussion of how it was formalised in Coq. The definitions and lemmas provided by the library are motivated by the proof and are discussed as they arise.
 
-\section{Language Definition}
+\section{Purely Linear Lambda Calculus}
 
 The language formalised is a wholly linear subset of DILL, extended with uninterpreted primitive types. For brevity, call this language PLLC, for the Purely Linear Lambda Calculus. PLLC provides just enough features to reason about linearity in interesting ways, while not being too labour-intensive to formalise. Its syntax is:
 \begin{eqnarray*}
@@ -796,7 +797,7 @@ t,u & ::= & * \sor x \sor (\lam{x : A} t) \sor \app{t}{u} \sor \TPrim{s} \\
 v & ::= & * \sor x \sor (\lam{x : A} t) \sor \TPrim{s}
 \end{eqnarray*}
 
-The primitive types provide some types other than the unit type for the function constructor to act on. Their inclusion has minimal impact on the proof of soundness and they can be removed without altering the outcome. All of the other terms have the same meaning as in DILL. The typing rules for PLLC are shown in Figure \ref{pllc-typing-rules}.
+The primitive types provide some types other than the unit type for the function type constructor to act on. Their inclusion has minimal impact on the proof of soundness and they can be removed without altering the outcome. All of the other terms have the same meaning as in DILL. The typing rules for PLLC are shown in Figure \ref{pllc-typing-rules}.
 
 \begin{figure}[h]
 \caption{Typing Rules for PLLC}
@@ -817,15 +818,15 @@ The primitive types provide some types other than the unit type for the function
 \end{displaymath}
 \end{figure}
 
-With the exception of the rule for primitives, PLLC's typing rules are a subset of DILL's, with the intuitionistic contexts $\Gamma$ removed. Hence, in PLLC, every variable is linear and every function consumes its input. The rule for primitives allows any primitive term to be assigned any primitive type, the intention being that primitive types are handled by an external mechanism, as in a compiler.
+With the exception of the rule for primitives, PLLC's typing rules are a subset of DILL's, with the intuitionistic contexts $\Gamma$ removed. Hence, in PLLC, every variable is linear and every function consumes its input. In the ($\lolly$-E) rule, note the use of context splitting $(\Delta_1, \Delta_2)$ to divide the variables available to an application. The rule for primitives allows any primitive term to be assigned any primitive type, the intention being that primitive types are handled by a separate mechanism, as in a compiler.
 
-% Important points:
-% Bare minimum language required to reason about linearity.
-% Typing rules based on DILL.
-% Operational semantics based on a standard call by value lambda calculus (cite SF).
+The operational semantics for PLLC are derived from call-by-value semantics for the Simply-Typed Lambda Calculus \cite{pierce15}. The three rules, shown in Figure \ref{pllc-op-sems} include the $(\beta)$ rule for computation by substitution, and two rules for evaluating applications. The (StepApp1) rule states that if the first half of an application $u$ can step to a term $u'$, then the entire application can take a step by stepping $u$: $\app{u}{t} \steps \app{u'}{t}$. The (StepApp2) rule is a similar rule for the second sub-term of an application, and applies only once the first sub-term has been reduced to a value.
+
+By enforcing the restriction that the first sub-term of the application in (StepApp2) is a value, an evaluator never needs to choose which side should be evaluated first, thus removing non-determinism. If we include the $(\beta)$ rule in our consideration we see that the stepping relation as a whole is deterministic, although this property isn't verified in our Coq proofs.
 
 \begin{figure}[h]
 \caption{Operational Semantics for PLLC}
+\label{pllc-op-sems}
 \begin{displaymath}
 \arraycolsep=1.4pt\def\arraystretch{2.2}
 \begin{array}{cc}
@@ -836,11 +837,22 @@ With the exception of the rule for primitives, PLLC's typing rules are a subset 
 \end{displaymath}
 \end{figure}
 
-We say that a lemma or definition is \i{universal} if it is applicable to the verification of other linearly typed languages (using the DbLib library). Conversely, we say that a lemma is \i{language-specific} if it is not universal, and is concerned with some specific part of the concrete language being verified.
+As is somewhat standard in syntax-driven Coq proofs about programming languages \cite{pierce15}, we use inductive definitions for the terms, types and typing judgements of the language. Translating the semi-formal description of the language into Coq definitions is straight-forward once a few key parts of the representation are decided upon. Specifically:
 
-As is somewhat standard in syntax-driven Coq proofs about programming languages \cite{pierce15}, we use inductive definitions for the terms, types and typing judgements of the language. These definitions are language-specific, and all subsequent lemmas that reference them are also necessarily language-specific.
+\begin{itemize}
+\item How do we represent the names of variables? As discussed in \cref{sec:var-naming}, we elect to use \Francois Pottier's DbLib library for de Bruijn indices.
+\item How is substitution implemented? DbLib provides a substitution function given a few basic properties of a language. The implementation of this is discussed in the next section, \cref{sec:dblib-int}.
+\item How are typing contexts represented? How is context splitting implemented? These questions are the topic of the upcoming sections: \cref{sec:repr-ty-contexts}. % FIXME.
+\end{itemize}
+
+Discussion of the exact representation of terms, typing judgements and operational semantics is given in the Appendix, sections \cref{app:pllc-syntax}, \cref{app:pllc-typing-rules}, \cref{app:pllc-op-sems}.
+
+Type soundness is the property that we would like to establish to show that PLLC is a well-behaved programming language. We do this by proving progress and preservation lemmas, as defined in \cref{sec:op-sems-soundness}. The statement of these lemmas in Coq is given in \cref{sec:progress} and \cref{sec:preservation}, as well as consideration of how they were proved.
+
+The proofs of progress and preservation are \i{language-specific} in that they only apply to PLLC. We are primarily interested in the \i{universal} lemmas which can be used independently of PLLC and may be applicable to the verification of other linearly typed languages. In general, any lemmas that reference the terms, semantics or typing rules of PLLC are language specific, while lemmas about context splitting and typing contexts are universal and are part of our library.
 
 \section{Integrating with DbLib}
+\label{sec:dblib-int}
 
 DbLib provides functions for substitution and lifting that abstract over the manipulation of de Bruijn indices. Client libraries wanting to make use of DbLib need only implement a few fundamental operations via Coq's \i{type-classes} (ref Coq and Haskell type classes). For the linear lambda calculus we can use essentially the same definitions as for the simply typed lambda calculus, which are provided as an example with the library.
 
@@ -904,7 +916,7 @@ As noted in the background section, control over the actions permitted on typing
 
 For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations. The next two sections describe these two aspects of our formalisation, and this thesis's contribution to a general framework for substructural languages.
 
-\subsection{Emptiness}
+\section{Emptiness}
 
 We define the following predicate for environments which is compatible with any environment from DbLib. We say that an environment is \i{empty} if it contains no typing information. Hence, the empty list environment (\c{nil}) is empty, as is any number of \c{None} values.
 
@@ -931,7 +943,7 @@ Lemma empty_repeat_none : forall A n,
 FIXME: More here.
 \end{coqcode}
 
-\subsection{Context Splitting}
+\section{Context Splitting}
 
 % You've met context splitting before.
 % High-level description.
@@ -964,7 +976,7 @@ Inductive context_split {A} : env A -> env A -> env A -> Prop :=
       context_split (v :: E) (v1 :: E1) (v2 :: E2).
 \end{coqcode}
 
-\subsubsection{Single Element Splits}
+\subsection{Single Element Splits}
 
 One may wonder if the presence of an accompanying \c{split_single} predicate is necessary, as the same meaning can be achieved with the following definition that places the splitting of single elements inline:
 
@@ -1011,7 +1023,7 @@ Without a \c{split_single} definition, inversion of \c{context_split (e :: raw_i
 
 Hence, \c{split_single} is a more general and useful way for dealing with context splitting, as it allows us to prove goals of the form \c{context_split (e :: E) (e1 :: E1) (e2 :: E2)} without knowing the exact values of \c{e}, \c{e1} and \c{e2}. If the exact values \i{are} required for a proof, they can still be considered by performing inversion on the \c{split_single e e1 e2} fact.
 
-\subsubsection{Properties of Context Splitting}
+\subsection{Properties of Context Splitting}
 
 We prove several basic properties of context splitting, such as commutativity, as well as lemmas motivated by the proof of soundness for the linear lambda calculus.
 
@@ -1053,7 +1065,7 @@ In his proofs about uniqueness typing Edsko de Vries [REF] establishes all of th
 
 % TODO: Note rewriting rules for commutativity somewhere, maybe in the automation section?
 
-\subsubsection{Lemmas Required for Soundness}
+\subsection{Lemmas Required for Soundness}
 
 In order to prove soundness, several lemmas about the interaction between inserts and context splitting were required. Although many of the lemmas are conceptually simple, some required significant effort and represent a large portion of the work involved in the proof of soundness for the linear lambda calculus. Many lemmas also involve the insertion of \c{None} values into contexts, which is a consequence of the strengthened induction required to prove the substitution lemma (see the next section on substitution (TODO)).
 
@@ -1085,70 +1097,8 @@ TODO: More here about the other couple of insertion/split lemmas.
 % Talk about substitution lemma.
 % Talk about preservation.
 
-\section{Typing Rules}
-
-Typing rules determine which terms are considered well-formed. We define an inductive predicate \c{has_type : (env ty) -> term -> ty -> Prop} so that \c{has_type E e t} is inhabited if the environment $E$ determines $e : t$. In standard mathematical notation this is $E \types e : t$, which we mirror using the Coq notation \c{E |- e ~: t}.
-
-\begin{coqcode}
-Reserved Notation "E '|-' e '~:' t" (at level 40).
-
-Inductive has_type : (env ty) -> term -> ty -> Prop :=
-  | HasTyUnit E
-      (UnitEmpty : is_empty E) :
-      E |- TUnit ~: TyUnit
-  | HasTyTrue E
-      (TrueEmpty : is_empty E) :
-      E |- TTrue ~: TyBool
-  | HasTyFalse E
-      (FalseEmpty : is_empty E) :
-      E |- TFalse ~: TyBool
-  | HasTyVar E x t
-      (VarPre : is_empty E) :
-      insert x t E |- TVar x ~: t
-  | HasTyAbs E e t1 t2
-      (AbsPre : (insert 0 t1 E) |- e ~: t2) :
-      E |- TAbs t1 e ~: (TyFun t1 t2)
-  | HasTyApp E E1 E2 e1 e2 t1 t2
-      (AppPreSplit : context_split E E1 E2)
-      (AppPreWT1 : E1 |- e1 ~: TyFun t1 t2)
-      (AppPreWT2 : E2 |- e2 ~: t1) :
-      E  |- TApp e1 e2 ~: t2
-
-where "E '|-' e '~:' t" := (has_type E e t).
-\end{coqcode}
-
-Here we see the definitions for emptiness and context splitting coming into play. In linear lambda calculus variables must be used exactly once, so a single variable \c{x} is well-typed only under an environment containing a type for \c{x} and nothing else, as captured by the \c{HasTyVar} rule. Similarly, primitive values must be typed under environments containing no free variables.
-
-A lambda abstraction $(\lambda \hat{0} : \tau. \; e)$ is well-typed if the body can be typed under an environment extended by the type for its binder, $(0 : \tau)$. This is the only rule that requires the \i{input} context (\c{insert 0 t1 E}) to differ in length to the \i{output} context (\c{E}).
-
-Function applications make use of the \c{context_split} operation to ensure that the variables used to type an application $(e_1 e_2)$ are split between $e_1$ and $e_2$ without duplication. The rule also ensures that the type of the application (\c{t2}) is consistent with the type of the function being applied (\c{t1 -> t2}) and the type of the argument (\c{t1}).
-
-\section{Operational Semantics}
-
-For the semantics of our language we use a call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
-
-\begin{coqcode}
-Inductive step : term -> term -> Prop :=
-  | StepAppAbs e e' v t
-      (BetaPreVal : value v)
-      (BetaPreSubst : subst v 0 e = e') :
-      step (TApp (TAbs t e) v) e'
-  | StepApp1 e1 e1' e2
-      (App1Step : step e1 e1') :
-      step (TApp e1 e2) (TApp e1' e2)
-  | StepApp2 v1 e2 e2'
-      (App2Val : value v1)
-      (App2Step : step e2 e2') :
-      step (TApp v1 e2) (TApp v1 e2').
-\end{coqcode}
-
-The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. It states that function application is equivalent to the substitution of the argument value for the bound variable in the body of the function. For substitution, note the use of DbLib's \c{subst} function. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \rightarrow e[v/0]$.
-
-We are using a \i{call-by-value} evaluation strategy, which means that only the outer-most reducible expressions (\i{redexes}) are reduced, and only when their argument is a value \cite{tapl}. Note that as a result there is no rule for stepping a $\lambda$-abstraction when its body is capable of stepping, as in: $e \rightarrow e' \implies (\lambda 0 : \tau. \, e) \rightarrow (\lambda 0 : \tau. \, e')$.
-
-The two rules for stepping an application $(e_1 \; e_2)$ ensure that $e_1$ is fully evaluated before evaluating $e_2$. This is captured by the \c{value v1} argument to \c{StepApp2}. By making this restriction an evaluator never needs to choose which side should be evaluated first, thus removing non-determinism. If we include the $\beta$-rule in our consideration we see that the stepping relation as a whole is deterministic, although this property isn't verified in our Coq proofs.
-
 \section{Progress}
+\label{sec:progress}
 
 With typing rules and small step semantics established we can state the progress lemma which contributes to the proof of type soundness.
 
@@ -1171,9 +1121,10 @@ Lemma fun_value_is_abs : forall E e t1 t2,
   (exists e', e = TAbs t1 e').
 \end{coqcode}
 
-Given that most of the verification effort was expended reasoning about context splitting, substitution and other lemmas required for preservation, the effort required to prove progress represents a relatively small fraction of the total effort. The fact that progress and preservation each form ``half" of the soudness proof does not imply that the difficulty of proving soundness is split evenly between them.
+Given that most of the verification effort was expended reasoning about context splitting, substitution and other lemmas required for preservation, the effort required to prove progress represents a relatively small fraction of the total effort. The fact that progress and preservation each form ``half" of the soundness proof does not imply that the difficulty of proving soundness is split evenly between them.
 
 \section{Preservation}
+\label{sec:preservation}
 
 The preservation lemma states that a if well-typed closed term $e$ can take a step to another term $e'$, then $e'$ is also well-typed. In other words, the type of a term is \i{preserved} as it is evaluated in accordance with the small-step semantics.
 
@@ -1211,7 +1162,7 @@ Lemma substitution: forall E2 e2 t1 t2 x,
   E |- (subst e1 x e2) ~: t2.
 \end{coqcode}
 
-Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 ~: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g. $E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate subgoals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic (REF) which makes use of Conor's humorously named ``John Major" heterogenous equality (\c{JMeq}). Heterogenous equality requires the addition of an extra axiom, the consideration of which is discussed in the Evaluation chapter.
+Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 ~: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g. $E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate sub-goals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic (REF) which makes use of Conor's humorously named ``John Major" heterogeneous equality (\c{JMeq}). Heterogeneous equality requires the addition of an extra axiom, the consideration of which is discussed in the Evaluation chapter.
 
 Simple inversion removes the cases that are absurd due to the \c{insert x t1 E2} environment, leaving three cases for variables, $\lambda$-abstractions and applications. The variable case is handled by some straight-forward reasoning about empty contexts, and requires no new supporting lemmas, while the other two cases form the motivation for several of the lemmas about inserts and context splitting.
 
@@ -1398,7 +1349,8 @@ Although automating proofs extensively reduces proof-effort and therefore makes 
 
 \chapter{Appendix}
 
-\section{Representing PLLC Syntax in Coq}
+\section{PLLC Syntax in Coq}
+\label{app:pllc-syntax}
 
 To define the terms of PPLC we must first define the set of types. The reason for this is that lambda abstractions are explicitly annotated with the type of their parameter in order to avoid type-inference when writing proofs. A lambda abstraction $(\lambda x : \tau. e)$ is represented by the Coq expression \c{TAbs $\tau$ e}, which hides the name of the binding variable $x$ through the use of de Bruijn indices. The inductive definition for types is:
 
@@ -1434,6 +1386,73 @@ Inductive value : term -> Prop :=
 \end{coqcode}
 
 Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
+
+\section{PLLC Typing Rules in Coq}
+\label{app:pllc-typing-rules}
+
+Typing rules determine which terms are considered well-formed. We define an inductive predicate \c{has_type : (env ty) -> term -> ty -> Prop} so that \c{has_type E e t} is inhabited if the environment $E$ determines $e : t$. In standard mathematical notation this is $E \types e : t$, which we mirror using the Coq notation \c{E |- e ~: t}.
+
+\begin{coqcode}
+Reserved Notation "E '|-' e '~:' t" (at level 40).
+
+Inductive has_type : (env ty) -> term -> ty -> Prop :=
+  | HasTyUnit E
+      (UnitEmpty : is_empty E) :
+      E |- TUnit ~: TyUnit
+  | HasTyTrue E
+      (TrueEmpty : is_empty E) :
+      E |- TTrue ~: TyBool
+  | HasTyFalse E
+      (FalseEmpty : is_empty E) :
+      E |- TFalse ~: TyBool
+  | HasTyVar E x t
+      (VarPre : is_empty E) :
+      insert x t E |- TVar x ~: t
+  | HasTyAbs E e t1 t2
+      (AbsPre : (insert 0 t1 E) |- e ~: t2) :
+      E |- TAbs t1 e ~: (TyFun t1 t2)
+  | HasTyApp E E1 E2 e1 e2 t1 t2
+      (AppPreSplit : context_split E E1 E2)
+      (AppPreWT1 : E1 |- e1 ~: TyFun t1 t2)
+      (AppPreWT2 : E2 |- e2 ~: t1) :
+      E  |- TApp e1 e2 ~: t2
+
+where "E '|-' e '~:' t" := (has_type E e t).
+\end{coqcode}
+
+Here we see the definitions for emptiness and context splitting coming into play. In linear lambda calculus variables must be used exactly once, so a single variable \c{x} is well-typed only under an environment containing a type for \c{x} and nothing else, as captured by the \c{HasTyVar} rule. Similarly, primitive values must be typed under environments containing no free variables.
+
+A lambda abstraction $(\lambda \hat{0} : \tau. \; e)$ is well-typed if the body can be typed under an environment extended by the type for its binder, $(0 : \tau)$. This is the only rule that requires the \i{input} context (\c{insert 0 t1 E}) to differ in length to the \i{output} context (\c{E}).
+
+Function applications make use of the \c{context_split} operation to ensure that the variables used to type an application $(e_1 e_2)$ are split between $e_1$ and $e_2$ without duplication. The rule also ensures that the type of the application (\c{t2}) is consistent with the type of the function being applied (\c{t1 -> t2}) and the type of the argument (\c{t1}).
+
+\section{PLLC Operational Semantics in Coq}
+\label{app:pllc-op-sems}
+
+For the semantics of our language we use a call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
+
+\begin{coqcode}
+Inductive step : term -> term -> Prop :=
+  | StepAppAbs e e' v t
+      (BetaPreVal : value v)
+      (BetaPreSubst : subst v 0 e = e') :
+      step (TApp (TAbs t e) v) e'
+  | StepApp1 e1 e1' e2
+      (App1Step : step e1 e1') :
+      step (TApp e1 e2) (TApp e1' e2)
+  | StepApp2 v1 e2 e2'
+      (App2Val : value v1)
+      (App2Step : step e2 e2') :
+      step (TApp v1 e2) (TApp v1 e2').
+\end{coqcode}
+
+The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. It states that function application is equivalent to the substitution of the argument value for the bound variable in the body of the function. For substitution, note the use of DbLib's \c{subst} function. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \rightarrow e[v/0]$.
+
+We are using a \i{call-by-value} evaluation strategy, which means that only the outer-most reducible expressions (\i{redexes}) are reduced, and only when their argument is a value \cite{tapl}. Note that as a result there is no rule for stepping a $\lambda$-abstraction when its body is capable of stepping, as in: $e \rightarrow e' \implies (\lambda 0 : \tau. \, e) \rightarrow (\lambda 0 : \tau. \, e')$.
+
+The two rules for stepping an application $(e_1 \; e_2)$ ensure that $e_1$ is fully evaluated before evaluating $e_2$. This is captured by the \c{value v1} argument to \c{StepApp2}.
+
+\section{Complete Source Code}
 
 DbLib version (git commit hash): blah
 
