@@ -1326,9 +1326,18 @@ Although automating proofs extensively reduces proof-effort and therefore makes 
 % Very time consuming to create. Partly due to the DbLib list env not being well-suited to linearity.
 % Definitions are not trivial to write proofs about,
 
-\section{Summary of Evaluation}
+% TODO.
+%\section{Summary of Evaluation}
 
 \chapter{Conclusion}
+
+We have identified context splitting as a common trait of languages with substructural typing, and have created a Coq library for context splitting, building upon DbLib. This library aided in a syntactic proof of type soundness for a simple variant of the linear lambda calculus, and we are confident that it could be scaled to handle all of Dual Intuitionistic Linear Logic.
+
+Overall we were able to achieve a satisfactory level of quality and expressiveness in the mechanised Coq proofs, although some deficiencies in the use of automatic variable naming and automation could be improved. Further work could look at using custom tactics for dealing with these problems in Coq, or address the more fundamental challenge of building readable and maintainable facilities for proof automation. Following Adam Chlipala's mostly-automated philosophy from the start of a development would be beneficial from an automation standpoint, whilst also solving the issue of variable naming as a side-effect.
+
+Although it was initially hoped that the context splitting library would be useful in the formalisation of more advanced languages, this is probably unrealistic. The first reason for this is that more advanced languages tend to involve type system extensions that obsolete context splitting as we have defined it, or contain so many other features that context splitting only makes up a small fraction of the overall proof effort. Secondly, the approach to context splitting whereby unavailable values are entirely erased is subsumed by an approach based on separation algebras whereby the number of occurrences of a variable is tracked in the typing context. This approach is used to great effect by Pottier for \SSPHS \cite{pottier13}, and McBride for a fusion of linear and dependent typing \cite{mcbride16}.
+
+Pottier's DbLib library for reasoning about de Bruijn indices was found to be highly effective at abstracting over the details of capture-avoiding substitution. Our proofs were able to make effective use of the library by defining only a few language-specific functions. % TODO: continue the conclusion.
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
@@ -1351,7 +1360,7 @@ Inductive ty : Set :=
   | TyBool.
 \end{coqcode}
 
-Now, with LLC's types defined, we can define the syntax of terms:
+Now, with LLC's types defined, we can define the set of terms:
 
 % FIXME: Update all this syntax.
 \begin{coqcode}
@@ -1375,7 +1384,7 @@ Inductive value : term -> Prop :=
     | VFalse : value TFalse
 \end{coqcode}
 
-Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. Types in Prop don't work with Coq's program extraction, but this is no concern for our purposes. The real reason to embrace the distinction is to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
+Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. We use Prop for all predicates to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
 
 \section{PLLC Typing Rules in Coq}
 \label{app:pllc-typing-rules}
