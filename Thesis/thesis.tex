@@ -746,7 +746,7 @@ Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphi
 
 \section{Summary of Previous Work}
 
-In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer in-depth discussion of these to future work.
+In summary, previous work on the formalisation of resource-aware type systems has culminated in the wide-spread use of capabilities. The basic ideas of linear and affine logic have been adapted to form the core of these systems, with some extra features and approaches mixed in (e.g. hidden state and de Vries' use of kinds). \b{Context splitting} plays a key role in almost all systems surveyed. The use of mechanical verification in proofs of type soundness has gained popularity, with most recent works including a formalisation in Coq or Twelf. Other mainstream proof assistants like Isabelle seem to be less used in this space, but we suspect this is primarily due to the limited number of research groups performing this kind of research, and their personal preferences. Several capability systems mention Alias Types \cite{smith00} and separation logic \cite{reynolds02} as foundational concepts, but we defer in-depth discussion of these to future work.
 
 \section{Evaluation Framework}
 \label{sec:eval-framework}
@@ -772,7 +772,7 @@ Point (3) relates to the coverage provided by the library's lemmas. Ideally, all
 \subsection{Implementation Goals}
 \label{sec:impl-goals}
 
-The construction of a large Coq proof, as in the development of any complex piece of software, demands attention to quality of design and implementation. Due to the lack of well established engineering techniques for interactive proofs we describe and justify some of our own criteria here. Discussion of Adam Chlipala's automated style of theorem proving is given as part of a larger discussion about proof automation in the evaluation section.
+The construction of a large Coq proof, as in the development of any complex piece of software, demands attention to quality of design and implementation. Due to the lack of well established engineering techniques for interactive proofs we describe and justify some of our own criteria here. Discussion of Adam Chlipala's automated style of theorem proving is given as part of a larger discussion about proof automation in the Evaluation chapter (\cref{sec:automation}).
 
 Firstly, our Coq proofs should be \b{easy to read and understand}. By this we mean that additional complexity or obfuscation that detracts from the \i{intent} of the proof should be kept to a minimum. Coq proofs differ from most other bits of code in that they are often difficult to read without knowing the goal and hypotheses at each step, so our criteria for readability must take this into account.
 
@@ -804,7 +804,7 @@ An assessment of the work according to this evaluation framework is given in the
 
 \section{Research Questions}
 
-The primary research question that this thesis attempts to answer relates to the efficient development of verified proofs about low-level substructural languages. Specifically,
+The primary research question that this thesis attempts to answer relates to the efficient development of mechanically verified proofs about languages with substructural typing. Specifically,
 
 \begin{itemize}
 \item What are the common properties of all proofs about substructural languages, and can these properties be exploited to avoid duplicated work in the context of interactive theorem proving?
@@ -951,11 +951,11 @@ As noted in the Background chapter, control over the actions permitted on typing
 
 \begin{itemize}
 \item \textbf{Functions}: Some Coq formalisations of languages with structural typing \cite{pierce15} make use of functions to encode partial maps from variables to types. Assigning a type involves wrapping the existing environment in another conditional statement, as in \c{insert x $\tau$ H := fun y => if x = y then Some $\tau$ else H y}. This approach is unsuitable for substructural type systems because the function is opaque and can't be disassembled into two functions which are equivalent when combined. Given an arbitrary function, it is impossible to know that it is always going to consist of a conditional of the form shown, and therefore it is also impossible to extract any of the information about x, $\tau$ or the original $H$.
-\item \textbf{Lists of Types}: We could consider using a list of types so that the type for variable $\hat{i}$ is at index $i$. This is preferable to using a function because we can inspect and destructure a list, and can also perform induction. However, splitting an environment becomes problematic because we need to keep the type for variable $\hat{i}$ at index $i$, even if some or all of the types at indexes less than $i$ should no longer be available because they were assigned to the other side of the split. Essentially, if we are to use a list, we need a filler value to occupy the evacuated positions. This leads to our next option:
+\item \textbf{Lists of Types}: We could consider using a list of types so that the type for variable $\hat{i}$ is at index $i$. This is preferable to using a function because we can inspect and destructure a list, and can also perform induction. However, splitting an environment becomes problematic because we need to keep the type for variable $\hat{i}$ at index $i$, even if some or all of the types at indices less than $i$ should no longer be available because they were assigned to the other side of the split. Essentially, if we are to use a list, we need a filler value to occupy the evacuated positions. This leads to our next option:
 \item \textbf{Lists of Optional Types}: What if we rather than using a list of types, we use a list of \c{option type}, so that types which are no longer available are represented by \c{None} entries? This fulfils all of our requirements: we can look-up types, alter them, add new entries and split an environment so that variables and their types are divided between the two new environments.
 \end{itemize}
 
-For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{Env} type from DbLib. However, the lemmas about \c{Env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations. The next two sections describe these two aspects of our formalisation, and this thesis's contribution to a general framework for substructural languages.
+For these reasons, our formalisation makes use of a list of optional types, as provided by the \c{env} type from DbLib. However, the lemmas about \c{env} provided by DbLib proved to be insufficient for reasoning about substructural typing rules. For example, DbLib treats the empty list \c{[] (nil)} as the only empty environment, when it is often useful to treat any number of \c{None}s as an empty environment. Further, context splitting defined on \c{Env} is general enough to be of use in multiple DbLib-based formalisations, so why not re-use this effort? The next two sections describe these two aspects of our formalisation, and this thesis's contribution to a general framework for substructural languages.
 
 \section{Emptiness}
 \label{sec:emptiness}
@@ -1001,7 +1001,7 @@ Context splitting is the operation by which a typing environment, implemented as
 
 In PLLC, the typing rule for application requires that the context used to type $(e_1 e_1)$ can be split into two contexts that type $e_1$ and $e_2$ individually. This splitting causes variables from the typing context to be used at most once in the expression $(e_1 e_2)$, as each element of the context must be assigned to either the left or right sub-expression.
 
-As we are working with a list, it makes sense to preserve the length of the context when splitting. As a base case we have $\emptyset = \emptyset \circ \emptyset$. If the list contains one or more elements, then that element can either be assigned to the left or to the right. In Coq, we define an inductive predicate over contexts so that \c{context_split E E1 E1} $\equiv E = E_1 \circ E_2$.
+As we are working with a list, it makes sense to preserve the length of the context when splitting. As a base case we have $[] = [] \circ []$. If the list contains one or more elements, then that element can either be assigned to the left or to the right. In Coq, we define an inductive predicate over contexts so that \c{context_split E E1 E1} $\equiv E = E_1 \circ E_2$.
 
 \begin{coqcode}
 Inductive split_single {A} : option A -> option A -> option A -> Prop :=
@@ -1098,7 +1098,7 @@ The justification for calling this operation associativity is the view of $(\cir
 
 \textbf{4-way Splits}
 
-In his proofs about uniqueness typing Edsko de Vries \cite{deVries07, deVriesPhD08} establishes all of these properties, but proves the associativity lemma using a 4-way split lemma like this: $E = (E_{1a} \circ E_{1b}) \circ (E_{2a} \circ E_{2b}) \Rightarrow E = (E_{1a} \circ E_{2a}) \circ (E_{2a} \circ E_{2b})$. In addition to associativity being provable from this lemma, the opposite is also true, and we prove a version of this lemma called \c{split_swap} using a few simple applications of commutativity and associativity.
+In his proofs about uniqueness typing Edsko de Vries \cite{deVries07, deVriesPhD08} establishes all of these properties, but proves the associativity lemma using a 4-way split lemma like this: $E = (E_{1a} \circ E_{1b}) \circ (E_{2a} \circ E_{2b}) \longrightarrow E = (E_{1a} \circ E_{2a}) \circ (E_{2a} \circ E_{2b})$. In addition to associativity being provable from this lemma, the opposite is also true, and we prove a version of this lemma called \c{split_swap} using a few simple applications of commutativity and associativity.
 
 \textbf{Rotation} The proof of preservation requires a lemma of the form: $E = E_0 \circ (E_1 \circ E_2) \Rightarrow E = E_1 \circ (E_0 \circ E_2)$, which is provable using the other lemmas above.
 
@@ -1114,6 +1114,7 @@ DbLib's \c{insert} function behaves in two different ways depending on the relat
 
 To handle the case where \c{x >= length E} and padding \c{None} values are inserted, we note that the values past the end of the old environment will all be \c{None}. Equipped with a simple definition of a \c{repeat} function on lists, and some lemmas about list append, the proof of this case is simple. Determining the right abstractions is the hardest part.
 
+\newpage
 \begin{coqcode}
 Lemma insert_none_def : forall A x (E : env A),
   x >= length E ->
@@ -1127,7 +1128,7 @@ Lemma split_app : forall A (E : env A) E1 E2 n,
       context_split E E1' E2'.
 \end{coqcode}
 
-The other case where the new \c{None} value is inserted in between existing elements is handled by an induction on \c{x}, which is made simpler by knowing the bound on \c{x}, i.e. \c{x < length E}. For example, it absolves the prover from having to deal with the case where the environment is empty, which proved to be a nuisance in early versions of the proof. Particularly as \c{length (tl E1) = length (tl E2)} does not imply that \c{length E1 = length E2} as one may expect outside a total programming language.
+The other case where the new \c{None} value is inserted in between existing elements is handled by an induction on \c{x}, which is made simpler by knowing the bound on \c{x}, i.e. \c{x < length E}. For example, it absolves us from having to deal with the case where the environment is empty, which proved to be a nuisance in early versions of the proof. Particularly as \c{length (tl E1) = length (tl E2)} does not imply that \c{length E1 = length E2} as one may expect outside a total programming language.
 
 A few other lemmas about context splitting and interactions with DbLib's \c{insert} were required for the proof of soundness. They can be found in the accompanying proof sources, see \cref{sec:src}. In general, the lemmas involving existentials required more cunning to prove, and subsequently more cunning to apply, as discussed in \cref{sec:named-destruct}.
 
@@ -1160,8 +1161,9 @@ Given that most of the verification effort was expended reasoning about context 
 \section{Preservation}
 \label{sec:preservation}
 
-The preservation lemma states that a if well-typed closed term $e$ can take a step to another term $e'$, then $e'$ is also well-typed. In other words, the type of a term is \i{preserved} as it is evaluated in accordance with the small-step semantics.
+The preservation lemma states that if a well-typed closed term $e$ can take a step to another term $e'$, then $e'$ is also well-typed. In other words, the type of a term is \i{preserved} as it is evaluated in accordance with the small-step semantics.
 
+\newpage
 \begin{coqcode}
 Theorem preservation : forall E e e' t,
   is_empty E ->
@@ -1185,7 +1187,7 @@ The substitution lemma states that the result of a substitution is well-typed if
 }
 \end{eqnarray*}
 
-Substitution lemmas similar to this are common in proofs of similar complexity, as in Software Foundations \cite{pierce15} and the examples accompanying DbLib. In Software Foundations, a weakening lemma is used in the proof of the substitution lemma, but with substructural typing this technique is unavailable.
+Substitution lemmas similar to this are common in proofs of similar complexity, as in \i{Software Foundations} \cite{pierce15} and the examples accompanying DbLib. In Software Foundations, a weakening lemma is used in the proof of the substitution lemma, but with substructural typing this technique is unavailable.
 
 In Coq the lemma is:
 
@@ -1197,7 +1199,7 @@ Lemma substitution: forall E2 e2 t1 t2 x,
   E |- (subst e1 x e2) ~: t2.
 \end{coqcode}
 
-Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 \textasciitilde: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g.$E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate sub-goals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic \cite{mcbride00} which makes use of Conor's humorously named ``John Major" heterogeneous equality (\c{JMeq}). Heterogeneous equality requires the addition of an axiom, but our use of it is restricted to the proof-of-concept and it isn't required to use the library.
+Proof is by \i{dependent induction} on the judgement \c{insert x t1 E2 |- e2 \textasciitilde: t2}. Dependent induction allows us to take into account the fact that the environment is \c{insert x t1 E2} rather than an unadorned variable (e.g. $E$). This is achieved by replacing instantiated variables with general ones, and then adding constraining equalities. In this case, the only instantiated variable is \c{insert x t1 E2}, which dependent induction will replace by a new universally quantified variable $E_\text{new}$ and the equation $E_\text{new} = \c{insert x t1 E2}$. With the goal in the form described the dependent induction tactic then applies the induction principle for \c{has_type} to generate sub-goals for each of the cases, whilst preserving the newly added equality constraints. Coq's dependent induction is based on Conor McBride's \c{BasicElim} tactic \cite{mcbride00} which makes use of Conor's humorously named ``John Major" heterogeneous equality (\c{JMeq}). Heterogeneous equality requires the addition of an axiom, but our use of it is restricted to the proof-of-concept and it isn't required to use the library.
 
 Simple inversion removes the cases that are absurd due to the \c{insert x t1 E2} environment, leaving three cases for variables, $\lambda$-abstractions and applications. The variable case is handled by some straight-forward reasoning about empty contexts, and requires no new supporting lemmas, while the other two cases form the motivation for several of the lemmas about inserts and context splitting.
 
@@ -1219,12 +1221,12 @@ The addition of lowering to DbLib was the only substantial change required for o
 
 \section{Summary}
 
-Our Coq formalisation of PLLC was able to make use of universal lemmas about emptiness and context splitting developed as part of this thesis. These lemmas represents a significant portion of the effort required to establish type preservation for PLLC. Further, the formalisation was able to make successful use of \Francois Pottier's DbLib library, for substitution operations and basic actions on typing environments. The creation of a generic library for context splitting provides a positive answer to our primary research question about exploiting commonalities in formalisations of languages with substructural typing. The extent to which the library is applicable to other formalisations is discussed in the next chapter.
+Our Coq formalisation of PLLC was able to make use of universal lemmas about emptiness and context splitting developed as part of this thesis. These lemmas represent a significant portion of the effort required to establish type preservation for PLLC. Further, the formalisation was able to make successful use of \Francois Pottier's DbLib library, for substitution operations and basic actions on typing environments. The creation of a generic library for context splitting provides a positive answer to our primary research question about exploiting commonalities in formalisations of languages with substructural typing. The extent to which the library is applicable to other formalisations is discussed in the next chapter.
 
 \chapter{Evaluation}
 \label{chap:eval}
 
-In this section we assess the quality of the work according to the Evaluation Framework of Section \cref{sec:eval-framework}. We discuss the success of the library according to its conceptual goals, primarily by outlining how a formalisation of $L^3$ could make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
+In this section we assess the quality of the work according to the Evaluation Framework of Section \cref{sec:eval-framework}. We discuss the success of the library according to its conceptual goals, primarily by outlining how a formalisation of $L^3$ may make use of the library. Further, we evaluate the library's implementation according to the implementation goals and discuss possible improvements.
 
 \section{Generality and Applicability}
 \label{sec:generality}
@@ -1233,7 +1235,7 @@ According to the conceptual goals of our evaluation framework, we would like the
 
 Extending the proof-of-concept LLC proof to a complete formalisation of DILL would require the addition of an intuitionistic context, product types and bang types. The paper for DILL \cite{barber96} includes proofs of substitution lemmas similar to the one used in the proof of preservation for our LLC, which suggests that it would admit a complete proof of soundness in a syntactic style. This is in contrast to several earlier systems based on linear logic, which Philip Wadler showed \i{do not} have substitution lemmas \cite{wadlerNoSubst}. Wadler's result is our primary motivation for using DILL as a foundation, motivated further by Pottier's success with DILL-based syntactic soundness proofs in SSHPS \cite{pottier13}. Interestingly, a draft version of the $L^3$ paper from 2001 cites Wadler's result as a reason to avoid a syntactic proof, but this claim is absent from the final paper \cite{ahmed05}.
 
-The proofs of progress and preservation for DILL could re-use much of the proof effort for PLLC. For example, the ($\otimes$-I) rule is similar to the LLC's existing ($\lolly$-E) rule, implying that inductive cases related to ($\otimes$-I) could be handled using the same library lemmas used for ($\lolly$-E). Further, the lemmas provided by the library about \c{insert} and context splitting would aid in reasoning about ($\otimes$-E) and (!-E), which both include augmented contexts in their premises.
+The proofs of progress and preservation for DILL could re-use much of the proof effort for PLLC. For example, the ($\otimes$-I) rule is similar to PLLC's existing ($\lolly$-E) rule, implying that inductive cases related to ($\otimes$-I) could be handled using the same library lemmas used for ($\lolly$-E). Further, the lemmas provided by the library about \c{insert} and context splitting would aid in reasoning about ($\otimes$-E) and (!-E), which both include augmented contexts in their premises.
 
 Our approach may also be applicable to a modified version of Edsko de Vries' uniqueness type system \cite{deVries07, deVriesPhD08}. Edsko's soundness proof is syntactic and makes use of an inductive context splitting relation that is identical to ours except that it allows non-unique (intuitionistic) types to be split to both sides. To make his system compatible with purely linear context splitting a stand-alone contraction rule could be added, in the style of Wadler's linear lambda calculus of 1993 \cite{wadler93}. The contraction rule would provide the ability to duplicate non-unique values, which would previously have been provided by context splitting.
 
@@ -1243,6 +1245,7 @@ Our approach may also be applicable to a modified version of Edsko de Vries' uni
 \i{The Linear Language with Locations}, $L^3$, is a good candidate for assessing the applicability of our approach to languages beyond the linear lambda calculus. As argued in the Background chapter, its use of linear capabilities and shared pointers is typical of other modern calculi supporting destructive updates.
 
 $L^3$ seems like it may be amenable to mechanical verification with our library because like DILL and Wadler's linear lambda calculus, contexts are split in a purely linear way. Intuitionistic terms are handled by the $\dupl{t}$ and $\drop{t}$ primitives, rather than implicit or explicit contraction and weakening, which means the \c{context_split} predicate could be employed unaltered. However, as noted in the $L^3$ paper \cite{ahmed05}, the operational semantics and typing rules are not set-up for a syntactic proof of soundness. As an example, consider the preservation lemma for the memory allocation primitive $\lnew{v}$. Under the operational semantics the term steps unconditionally: $(\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})$, hence we should have:
+
 \begin{eqnarray*}
 \infer{\Delta; \Gamma \types \qpair{l}{\capa \otimes !(\ptr{l})} : \Exists{\rho} A}{
   \Delta; \Gamma \types \lnew{v} : \Exists{\rho} A  & (\sigma, \lnew{v}) \steps (\sigma \uplus \{l \to v\}, \qpair{l}{\capa \otimes !(\ptr{l})})
@@ -1282,7 +1285,7 @@ An alternative to using Pierce's \c{Case} markers would have been to use Coq's \
 
 \subsection{Avoiding Auto-Generated Variable Names}
 
-Avoiding references to automatically generated names is an important part of creating a readable and maintainable proof. Generated names are subject to change between Coq versions, which renders all pieces of proof script reliant on them in need of upgrading. Furthermore, updating the proof can be difficult if the exact values that the names were referring to have been forgotten, effectively requiring old goals to be solved anew.
+Avoiding references to automatically generated names is an important part of creating a readable and maintainable Coq proof. Generated names are subject to change between Coq versions, potentially rendering all pieces of proof script reliant on them in need of upgrading. Furthermore, updating the proof can be difficult if the exact values that the names were referring to have been forgotten, effectively requiring old goals to be solved anew.
 
 Although there are several straight-forward techniques that can be used to avoid generated names, in practice we didn't manage to avoid them entirely, notably when using dependent induction.
 
@@ -1308,6 +1311,7 @@ Here the fact \c{is_empty E} is named \c{Empty} by \c{intros}, abstracted over, 
 
 A cosmetic variation of the above pattern for introductions could use named function arguments instead of an explicit \c{forall}. This is the approach taken for all inductive constructors, with the aim of generating unique names during inversion. For example, we can declare the \c{is_empty} predicate in two semantically equivalent ways:
 
+\newpage
 \begin{coqcode}
 (* With implicit argument names *)
 Inductive is_empty {A} : env A -> Prop :=
@@ -1327,13 +1331,14 @@ With the second variant, when inverting a fact of the form \c{is_empty E} the fa
 
 Named destructuring allows names to be provided to tactics like \c{induction}, \c{destruct} and \c{inversion} which would otherwise generate names automatically. For simple cases like induction on natural numbers and lists, we found it to be highly effective, e.g. \c{induction n as [|n']}. However, destructuring large chains of existentials, conjunctions and disjunctions in this manner quickly becomes unwieldy.
 
-For example, our proof of soundness for the linear lambda calculus contains a line: \c{destruct AppPreSplit as [E1' [E2' [? [? [? [? ?]]]]]]}. This is to the detriment of both readability and maintainability, in particular because changes to the lemma that forms \c{AppPreSplit} would require digging into several layers of brackets to ensure the names are correct and that the chain of conjunctions is fully decomposed. This is an area where the library falls short of the evaluation criteria. Further work could seek to eliminate maintenance burdens such as these, possibly using Arthur Charguéraud's improved tactics library, \c{LibTactics} \cite{tlc15}.
+For example, our proof of soundness for PLLC contains a line: \c{destruct AppPreSplit as [E1' [E2' [? [? [? [? ?]]]]]]}. This is to the detriment of both readability and maintainability, in particular because changes to the lemma that creates \c{AppPreSplit} would require digging into several layers of brackets to ensure the names are correct and that the chain of conjunctions is fully decomposed. This is an area where the library falls short of the evaluation criteria. Further work could seek to eliminate maintenance burdens such as these, possibly using Arthur Charguéraud's improved tactics library, \c{LibTactics} \cite{tlc15}.
 
 \subsubsection{Dependent Induction}
 
 Dependent induction is used at one point in the proof of soundness for PLLC, as discussed in \cref{sec:subst}. Unlike the regular induction tactic, Coq's dependent induction tactic doesn't provide a way to explicitly name the variables introduced by the inversion -- there is no \c{dependent induction x as [..]}. In our proof, we fall back on using the auto-generated names, which is less than ideal. We experienced the fragility of this approach when refactoring, which demonstrates the utility of our other work to avoid generated names.
 
 \subsection{Automation and Repetition}
+\label{sec:automation}
 
 We found that repeated sections of proof script could be de-duplicated in one of two ways: either by writing a lemma to encapsulate the common truth, or by using Coq's tactic language (Ltac) to repeat the same steps of reasoning. Of these, we found writing a lemma to be preferable as we found Ltac code more difficult to debug. In this section we discuss the efficacy of the automation employed by our proofs, and suggest possible improvements.
 
@@ -1350,25 +1355,17 @@ That said, the number of rewrites in our proof-of-concept is exacerbated by our 
 
 As well as \c{auto}, Coq also includes an \c{autorewrite} tactic for repeatedly rewriting using a collection of rewrite rules. Use of this tactic could be investigated as an alternative to making definitions transparent, although it wouldn't solve the problem of automatically simplifying hypotheses, which we get for free with transparent definitions and the simplify-everywhere tactic, \c{simpl in *}.
 
-Although automating proofs extensively reduces proof-effort and therefore makes larger developments feasible \cite{cpdt}, it is not without downsides. We found debugging Ltac code quite difficult and labour-intensive. For example, Ltac's semicolon operator which makes it possible to ``pipe" the results of tactics into each other, simultaneously makes debugging the middle of a pipeline difficult. The debugging mode for Ltac (\c{Set Ltac Debug}) doesn't show intermediate results in semicolon pipelines and also isn't available in CoqIDE (or Vim). This leaves one with no option but to break the pipeline apart into individual tactic applications. If a tactic is failing in only a few branches this also requires the temporary use of the \c{admit} tactic to navigate to the failing cases. Once the error is found and fixed, one then has to glue the tactics back together. This debugging experience is unarguably less than ideal, and is an inevitable consequence of automating heavily using current tools. Our proof walks the line between difficult-to-debug Ltac code and repetitive manual proof, erring slightly on the side of manual proof. Further work could develop improved debugging facilities for Coq tactics, possibly using a graphical interface to convey the branching into different cases.
+Although automating proofs extensively reduces proof-effort and therefore makes larger developments feasible \cite{cpdt}, it is not without downsides. We found debugging Ltac code quite difficult and labour-intensive. For example, Ltac's semicolon operator which makes it possible to ``pipe" the results of tactics into each other, simultaneously makes debugging the middle of a pipeline difficult. The debugging mode for Ltac (\c{Set Ltac Debug}) doesn't show intermediate results in semicolon pipelines and also isn't available in CoqIDE or Vim. This leaves one with no option but to break the pipeline apart into individual tactic applications. If a tactic is failing in only a few branches this also requires the temporary use of the \c{admit} tactic to navigate to the failing cases. Once the error is found and fixed, one then has to glue the tactics back together. This debugging experience is unarguably less than ideal, and is an inevitable consequence of automating heavily using current tools. Our proof walks the line between difficult-to-debug Ltac code and repetitive manual proof, erring slightly on the side of manual proof. Further work could develop improved debugging facilities for Coq tactics, possibly using a graphical interface to convey the branching into different cases.
 
-% Auto-rewrite, pattern-matching Ltac, etc.
+\section{Summary of Evaluation}
 
-% Debugging semi-colons.
+In summary, the library partially satisfies our evaluation criteria for quality of concept and implementation. Conceptually, the library is a success in that it aided us in the formalisation of PLLC. However, PLLC is extremely simple, and consideration of more complex languages like $L^3$ and \SSPHS reveals that the library isn't general enough to be useful in the formalisation of extensions to the linear lambda calculus involving strong destructive updates. That said, we have argued that it is general enough to be of use in a proof of soundness for DILL, and there may be ways to construct compatible new languages with the same features as $L^3$. Further, it may be possible that reasoning about context splitting as we have defined it could be used in a non-syntactic proof of soundness, possibly following the semantic interpretation of types for $L^3$.
+
+From an implementation perspective, the library and proof-of-concept are rather satisfactory. As discussed above, the fragility of automatic variable naming was avoided in all but one case involving the use of dependent induction. Readability of the proofs was simplest to achieve, through case markers and indentation, although the result may still not satisfy Chlipala. More automation and the use of third-party convenience tactics are two areas identified as areas of slight deficiency. It's possible that with these improvements the development would also have been less time consuming.
 
 %\section{Time Efficiency}
 
 %The library and proof-of-concept were both very time consuming to create. We attribute this both to inexperience with Coq's best practices and the fact that DbLib's environment type is ill-suited for proofs about context splitting. The first point, of inexperience, can only be mitigated by practice and study, which have both been provided by this project. The second deserves a more thorough discussion.
-
-%In our previous discussion about representing typing contexts, we saw the myriad.
-
-% Inexperience, not the best abstraction, DbLib's environment ill-suited to proofs about linear languages due to odd insert behaviour, etc.
-
-% Very time consuming to create. Partly due to the DbLib list env not being well-suited to linearity.
-% Definitions are not trivial to write proofs about,
-
-% TODO.
-%\section{Summary of Evaluation}
 
 \chapter{Conclusion}
 
@@ -1382,7 +1379,7 @@ Pottier's DbLib library for reasoning about de Bruijn indices was found to be hi
 
 In a broad sense, the literature on substructural typing has reached a point of maturity where the creation of practical tools is becoming feasible. The next generation of operating systems, device drivers and language run-times can hopefully be built on the foundation of formal verification. Projects like Adam Chlipala's Bedrock \cite{chlipala11} and Cyclone \cite{grossman05} are already a move in this direction. Further work could build a compiler for a substructural language based on Pottier's \SSPHS \cite{pottier13}, with accompanying verification tools. Cross-over with the impressive world of C verification also seems like it would be productive.
 
-Finally, Rust represents an opportunity for substructural typing to break into the mainstream. Although its semantics are yet to be formally specified, the foundations of Cyclone and the other systems surveyed could possibly be adapted for this purpose.
+Further, Mozilla's Rust programming language represents an opportunity for substructural typing to break into the mainstream. Although its semantics are yet to be formally specified, the foundations of Cyclone and the other systems surveyed could possibly be adapted for this purpose. Considering this alongside the possibility of verification tools built on linear dependent types as described in the work of McBride \cite{mcbride16}, these are surely exciting times for substructural type systems.
 
 %% chapters in the ``backmatter'' section do not have chapter numbering
 %% text in the ``backmatter'' is single spaced
@@ -1433,7 +1430,7 @@ Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a 
 \section{PLLC Typing Rules in Coq}
 \label{app:pllc-typing-rules}
 
-Typing rules determine which terms are considered well-formed. We define an inductive predicate \c{has_type : (env ty) -> term -> ty -> Prop} so that \c{has_type E e t} is inhabited if the environment $E$ determines $e : t$. In standard mathematical notation this is $E \types e : t$, which we mirror using the Coq notation \c{E |- e ~: t}.
+Typing rules determine which terms are considered well-formed. We define an inductive predicate \c{has_type : (env ty) -> term -> ty -> Prop} so that \c{has_type E e t} is inhabited if the environment $E$ determines $e : t$. In standard mathematical notation this is $E \types e : t$, which we mirror using the Coq notation \c{E |- e \textasciitilde: t}.
 
 \begin{coqcode}
 Reserved Notation "E '|-' e '~:' t" (at level 40).
@@ -1462,14 +1459,14 @@ where "E '|-' e '~:' t" := (has_type E e t).
 
 Here we see the definitions for emptiness and context splitting coming into play. In linear lambda calculus variables must be used exactly once, so a single variable \c{x} is well-typed only under an environment containing a type for \c{x} and nothing else, as captured by the \c{HasTyVar} rule. Similarly, primitive values must be typed under environments containing no free variables.
 
-A lambda abstraction $(\lambda \hat{0} : \tau. \; e)$ is well-typed if the body can be typed under an environment extended by the type for its binder, $(0 : \tau)$. This is the only rule that requires the \i{input} context (\c{insert 0 t1 E}) to differ in length to the \i{output} context (\c{E}).
+A lambda abstraction $(\lambda \hat{0} : \tau. \; e)$ is well-typed if the body can be typed under an environment extended by the type for its binder, $(\hat{0} : \tau)$. This is the only rule that requires the \i{input} context (\c{insert 0 t1 E}) to differ in length to the \i{output} context (\c{E}).
 
 Function applications make use of the \c{context_split} operation to ensure that the variables used to type an application $(e_1 e_2)$ are split between $e_1$ and $e_2$ without duplication. The rule also ensures that the type of the application (\c{t2}) is consistent with the type of the function being applied (\c{t1 -> t2}) and the type of the argument (\c{t1}).
 
 \section{PLLC Operational Semantics in Coq}
 \label{app:pllc-op-sems}
 
-For the semantics of our language we use a call-by-value small step semantics. We represent the semantic rules in Coq as an inductive relation \c{step : term -> term -> Prop} so that if \c{step e e'} is true, \c{e'} is the result of partially evaluating \c{e}.
+The following inductive definition encodes $e \steps e'$ as \c{step e e'}.
 
 \begin{coqcode}
 Inductive step : term -> term -> Prop :=
@@ -1486,11 +1483,11 @@ Inductive step : term -> term -> Prop :=
       step (TApp v1 e2) (TApp v1 e2').
 \end{coqcode}
 
-The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. It states that function application is equivalent to the substitution of the argument value for the bound variable in the body of the function. For substitution, note the use of DbLib's \c{subst} function. In mathematical notation the rule is: $(\lambda 0 : \tau. e) \; v \rightarrow e[v/0]$.
+The first rule, \c{StepAppAbs} is the familiar $\beta$-rule for evaluating the application of an abstraction to a value. It states that function application is equivalent to the substitution of the argument value for the bound variable in the body of the function. For substitution, note the use of DbLib's \c{subst} function.
 
-We are using a \i{call-by-value} evaluation strategy, which means that only the outer-most reducible expressions (\i{redexes}) are reduced, and only when their argument is a value \cite{tapl}. Note that as a result there is no rule for stepping a $\lambda$-abstraction when its body is capable of stepping, as in: $e \rightarrow e' \implies (\lambda 0 : \tau. \, e) \rightarrow (\lambda 0 : \tau. \, e')$.
+We are using a \i{call-by-value} evaluation strategy, which means that only the outer-most reducible expressions (\i{redexes}) are reduced, and only when their argument is a value \cite{tapl}. Note that as a result there is no rule for stepping a $\lambda$-abstraction when its body is capable of stepping, as in: $e \steps e' \longrightarrow (\lambda \hat{0} : \tau. \, e) \steps (\lambda \hat{0} : \tau. \, e')$.
 
-The two rules for stepping an application $(e_1 \; e_2)$ ensure that $e_1$ is fully evaluated before evaluating $e_2$. This is captured by the \c{value v1} argument to \c{StepApp2}.
+\newpage
 
 \section{Complete Source Code}
 \label{sec:src}
