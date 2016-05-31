@@ -715,13 +715,11 @@ However, EFMT depends on Chargu\'{e}raud's TLC library for \i{non-constructive} 
 
 \section{Summary of Mechanisation Techniques}
 
-The following table contains a summary of languages and type systems and their mechanisations. A tick (\tick) indicates that a property is true for a given language, a cross (\cross) indicates that it is false and a dash (-) indicates that the property is not applicable. Note that we also write ``Clean" here to mean Edsko de Vries' uniqueness typing system \cite{deVries07}.
+The following table (Figure \ref{mech-summ}) contains a summary of languages and type systems and their mechanisations. A tick (\tick) indicates that a property is true for a given language, a cross (\cross) indicates that it is false and a dash (-) indicates that the property is not applicable. Note that we also write ``Clean" here to mean Edsko de Vries' uniqueness typing system \cite{deVries07}.
 
-\newpage
-
-% \vspace{10mm}
-
-\begin{figure}[H]
+\begin{figure}[h]
+\caption{Summary of Mechanisation Techniques}
+\label{mech-summ}
 \begin{tabular}{|l|l|l|l|l|l|l|l|}
 \hline
 \textbf{System} & \textbf{DU} & \textbf{SU} & \textbf{Cp} & \textbf{Poly} & \textbf{Other} & \textbf{Mechanised?} & \textbf{Naming}\\
@@ -743,6 +741,8 @@ Mezzo \cite{mezzo14} &  \tick & \tick & \tick & \tick & Data-race free & \tick (
 Key: DU=Destructive Updates, SU=Strong Updates, Cp=Capabilities, Poly=Polymorphism, LN=Locally Nameless, DB=De Bruijn Indices, HOAS=Higher-order Abstract Syntax.
 \end{flushleft}
 \end{figure}
+
+\newpage
 
 \section{Summary of Previous Work}
 
