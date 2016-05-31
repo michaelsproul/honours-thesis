@@ -174,13 +174,13 @@ Computer systems form an integral part of modern society, both in the form of pe
 
 The C Programming Language, in which large amounts of low-level \i{systems software} is written, is an example of a language that is difficult to reason about because of its murky semantics. According to the language specification the results of some operations are classified as \i{undefined behaviour}, meaning that the compiler has no obligation to produce a specific result \cite{isoc}. Ideally, we would like to rule out undefined behaviour at compile time through the use of a type system. In this thesis we focus on the formal semantics of languages with strong type systems that are more well-suited to low-level software verification than C.
 
-In particular, we are interested in \i{resource-aware} languages which exploit \i{substructural} type systems based on linear logic \cite{girard87} to track how values are consumed and destroyed. Intuitively, a \i{linear} value is one that is guaranteed to be used exactly once. In the context of systems software, we can use variants of linearity to enable destructive updates of uniquely reference values, or automatic memory management without garbage collection.
+In particular, we are interested in \i{resource-aware} languages which exploit \i{substructural} type systems based on linear logic \cite{girard87} to track how values are consumed and destroyed. Intuitively, a \i{linear} value is one that is guaranteed to be used exactly once. In the context of systems software, we can use variants of linearity to enable destructive updates for uniquely reference values, or automatic memory management without garbage collection.
 
-We begin by discussing the Linear Lambda Calculus (LLC), which is a simple extension of $\lambda$-calculus with a linear type system. We then go on to describe more expressive languages which include features like shared pointers and destructive updates.
+We begin by discussing the linear lambda calculus (LLC), which is a simple extension of $\lambda$-calculus with a linear type system. We then go on to describe more expressive languages which include features like shared pointers and destructive updates.
 
 The \b{main contribution} of this thesis is a software library for the interactive theorem prover Coq. The library includes definitions and lemmas primarily about \i{context splitting}, which is a technique used in many substructural type systems. Our code is an extension of \Francois Pottier's DbLib library which aims to de-duplicate the effort required to reason about variable binding, just as we hope to de-duplicate the effort required to reason about linear typing.
 
-As a proof-of-concept for our approach we have undertaken a proof of \i{type soundness} for a Linear Lambda Calculus (LLC). Type soundness is a key result in establishing the sensibility of a language and we argue that our approach is also applicable to soundness proofs for more complex languages with the same foundations. Specifically, we argue that a proof of soundness for \i{The Linear Language with Locations} ($L^3$) might make effective use of our library, and that $L^3$ is representative of languages that build upon the Linear Lambda Calculus by adding destructive updates and shared pointers.
+As a proof-of-concept for our approach we have undertaken a proof of \i{type soundness} for a linear lambda calculus. Type soundness is a key result in establishing the sensibility of a language and we argue that our approach is also applicable to soundness proofs for more complex languages with the same foundations. Specifically, we argue that a proof of soundness for \i{The Linear Language with Locations} ($L^3$) might make effective use of our library, and that $L^3$ is representative of languages that build upon the linear lambda calculus by adding destructive updates and shared pointers.
 
 % Background.
 \chapter{Background}
@@ -193,7 +193,7 @@ Recall that the Curry-Howard correspondence establishes an equivalence between l
 
 \section{Beyond C}
 
-Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Despite this, a large body of work has developed around semantics for C and the verification of low-level software that such work enables. Michael Norrish's contribution of a structural operational semantics for C \cite{norrish98} is notable in that it laid the foundations for C verification projects like the seL4 micro-kernel \cite{klein14}. The seL4 kernel is written in C and is accompanied by proofs of correctness about its security, including crash-freedom and the absence of memory safety violations. The kernel makes use of the AutoCorres tool for translating C code into a higher-level monadic language embedded in the Isabelle/HOL theorem prover \cite{greenaway14}. AutoCorres generates proofs that the translation is a sound with respect to the semantics of the source C program.
+Historically, low-level \textit{systems software} has been written primarily in the C programming language, which was originally designed without a formal semantics. Despite this, a large body of work has developed around semantics for C and the verification of low-level software that such work enables. Michael Norrish's contribution of a structural operational semantics for C \cite{norrish98} is notable in that it laid the foundations for C verification projects like the seL4 micro-kernel \cite{klein14}. The seL4 kernel is written in C and is accompanied by proofs of correctness about its security, including crash-freedom and the absence of memory safety violations. The kernel makes use of the AutoCorres tool for translating C code into a higher-level monadic language embedded in the Isabelle/HOL theorem prover \cite{greenaway14}. AutoCorres generates proofs that the translation is sound with respect to the semantics of the source C program.
 Another notable C verification project is the CompCert verified compiler by Xavier Leroy \cite{leroy09}, which is capable of compiling and optimising C code to assembly whilst preserving its semantics. However, CompCert does not guarantee the absence of undefined behaviour in compiled programs, and can only detect undefined behaviour in code that doesn't perform I/O, by dynamically interpreting it.
 
 In this thesis we are concerned with the formal foundations for a possible successor to C. Whether or not this approach will result in simpler and less labour-intensive software verification is an open question. However, we hope that by starting afresh, and using types to enforce useful invariants, a new language for low-level software verification can emerge.
@@ -202,7 +202,7 @@ In this thesis we are concerned with the formal foundations for a possible succe
 
 Linear, affine and uniqueness typing are closely-related features of type systems that enforce rules about the number of times values may be used and referenced. These restrictions are motivated by several desirable properties that can be obtained by enforcing them. The Clean programming language (introduced in \cite{clean87}) uses uniqueness typing to ensure that values in memory have at most one reference to them, thus enabling \i{destructive updates} whilst preserving referential transparency. The Rust programming language \cite{rustWeb} uses uniqueness typing to track and free heap-allocated memory, thus allowing it to achieve memory safety without garbage collection. This makes it suitable for writing systems software where a garbage collector isn't available, like a garbage collector itself, or an operating system.
 
-At their core, all of these systems enforce their constraints using typing rules derived from linear logic \cite{girard87}. To get a feel for linear logic, we first turn our attention to the Linear Lambda Calculus. We then continue by discussing more complex languages and the techniques used in their mechanical formalisation.
+At their core, all of these systems enforce their constraints using typing rules derived from linear logic \cite{girard87}. To get a feel for linear logic, we first turn our attention to the linear lambda calculus. We then continue by discussing more complex languages and the techniques used in their mechanical formalisation.
 
 \section{The Linear Lambda Calculus}
 
@@ -236,7 +236,7 @@ To define which typing judgements are well-formed, we use inference rules in the
 % Types are assigned to terms relative to \i{two} typing environments, rather than just one as is typical for the simply typed lambda calculus. The use of two contexts is the origin of the name \b{Dual} Intuitionistic Linear Logic, and the intent
 
 \begin{figure}[h]
-\caption{Typing Rules for DILL Linear Lambda Calculus}
+\caption{Typing Rules for DILL linear lambda calculus}
 \begin{displaymath}
 \arraycolsep=1.4pt\def\arraystretch{2.2}
 \begin{array}{cc}
@@ -276,7 +276,7 @@ The product type $A \otimes B$ represents a pair of values and is inhabited by t
 
 The elimination rule for products ($\otimes$-E) also makes use of context splitting to ensure linearity. The rule states that if we have a term $u : A \otimes B$ and a term $t : C$ that is well-typed with free variables $x : A$ and $y : B$, then the expression that makes the components of $u$ available as $x$ and $y$ in $t$ also has type $C$. DILL uses the notation \b{let $x \otimes y : A \otimes B$ be $u$ in $t$} for this expression, which is equivalent to \c{let (x, y) = u in t} in Haskell syntax. The intuitionistic context $\Gamma$ from the \b{let} expression is available to both premises, whilst the linear context $(\Delta_1, \Delta_2)$ is split so that some variables are used to type $u$ ($\Delta_1$), and others are used to type $t$ in combination with the components of $u$ ($\Delta_2, x : A, y : B$).
 
-The \i{lollipop} type, $A \lolly B$, is the type of functions that consume a linear value of type $A$ and produce a value of type $B$. As we shall see shortly, regular functions $A \to B$ that don't consume their input can be encoded as $!A \lolly B$. Introducing a new value of lollipop type is done by writing a $\lambda$-abstraction, $(\lambda x : A. \; t)$ which is well-typed only if its body $t$ is well-typed under a linear environment extended with the type of the binder: $\Delta, x : A$. This rule, ($\lolly$-I) is identical to the rule for typing $\lambda$-abstractions in the Simply-Typed Lambda Calculus (STLC) except for the fact that it places the binder in the linear context.
+The \i{lollipop} type, $A \lolly B$, is the type of functions that consume a linear value of type $A$ and produce a value of type $B$. As we shall see shortly, regular functions $A \to B$ that don't destructively consume their input can be encoded as $!A \lolly B$. Introducing a new value of lollipop type is done by writing a $\lambda$-abstraction, $(\lambda x : A. \; t)$, which is well-typed only if its body $t$ is well-typed under a linear environment extended with the type of the binder: $\Delta, x : A$. This rule, ($\lolly$-I) is identical to the rule for typing $\lambda$-abstractions in the Simply-Typed Lambda Calculus (STLC) except for the fact that it places the binder in a linear context.
 
 The elimination rule for lollipop types ($\lolly$-E) uses a function application $(u \; t)$, where $u : A \lolly B$ and $t : A$. The context splitting is identical to the context splitting in the ($\otimes$-I) rule, with the linear context for $(u \; t)$ splitting into two sub-contexts for each of the sub-expressions $u$ and $t$.
 
@@ -308,7 +308,7 @@ Alternatively, it's possible for a term $u$ to have type $!A$ without an applica
 
 Note how we rely on (Lin-Var), rather than the bang introduction rule (!-I), to form the judgement $\emptyset; x : {!A} \types x : {!A}$. We also see the bang elimination rule in action here, adding the new name $y$ for $x$ into the intuitionistic context for ${!y} \otimes {!y}$.
 
-In the Simply-Typed Lambda Calculus, an equivalent duplication function would have type $A \to (A \otimes A)$. In fact, it is possible to embed all intuitionistic (STLC) terms and types in linear logic using reasoning similar to the above \cite{barber96}. Intuitionistic types $A$ can be translated to duplicable bang types ${!A}$, and functions $A \to B$ can similarly be translated to ${!A} \lolly B$.
+In the Simply-Typed Lambda Calculus, an equivalent duplication function would have type $A \to (A \otimes A)$. In fact, it is possible to embed all intuitionistic (STLC) terms and types in linear logic using reasoning similar to the above \cite{barber96}. Intuitionistic types $A$ can be translated to duplicable bang types ${!A}$, and functions $A \to B$ can be translated to ${!A} \lolly B$.
 
 \subsection{Structural Rules}
 
@@ -341,13 +341,13 @@ Contraction makes use of substitutions ($u[x/y, x/z]$) to form terms with two oc
 
 In DILL the contraction and weakening rules for intuitionistic variables are implicit in how the intuitionistic context is managed -- there can be additional intuitionistic assumptions present when typing variables (weakening), and intuitionistic assumptions can be duplicated freely (contraction). In contrast, in Wadler's system all duplication and discarding happens via (Contraction) and (Weakening). With the exception of the structural rules, Wadler's typing contexts behave entirely linearly, and are \b{split} in the same way linear contexts in DILL are split.
 
-If the use of structural rules is restricted, we get a substructural type system. Without Contraction, \i{variables can only appear once in a term}. Without Weakening, \i{all variables in the context must be used in the term}. Banning both contraction and weakening results in a \b{linear} type system where variables must be used exactly once. The systems we've seen so far, DILL and Wadler's LLC, are both linear in that contraction and weakening are banned for the non-intuitionistic terms of the language. Under the Curry-Howard correspondence, linear type systems correspond to linear logic, which was first introduced by Girard \cite{girard87}.
+If the use of structural rules is restricted, we get a substructural type system. Without contraction, \i{variables can only appear once in a term}. Without weakening, \i{all variables in the context must be used in the term}. Banning both contraction and weakening results in a \b{linear} type system where variables must be used exactly once. The systems we've seen so far, DILL and Wadler's LLC, are both linear in that contraction and weakening are banned for the non-intuitionistic terms of the language. Under the Curry-Howard correspondence, linear type systems correspond to linear logic, which was first introduced by Girard \cite{girard87}.
 
 If contraction is restricted but weakening is allowed, the result is an \b{affine} type system, corresponding to an affine logic (Grishin, 1974, Russian; recently \cite{tov11}). Variables in affine type systems can be thrown away but not duplicated, so every variable is used \i{at most once}.
 
 \subsection{Summary of the Linear Lambda Calculus}
 
-In this section we've seen how typing rules can be used to enforce constraints on the use of variables, by examining Dual Intuitionistic Linear Logic. We have seen that intuitionistic terms can be embedded in substructural languages via bang types and the careful management of typing contexts. The importance of \b{context splitting} to divide linear assumptions between sub-terms has also been highlighted. In the next sections we examine more complex calculi that build on the linear lambda calculus to model useful programming language constructs like mutation and destructive updates.
+In this section we've seen how typing rules can be used to enforce constraints on the use of variables, by examining Dual Intuitionistic Linear Logic. We have seen that intuitionistic terms can be embedded in substructural languages via bang types and the careful management of typing contexts. The importance of \b{context splitting} to divide linear assumptions between sub-terms has also been highlighted. In the next sections we examine more complex calculi that build on the linear lambda calculus to model useful programming constructs like mutation and memory allocation.
 
 \section{Operational Semantics and Type Soundness}
 \label{sec:op-sems-soundness}
@@ -358,10 +358,10 @@ To define the small-step semantics of a language, we inductively define a relati
 
 The $\beta$-rule of the $\lambda$-calculus can be stated for DILL as:
 \begin{eqnarray*}
-\infer[\beta]{(\lambda x : A. \; t) \; v \steps t[v/x]}{}
+\infer[(\beta)]{(\lambda x : A. \; t) \; v \steps t[v/x]}{}
 \end{eqnarray*}
 
-Here we use the variable $v$ to indicate a \i{value} of the language. Values are terms that are fully evaluated according to the small-step semantics of the language \cite{tapl} -- formally, they are terms that are in normal form with respect to the stepping relation $(\steps)$. By specifying that $\beta$-reduction can only occur if the argument is a value we have fixed the reduction strategy to call-by-value. Other reduction strategies can be similarly encoded, but we consider only call-by-value here, as that's most popular in the literature surveyed.
+Here we use the variable $v$ to indicate a \i{value} of the language. Values are terms that are fully evaluated according to the small-step semantics \cite{tapl} -- formally, they are terms that are in normal form with respect to the stepping relation $(\steps)$. By specifying that $\beta$-reduction can only occur if the argument is a value we have fixed the reduction strategy to call-by-value. Other reduction strategies can be similarly encoded, but we consider only call-by-value here, as it's simple and well-suited to low-level programming, as evidenced by the literate surveyed.
 
 Type systems for programming languages are said to be \i{sound} if well-typed programs are guaranteed not to get stuck when evaluated according to the language's operational semantics. Stated formally, the soundness lemma is:
 
@@ -375,7 +375,7 @@ The notation $(\steps^*)$ represents zero or more applications of $(\steps)$. Ou
 
 Soundness can be proved via two supporting lemmas called \i{progress} and \i{preservation}, using an approach introduced by Wright and Felleisen \cite{wright94}.
 
-The progress property holds if all well-typed terms are either values, or can take a step.
+The progress property holds if all well-typed closed terms are either values, or can take a step.
 \begin{eqnarray*}
 \infer[\t{(Progress)}]
 {(\exists e'. \; e \steps e') \lor \t{$e$ is a value}}
@@ -393,7 +393,7 @@ Our proof-of-concept Coq formalisation of a linear lambda calculus makes use of 
 
 \section{The Linear Language with Locations, $L^3$}
 
-We now turn our attention to \i{The Linear Language with Locations}, $L^3$ \cite{ahmed05}, which extends the linear lambda calculus with strong destructive updates and explicit memory management. In a language with references or pointers, a destructive update is a re-assignment of a value pointed to by a pointer. A \i{strong} destructive update is one that may also change the \i{type} of the value pointed to by the pointer. Destructive updates are a common feature of imperative languages, and their addition to the linear lambda calculus brings us a step closer to a sound and usable programming language for low-level programming. $L^3$ itself is not such a language, but could serve as a foundation for a language with more features (e.g. polymorphism). Its designers created it as a foundational calculus for strong updates, which can be used to model CPU registers.
+We now turn our attention to \i{The Linear Language with Locations}, $L^3$ \cite{ahmed05}, which extends the linear lambda calculus with strong destructive updates and explicit memory management. In a language with references or pointers, a destructive update is a re-assignment of a value pointed to by a pointer. A \i{strong} destructive update is one that may also change the \i{type} of the value pointed to by the pointer. Destructive updates are a common feature of imperative languages, and their addition to the linear lambda calculus brings us a step closer to a sound and usable programming language for low-level programming. $L^3$ itself is not such a language, but could serve as a foundation for a language with more features (e.g. polymorphism). Its designers created it as a foundational calculus for strong updates, which can be used to model type-varying CPU registers.
 
 % due to registers almost always containing values of different types throughout a program's execution.
 
@@ -420,11 +420,11 @@ v & ::= & * \sor v_1 \otimes v_2 \sor x \sor \lam{x} t \sor {!v} \sor \ptr{l} \s
 \end{eqnarray*}
 \end{figure}
 
-Many of the terms and types have the same meaning as in DILL. Functions, variables, products and the unit value are all the same. $L^3$'s description also includes small-step operational semantics, for which the set of values denoted by meta-variable $v$ are normal forms.
+Many of the terms and types have the same meaning as in DILL. Functions, variables, products and the unit value are all the same. $L^3$'s complete specification also includes small-step operational semantics, for which the set of values denoted by meta-variable $v$ are normal forms.
 
 The main addition is the set of primitives for allocating and managing memory: $\lnew{t}$, $\lfree{t}$ and $\lswap{t}{u}$. Each piece of memory allocated is at a constant location $l$, drawn from a set of location constants \b{LocConsts} which can be considered memory addresses. The precise locations are hidden from the programmer by existential types $\Exists{\rho} A$, for location variables $\rho \in \b{LocVars}$.
 
-$L^3$ is typical of other modern calculi in that it separates resources like pointers from \i{capabilities} to use those resources. A pointer value $\ptr{l} : \Ptr{l}$ is unusable without a capability to read from and write to it: $\capa{l} : \Capa{l}{A}$. Capabilities are linear values, whilst pointers are duplicable. To see how this is enforced, and the destructive updates that it enables, we now considering the typing rules for $L^3$, as in Figures \ref{l3_typing_part1} and \ref{l3_typing_part2}.
+$L^3$ is typical of other modern calculi in that it separates resources like pointers from \i{capabilities} to use resources. A pointer value $\ptr{l} : \Ptr{l}$ is unusable without a capability to read from and write to it: $\capa{l} : \Capa{l}{A}$. Capabilities are linear values, whilst pointers are duplicable. To see how this is enforced, and the destructive updates that it enables, we now considering the typing rules for $L^3$, as in Figures \ref{l3_typing_part1} and \ref{l3_typing_part2}.
 
 \clearpage
 
@@ -513,7 +513,7 @@ $L^3$ is typical of other modern calculi in that it separates resources like poi
 \end{displaymath}
 \end{figure}
 
-$L^3$'s typing judgements include two contexts, one for locations ($\Delta$) and another for types ($\Gamma$), as in $\Delta; \Gamma \types t : A$. All variables and their types are stored in one typing context, which makes $L^3$ more similar to Wadler's LLC than DILL -- despite the syntactic similarity. The location context $\Delta$ is a sequence of location variables that are currently in scope, like variables in a typing context without the type information: $\Delta ::= \emptyset \sor \Delta, \rho$.
+$L^3$'s typing judgements include two contexts, one for locations ($\Delta$) and another for types ($\Gamma$), as in $\Delta; \Gamma \types t : A$. All variables and their types are stored in one typing context, which makes $L^3$ more similar to Wadler's LLC than DILL, despite the syntactic similarity. The location context $\Delta$ is a sequence of location variables that are currently in scope, like variables in a typing context without the type information: $\Delta ::= \emptyset \sor \Delta, \rho$.
 
 As in DILL, \b{context splitting} is used extensively to ensure that each variable appears exactly once in a term. The typing rules for unit types, product types ($\otimes$) and functions ($\lolly$) are almost identical to the rules for their counterparts in Wadler's LLC, and DILL, modulo the different number of contexts.
 
