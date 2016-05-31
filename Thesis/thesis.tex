@@ -78,14 +78,6 @@
 
 %% Thesis details
 
-% TODO: Choose a title...
-% Re-usable lemmas for the formalisation of linearly-typed languages
-% A library-based approach to context splitting
-% Towards a framework for the mechanised verification of substructural type systems
-% A library based approach to the verification of linear type systems
-% Code: library, lemmas, definitions, engineering.
-% Effective verification of linear types in Coq.
-% Proof engineering for formalisations of languages with linear types
 \thesistitle{A Library Based Approach to the Verification of Languages with Linear Types}
 \thesisschool{School of Computer Science and Engineering}
 \thesisauthor{Michael Alexander Sproul}
@@ -931,15 +923,13 @@ The only binders in our linear lambda calculus are lambda abstractions, so our i
 \begin{coqcode}
 Fixpoint traverse_term (f : nat -> nat -> term) l t :=
   match t with
-  | TUnit => TUnit
-  | TTrue => TTrue
-  | TFalse => TFalse
   | TVar x =>
       f l x
   | TAbs t e =>
       TAbs t (traverse_term f (1 + l) e)
   | TApp e1 e2 =>
       TApp (traverse_term f l e1) (traverse_term f l e2)
+  | _ => t
   end.
 \end{coqcode}
 
@@ -975,7 +965,7 @@ Inductive is_empty {A} : env A -> Prop :=
 
 The necessity of a predicate for emptiness arises from several uses of \i{inductive loading} in proofs of lemmas related to substitution and type preservation. Using \c{nil} environments proved to be too limiting, and there are several cases in the proof where an induction generates an empty environment like \c{raw_insert x None nil}, and has to apply an inductive hypothesis about empty contexts to it.
 
-In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Examples of lemmas about emptiness are shown below, the full set can be found in the file \c{Empty.v} in the accompanying source. % FIXME, file name.
+In order to be useful in the verification of languages, lemmas about the properties of the \c{is_empty} predicate and its interaction with other parts of the system are required. Of these lemmas, the ones involving interaction with DbLib were slightly more difficult to prove than those about simple Coq constructs. Examples of lemmas about emptiness are shown below, the full set can be found in the file \c{Linear/Empty.v} in the accompanying source code (\cref{sec:src}).
 
 \begin{coqcode}
 Lemma empty_repeat : forall A (E : env A),
@@ -1107,7 +1097,7 @@ In his proofs about uniqueness typing Edsko de Vries \cite{deVries07, deVriesPhD
 
 \textbf{Rotation} The proof of preservation requires a lemma of the form: $E = E_0 \circ (E_1 \circ E_2) \Rightarrow E = E_1 \circ (E_0 \circ E_2)$, which is provable using the other lemmas above.
 
-\textbf{Emptiness} Lemmas about empty contexts as the identity element for context splitting are provable using a few lines of proof script. For details, see \c{Context.v}. % FIXME: name.
+\textbf{Emptiness} Lemmas about empty contexts as the identity element for context splitting are provable using a few lines of proof script. For details, see \c{Linear/Context.v} in the accompanying source code (\cref{sec:src}).
 
 \subsection{Lemmas Required for Soundness}
 
@@ -1402,19 +1392,19 @@ To define the terms of PPLC we must first define the set of types. The reason fo
 \begin{coqcode}
 Inductive ty : Set :=
   | TyUnit
-  | TyFun : ty -> ty -> ty
-  | TyBool.
+  | TyPrim : String.string -> ty
+  | TyFun : ty -> ty -> ty.
 \end{coqcode}
 
-Now, with LLC's types defined, we can define the set of terms:
+Now, with PLLC's types defined, we can define the set of terms:
 
-% FIXME: Update all this syntax.
 \begin{coqcode}
 Inductive term : Set :=
-    | TUnit | TTrue | TFalse
-    | TVar : nat -> term
-    | TAbs : ty -> term -> term
-    | TApp : term -> term -> term.
+  | TUnit
+  | TPrim : String.string -> term
+  | TVar : nat -> term
+  | TAbs : ty -> term -> term
+  | TApp : term -> term -> term.
 \end{coqcode}
 
 Variables are represented by the \c{TVar} constructor which takes a de Bruijn index representing the variable and constructs a \c{term}. Later when defining the typing judgement we will see that a variable \c{TVar i} is well-typed only if the typing context contains a type at index $i$.
@@ -1423,11 +1413,10 @@ In order to state the progress and preservation lemmas, Coq also needs an idea o
 
 \begin{coqcode}
 Inductive value : term -> Prop :=
-    | VUnit : value TUnit
-    | VVar : forall x, value (TVar x)
-    | VAbs : forall t e, value (TAbs t e)
-    | VTrue : value TTrue
-    | VFalse : value TFalse
+  | VUnit : value TUnit
+  | VPrim : forall s, value (TPrim s)
+  | VVar : forall x, value (TVar x)
+  | VAbs : forall t e, value (TAbs t e).
 \end{coqcode}
 
 Note that the type of \c{value} is \c{term -> Prop}. Given a \c{term}, \c{t}, a Coq term with type \c{value t} \i{witnesses} the truth of the proposition \c{value t}, which itself has type \c{Prop}. This is in contrast to \c{ty} and \c{term} which have type \c{Set}. Types in Prop are intended to represent proof terms, while those in Set are meant to represent data. We use Prop for all predicates to minimise friction with Coq's standard library, which provides definitions for basic logical connectives operating only on \c{Prop}s.
@@ -1442,14 +1431,11 @@ Reserved Notation "E '|-' e '~:' t" (at level 40).
 
 Inductive has_type : (env ty) -> term -> ty -> Prop :=
   | HasTyUnit E
-      (UnitEmpty : is_empty E) :
+      (UnitPre : is_empty E) :
       E |- TUnit ~: TyUnit
-  | HasTyTrue E
-      (TrueEmpty : is_empty E) :
-      E |- TTrue ~: TyBool
-  | HasTyFalse E
-      (FalseEmpty : is_empty E) :
-      E |- TFalse ~: TyBool
+  | HasTyPrim E s t
+      (PrimPre : is_empty E) :
+      E |- TPrim s ~: TyPrim t
   | HasTyVar E x t
       (VarPre : is_empty E) :
       insert x t E |- TVar x ~: t
@@ -1500,6 +1486,13 @@ The two rules for stepping an application $(e_1 \; e_2)$ ensure that $e_1$ is fu
 \section{Complete Source Code}
 \label{sec:src}
 
-DbLib version (git commit hash): blah
+The complete source code for both the library and the proof of soundness for PLLC is available on GitHub.
+
+\url{https://github.com/michaelsproul/dblib-linear}
+
+The commit-hash for the master branch at the time of writing is:
+
+% FIXME: update this at the very last minute.
+\c{712c4f5c0a3f83f55054789829f3f824771fc1c4}
 
 \end{document}
