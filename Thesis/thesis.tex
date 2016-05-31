@@ -428,56 +428,98 @@ v & ::= & * \sor v_1 \otimes v_2 \sor x \sor \lam{x} t \sor {!v} \sor \ptr{l} \s
 \end{eqnarray*}
 \end{figure}
 
-\begin{figure}[h]
-\caption{Typing Rules for The Linear Language with Locations}
-\label{l3_typing}
+Many of the terms and types have the same meaning as in DILL. Functions, variables, products and the unit value are all the same. $L^3$'s description also includes small-step operational semantics, for which the set of values denoted by meta-variable $v$ are normal forms.
+
+The main addition is the set of primitives for allocating and managing memory: $\lnew{t}$, $\lfree{t}$ and $\lswap{t_1}{t_2}{t_3}$. Each piece of memory allocated is at a constant location $l$, drawn from a set of location constants \b{LocConsts} which can be considered memory addresses. The precise locations are hidden from the programmer by existential types $\Exists{\rho} A$, for location variables $\rho \in \b{LocVars}$.
+
+$L^3$ is typical of other modern calculi in that it separates resources like pointers from \i{capabilities} to use those resources. A pointer value $\ptr{l} : \Ptr{l}$ is unusable without a capability to read from and write to it: $\capa{l} : \Capa{l}{A}$. Capabilities are linear values, whilst pointers are duplicable. To see how this is enforced, and the destructive updates that it enables, we now considering the typing rules for $L^3$, as in Figures \ref{l3_typing_part1} and \ref{l3_typing_part2}.
+
+\clearpage
+
+\begin{figure}[H]
+\caption{Typing Rules for The Linear Language with Locations (Part I)}
+\label{l3_typing_part1}
 \begin{displaymath}
-\arraycolsep=1.2pt\def\arraystretch{2.2}
-\begin{array}{cc}
+\arraycolsep=0.5pt\def\arraystretch{2.2}
+\begin{array}{c}
 % Unit
-\infer{\Delta; \emptyset \types * : \mathbb{I}}{} &
-\infer{\Delta; \Gamma_1, \Gamma_2 \types \letbe{*}{t}{u} : A}{
+\infer[\t{(Unit-I)}]{\Delta; \emptyset \types * : \mathbb{I}}{} \\
+\infer[\t{(Unit-E)}]{\Delta; \Gamma_1, \Gamma_2 \types \letbe{*}{t}{u} : A}{
   \Delta; \Gamma_1 \types t : \mathbb{I}  &  \Delta; \Gamma_2 \types u : A
 } \\
+% Vars
+\infer[\t{(Var)}]{\Delta; x : A \types x : A}{FLV(A) \subseteq \Delta} \\
 % Pairs
-\infer{\Delta; \Gamma_1, \Gamma_2 \types t \otimes u : A \otimes B}{
-  \Delta; \Gamma_1 \types t : A  &  \Delta; \Gamma_2 \types u : A
-}\\
-\infer
+\infer[\t{($\otimes$-I)}]{\Delta; \Gamma_1, \Gamma_2 \types t \otimes u : A \otimes B}{
+  \Delta; \Gamma_1 \types t : A  &  \Delta; \Gamma_2 \types u : B
+} \\
+\infer[\t{($\otimes$-E)}]
 {\Delta; \Gamma_1, \Gamma_2 \types \letbe{x_1 \otimes x_2}{t}{u} : C}
 {\Delta; \Gamma_1 \types t : A \otimes B  &
- \Delta; \Gamma_2, x_1 : A, x_2 : A \types u : C}\\
-% Vars
-\infer[\t{(Var)}]{\Delta; x : A \types x : A}{FLV(A) \subseteq \Delta}\\
+ \Delta; \Gamma_2, x_1 : A, x_2 : B \types u : C} \\
 % Functions
 \infer[\t{($\lolly$-I)}]{\Delta; \Gamma \types \lam{x} t : A \lolly B}{
   \Delta; \Gamma, x : A \types t : B
-} &
+} \\
 \infer[\t{($\lolly$-E)}]{\Delta; \Gamma_1, \Gamma_2 \types \app{t}{u} : B}{
   \Delta; \Gamma_1 \types t : A \lolly B  &  \Delta; \Gamma_2 \types u : A
 } \\
 % Bang
-\infer[\t{(!-I)}]{\Delta; !\Gamma \types {!v} : {!A}}{\Delta; !\Gamma \types v : A} &
+\infer[\t{(!-I)}]{\Delta; !\Gamma \types {!v} : {!A}}{\Delta; !\Gamma \types v : A} \\
 \infer[\t{(!-E)}]{\Delta; \Gamma_1, \Gamma_2 \types \letbe{!x}{t}{u} : B}{
-  \Delta; \Gamma_1 \types t : A  &  \Delta; \Gamma_2, x : A \types u : B
+  \Delta; \Gamma_1 \types t : {!A}  &  \Delta; \Gamma_2, x : A \types u : B
 }\\
+% Dupl and drop.
 \infer[\t{(Dupl)}]{\Delta; \Gamma \types \dupl{t} : {!A} \otimes {!A}}{
   \Delta; \Gamma \types t : {!A}
-} &
+} \\
 \infer[\t{(Drop)}]{\Delta; \Gamma \types \drop{t} : \mathbb{I}}{
   \Delta; \Gamma \types t : {!A}
-}
+} \\
+
 \end{array}
 \end{displaymath}
 \end{figure}
 
-Many of the terms and types have the same meaning as in DILL. Functions, variables, products and the unit value are all the same. $L^3$'s description also includes small-step operational semantics, for which the set of values denoted by meta-variable $v$ are normal forms.
+% \clearpage
 
-% Bang types are handled in a slightly different way, with two new primitives added: $\dupl{t}$ and $\drop{t}$.
-
-The main addition is the set of primitives for allocating and managing memory: $\lnew{t}$, $\lfree{t}$ and $\lswap{t_1}{t_2}{t_3}$. Each piece of memory allocated is at a constant location $l$, drawn from a set of location constants \b{LocConsts} which can be considered memory addresses. The precise locations are hidden from the programmer by existential types $\Exists{\rho} A$, for location variables $\rho \in \b{LocVars}$.
-
-$L^3$ is typical of other modern calculi in that it separates resources like pointers from \i{capabilities} to use those resources. A pointer value $\ptr{l} : \Ptr{l}$ is unusable without a capability to read from and write to it: $\capa{l} : \Capa{l}{A}$. Capabilities are linear values, whilst pointers are duplicable. To see how this is enforced, and the destructive updates that it enables, we now considering the typing rules for $L^3$, as in Figure \ref{l3_typing}.
+\begin{figure}[H]
+\caption{Typing Rules for The Linear Language with Locations (Part II)}
+\label{l3_typing_part2}
+\begin{displaymath}
+\arraycolsep=0.5pt\def\arraystretch{2.2}
+\begin{array}{c}
+% New and free.
+\infer[\t{(New)}]{\Delta; \Gamma \types \lnew{t} : \Exists{\rho} \Capa{\rho}{A} \otimes {!(\Ptr{\rho})}}{
+  \Delta; \Gamma \types t : A
+} \\
+\infer[\t{(Free)}]{\Delta; \Gamma \types \lfree{t} : \Exists{\rho} A}{
+  \Delta; \Gamma \types t : \Exists{\rho} \Capa{\rho}{A} \otimes {!(\Ptr{\rho})}
+} \\
+% Swap.
+\infer[\t{(Swap)}]{\Delta; \Gamma_1, \Gamma_2 \types \lswap{t}{u} : \; (\Capa{\rho}{B}) \otimes A}{
+  \Delta; \Gamma_1 \types t : \Ptr{\rho}  &  \Delta; \Gamma_2 \types u : (\Capa{\rho}{A}) \otimes B
+} \\
+% LFun
+\infer[\t{(LFun)}]{\Delta; \Gamma \types \Lam{\rho} t : \Forall{\rho} A}{
+  \Delta, \rho; \Gamma \types t : A
+} \\
+% LApp
+\infer[\t{(LApp)}]{\Delta; \Gamma \types t [\rho'] : A[\rho' / \rho]}{
+  \Delta; \Gamma \types t : \Forall{\rho} A  &  \rho' \in \Delta
+} \\
+% LPack
+\infer[\t{(LPack)}]{\Delta; \Gamma \types \qpair{\rho'}{t} : \Exists{\rho} A} {
+  \rho' \in \Delta  &  \Delta; \Gamma \types t : A[\rho' / \rho]
+} \\
+% Let-LPack
+\infer[\t{(Let-LPack)}]{\Delta; \Gamma_1, \Gamma_2 \types \letbe{\qpair{\rho}{x}}{t}{u} : B}{
+  \Delta; \Gamma_1 \types t : \Exists{\rho} A  &  FLV(B) \subseteq \Delta  &
+  \Delta, \rho; \Gamma_2, x : A \types u : B
+}
+\end{array}
+\end{displaymath}
+\end{figure}
 
 $L^3$'s typing judgements include two contexts, one for locations and another for types: $\Delta; \Gamma \types t : A$. All variables and their types are stored in one typing context, which makes $L^3$ more similar to Wadler's LLC than DILL -- despite the syntactic similarity. The location context $\Delta$ is a sequence of location variables that are currently in scope, like variables in a typing context without the type information: $\Delta ::= \emptyset \sor \Delta, \rho$.
 
